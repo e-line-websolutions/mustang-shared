@@ -1,4 +1,6 @@
 component accessors=true {
+  property jsonService;
+
   public numeric function sanitizeNumericValue( number ) {
     return reReplace( number, '[^\d-\.]+', '', 'all' );
   }
@@ -21,6 +23,21 @@ component accessors=true {
   }
 
   public any function processEntity( required any data, numeric level=0, numeric maxLevel=0 ) {
+    // doesn't work on non-basecfc objects
+    if( isObject( data ) && !structKeyExists( data, "getID" )) {
+      return;
+    }
+
+    // beyond maxLevel depth, only return ID and name (or the value if its a string)
+    if( maxLevel != 0 && level >= maxLevel ) {
+      if( isObject( data ) && structKeyExists( data, "getID" )) {
+        return data.getID();
+      } else if ( !isSimpleValue( data )) {
+        return;
+      }
+    }
+
+    // object caching:
     if( level == 0 ) {
       request.cacheID = createUUID();
     }
@@ -33,14 +50,7 @@ component accessors=true {
 
     var cache = request.objCache[request.cacheID];
 
-    if( maxLevel != 0 && level >= maxLevel ) {
-      if( isObject( data ) && structKeyExists( data, "getID" )) {
-        return data.getID();
-      } else if ( !isSimpleValue( data )) {
-        return;
-      }
-    }
-
+    // data parsing:
     if( isSimpleValue( data )) {
       var result = data;
 
@@ -48,38 +58,42 @@ component accessors=true {
       var result = {};
       var md = getMetadata( data );
 
-      if( structKeyExists( cache, data.getID())) {
+      if( structKeyExists( data, "getID" ) && structKeyExists( cache, data.getID())) {
         result = cache[data.getID()];
       } else {
         do {
-          for( var i=1; i<=arrayLen( md.properties ); i++ ) {
-            var prop = md.properties[i];
+          if( structKeyExists( md, "properties" )) {
+            for( var i=1; i<=arrayLen( md.properties ); i++ ) {
+              var prop = md.properties[i];
 
-            param boolean prop.inapi=true;
-            param string prop.fieldtype="column";
+              param boolean prop.inapi=true;
+              param string prop.fieldtype="column";
 
-            if( prop.inapi && structKeyExists( data, "get" & prop.name )) {
-              var allowedFieldTypes = "id,column,many-to-one,many-to-many,one-to-many";
+              if( prop.inapi && structKeyExists( data, "get" & prop.name )) {
+                var allowedFieldTypes = "id,column,many-to-one,many-to-many,one-to-many";
 
-              if( level >= 3 ) {
-                allowedFieldTypes = "id,column,many-to-one";
-              }
+                if( level >= 3 ) {
+                  allowedFieldTypes = "id,column,many-to-one";
+                }
 
-              if( level >= 4 ) {
-                allowedFieldTypes = "id,column";
-              }
+                if( level >= 4 ) {
+                  allowedFieldTypes = "id,column";
+                }
 
-              if( level >= 4 && !listFindNoCase( "id,name", prop.name )) {
-                continue;
-              }
+                if( level >= 4 && !listFindNoCase( "id,name", prop.name )) {
+                  continue;
+                }
 
-              if( listFindNoCase( allowedFieldTypes, prop.fieldtype )) {
-                var value = evaluate( "data.get#prop.name#()" );
-                if( !isNull( value )) {
-                  if( isObject( value ) && structKeyExists( cache, value.getID() )) {
-                    continue;
-                  } else {
-                    result[prop.name] = processEntity( value, level + 1, maxLevel );
+                if( listFindNoCase( allowedFieldTypes, prop.fieldtype )) {
+                  var value = evaluate( "data.get#prop.name#()" );
+                  if( !isNull( value )) {
+                    if( isObject( value ) && structKeyExists( value, "getID" ) && structKeyExists( cache, value.getID())) {
+                      continue;
+                    } else if( structKeyExists( prop, "dataType" ) && prop.dataType == "json" ) {
+                      structAppend( result, jsonService.deserialize( value ));
+                    } else {
+                      result[prop.name] = processEntity( value, level + 1, maxLevel );
+                    }
                   }
                 }
               }
