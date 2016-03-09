@@ -1,8 +1,82 @@
 component accessors=true {
   property jsonService;
 
-  public numeric function sanitizeNumericValue( number ) {
-    return reReplace( number, '[^\d-\.]+', '', 'all' );
+  public numeric function sanitizeNumericValue( required string source ) {
+    var result = reReplace( source, '[^\d-\.]+', '', 'all' );
+
+    if( isNumeric( result )) {
+      return result;
+    }
+
+    throw( type="dataService.sanitizeNumericValue", message="Source could not be converted to a number.", detail="Original value: #source#." );
+  }
+
+  public date function sanitizeDateValue( required string source ) {
+    // This method makes an educated guess about the date format
+    var result = source;
+    var dateFormats = {
+          admy=[3,2,1],
+          bmdy=[3,1,2],
+          cymd=[1,2,3]
+        };
+
+    try {
+      source = reReplace( source, '\D+', '-', 'all' );
+
+      if( !listLen( source, '-' ) >= 3 ) {
+        return source;
+      }
+
+      if( arrayLen( arguments ) >= 2) {
+        // Use the provided date formatter:
+        dateFormats = {
+          "#arguments[2]#" = dateFormats[arguments[2]]
+        };
+      } else {
+        if( len( listGetAt( source, 1, '-' )) == 4 ) {
+          // last item can't be the YEAR
+          structDelete( dateFormats, 'bmdy' );
+          structDelete( dateFormats, 'admy' );
+        }
+
+        if( len( listGetAt( source, 3, '-' )) == 4) {
+          // last item is probably the YEAR
+          structDelete( dateFormats, 'cymd' );
+        }
+
+        if( listGetAt( source, 1, '-' ) > 12) {
+          // first item can't be the MONTH
+          structDelete( dateFormats, 'bmdy' );
+        }
+
+        if( listGetAt( source, 2, '-' ) > 12) {
+          // second item can't be the MONTH
+          structDelete( dateFormats, 'admy' );
+          structDelete( dateFormats, 'cymd' );
+        }
+      }
+
+      var sortedKeys = listToArray( listSort( structKeyList( dateFormats ), 'text' ));
+
+      for( var key in sortedKeys ) {
+        var currentDateFormat = dateFormats[key];
+
+        result = createDate(
+          listGetAt( source, currentDateFormat[1], '-' ),
+          listGetAt( source, currentDateFormat[2], '-' ),
+          listGetAt( source, currentDateFormat[3], '-' )
+        );
+
+        try {
+          var testDate = lsDateFormat( result, 'dd/mm/yyyy' );
+          return result;
+        } catch ( any e ) {}
+      }
+
+      return result;
+    } catch ( any e ) {
+      rethrow;
+    }
   }
 
   public boolean function isGUID( required string text ) {
@@ -22,13 +96,17 @@ component accessors=true {
   public void function nil() {
   }
 
-  public any function processEntity( required any data, numeric level=0, numeric maxLevel=0 ) {
+  public any function processEntity( any data, numeric level=0, numeric maxLevel=0 ) {
+    if( isNull( data )) {
+      return;
+    }
+
     // doesn't work on non-basecfc objects
     if( isObject( data ) && !structKeyExists( data, "getID" )) {
       return;
     }
 
-    // beyond maxLevel depth, only return ID and name (or the value if its a string)
+    // beyond maxLevel depth, only return ID and name (or the value if it's a string)
     if( maxLevel != 0 && level >= maxLevel ) {
       if( isObject( data ) && structKeyExists( data, "getID" )) {
         return data.getID();
@@ -50,92 +128,98 @@ component accessors=true {
 
     var cache = request.objCache[request.cacheID];
 
-    // data parsing:
-    if( isSimpleValue( data )) {
-      var result = data;
+    try {
 
-    } else if( isObject( data )) {
-      var result = {};
-      var md = getMetadata( data );
+      // data parsing:
+      if( isSimpleValue( data )) {
+        var result = data;
 
-      if( structKeyExists( data, "getID" ) && structKeyExists( cache, data.getID())) {
-        result = cache[data.getID()];
-      } else {
-        do {
-          if( structKeyExists( md, "properties" )) {
-            for( var i=1; i<=arrayLen( md.properties ); i++ ) {
-              var prop = md.properties[i];
+      } else if( isObject( data )) {
+        var result = {};
+        var md = getMetadata( data );
 
-              param boolean prop.inapi=true;
-              param string prop.fieldtype="column";
+        if( structKeyExists( data, "getID" ) && structKeyExists( cache, data.getID())) {
+          result = cache[data.getID()];
+        } else {
+          do {
+            if( structKeyExists( md, "properties" )) {
+              for( var i=1; i<=arrayLen( md.properties ); i++ ) {
+                var prop = md.properties[i];
 
-              if( prop.inapi && structKeyExists( data, "get" & prop.name )) {
-                var allowedFieldTypes = "id,column,many-to-one,many-to-many,one-to-many";
+                param boolean prop.inapi=true;
+                param string prop.fieldtype="column";
 
-                if( level >= 3 ) {
-                  allowedFieldTypes = "id,column,many-to-one";
-                }
+                if( prop.inapi && structKeyExists( data, "get" & prop.name )) {
+                  var allowedFieldTypes = "id,column,many-to-one,many-to-many,one-to-many";
 
-                if( level >= 4 ) {
-                  allowedFieldTypes = "id,column";
-                }
+                  if( level >= 3 ) {
+                    allowedFieldTypes = "id,column,many-to-one";
+                  }
 
-                if( level >= 4 && !listFindNoCase( "id,name", prop.name )) {
-                  continue;
-                }
+                  if( level >= 4 ) {
+                    allowedFieldTypes = "id,column";
+                  }
 
-                if( listFindNoCase( allowedFieldTypes, prop.fieldtype )) {
-                  var value = evaluate( "data.get#prop.name#()" );
-                  if( !isNull( value )) {
-                    if( isObject( value ) && structKeyExists( value, "getID" ) && structKeyExists( cache, value.getID())) {
-                      continue;
-                    } else if( structKeyExists( prop, "dataType" ) && prop.dataType == "json" ) {
-                      structAppend( result, jsonService.deserialize( value ));
-                    } else {
-                      result[prop.name] = processEntity( value, level + 1, maxLevel );
+                  if( level >= 4 && !listFindNoCase( "id,name", prop.name )) {
+                    continue;
+                  }
+
+                  if( listFindNoCase( allowedFieldTypes, prop.fieldtype )) {
+                    var value = evaluate( "data.get#prop.name#()" );
+                    if( !isNull( value )) {
+                      if( isObject( value ) && structKeyExists( value, "getID" ) && structKeyExists( cache, value.getID())) {
+                        continue;
+                      } else if( structKeyExists( prop, "dataType" ) && prop.dataType == "json" ) {
+                        structAppend( result, jsonService.deserialize( value ));
+                      } else {
+                        result[prop.name] = processEntity( value, level + 1, maxLevel );
+                      }
                     }
                   }
                 }
               }
             }
-          }
 
-          if( structKeyExists( md, "extends" )) {
-            md = md.extends;
-          }
-        } while( structKeyExists( md, "extends" ) && structKeyExists( md, "properties" ));
+            if( structKeyExists( md, "extends" )) {
+              md = md.extends;
+            }
+          } while( structKeyExists( md, "extends" ) && structKeyExists( md, "properties" ));
 
-        cache[data.getID()] = result;
-      }
-
-    } else if( isArray( data )) {
-      var result = [];
-      var itemCounter = 0;
-
-      for( var el in data ) {
-        var newData = processEntity( el, level + 1, maxLevel );
-
-        if( !isNull( newData )) {
-          itemCounter++;
-
-          if( itemCounter > 100 ) {
-            arrayAppend( result, "capped at 100 results" );
-            break;
-          }
-
-          arrayAppend( result, newData );
+          cache[data.getID()] = result;
         }
+
+      } else if( isArray( data )) {
+        var result = [];
+        var itemCounter = 0;
+
+        for( var i = 1; i <= arrayLen( data ); i++ ) {
+          var el = data[i];
+          var newData = processEntity( el, level + 1, maxLevel );
+
+          if( !isNull( newData )) {
+            itemCounter++;
+
+            if( itemCounter > 100 ) {
+              arrayAppend( result, "capped at 100 results" );
+              break;
+            }
+
+            arrayAppend( result, newData );
+          }
+        }
+
+      } else if( isStruct( data )) {
+        var result = {};
+        for( var key in data ) {
+          result[key] = processEntity( data[key], level + 1, maxLevel );
+        }
+
       }
 
-    } else if( isStruct( data )) {
-      var result = {};
-      for( var key in data ) {
-        result[key] = processEntity( data[key], level + 1, maxLevel );
-      }
-
+      return result;
+    } catch ( any e ) {
+      return;
     }
-
-    return result;
   }
 
   // PRIVATE HELPER METHODS

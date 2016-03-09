@@ -11,7 +11,7 @@ component accessors=true {
   }
 
   public any function get() {
-    if( structCount( arguments ) == 1 && dataService.isGUID( arguments[1] )) {
+    if( structCount( arguments ) == 1 && !isNull( arguments[1] ) && dataService.isGUID( arguments[1] )) {
       return getOne( arguments[1] );
 
     } else if( structCount( arguments )) {

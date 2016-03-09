@@ -4,8 +4,14 @@ component accessors=true {
   property type="struct" name="auth";
   property type="struct" name="instance";
 
-  public any function init() {
-    variables.instance.bcrypt = getBCrypt();
+  public any function init( config ) {
+    var bCryptPath = "#request.root#/lib/java";
+
+    if( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ))) {
+      bCryptPath = config.paths.bcrypt;
+    }
+
+    variables.instance.bcrypt = getBCrypt( bCryptPath );
   }
 
   public struct function getAuth() {
@@ -124,10 +130,10 @@ component accessors=true {
     }
   }
 
-  private any function getBCrypt() {
+  private any function getBCrypt( required string pathToBcrypt ) {
     var system = createObject( "java", "java.lang.System" );
     var javaVersion = listGetAt( system.getProperty( "java.version" ), 2, "." );
-    var bCryptLocation = directoryList( "#request.root#/lib/java/#javaVersion#/", false, "path", "*.jar" );
+    var bCryptLocation = directoryList( pathToBcrypt & "/" & javaVersion, false, "path", "*.jar" );
     var jl = new javaloader.javaloader( bCryptLocation );
 
     return jl.create( "org.mindrot.jbcrypt.BCrypt" );
