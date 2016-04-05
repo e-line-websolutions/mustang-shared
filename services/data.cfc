@@ -77,6 +77,8 @@ component accessors=true {
     } catch ( any e ) {
       rethrow;
     }
+
+    throw( type="dataService.sanitizeDateValue", message="Source could not be converted to a date.", detail="Original value: #source#." );
   }
 
   public boolean function isGUID( required string text ) {
@@ -96,7 +98,9 @@ component accessors=true {
   public void function nil() {
   }
 
-  public any function processEntity( any data, numeric level=0, numeric maxLevel=0 ) {
+  public any function processEntity( any data,
+                                 numeric level=0,
+                                 numeric maxLevel=0 ) {
     if( isNull( data )) {
       return;
     }
