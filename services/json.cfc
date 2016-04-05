@@ -43,32 +43,9 @@ component {
     *  </ul>
     */
   public any function deserializeFromJSON( required string JSONVar, boolean strictMapping=true ) {
+    var _data = trim( JSONVar );
     var ar = [];
     var st = {};
-    var dataType = "";
-    var inQuotes = false;
-    var startPos = 1;
-    var nestingLevel = 0;
-    var dataSize = 0;
-    var i = 1;
-    var skipIncrement = false;
-    var j = 0;
-    var char = "";
-    var structVal = "";
-    var qRows = 0;
-    var qCols = "";
-    var qCol = "";
-    var qData = "";
-    var curCharIndex = "";
-    var curChar = "";
-    var result = "";
-    var unescapeVals = variables.escapeVals[1];
-    var unescapeToVals = variables.escapeVals[2];
-    var unescapeVals2 = variables.escapeVals[3];
-    var unescapetoVals2 = variables.escapeVals[4];
-    var dJSONString = "";
-    var pos = 0;
-    var _data = trim( JSONVar );
 
     if( isNumeric( _data )) {
       return val( _data );
@@ -86,23 +63,21 @@ component {
       _data = mid( _data, 2, len( _data )-2 );
 
       if( find( "\b", _data ) || find( "\t", _data ) || find( "\n", _data ) || find( "\f", _data ) || find( "\r", _data ) || find( "\\", _data ) || find( "\/", _data )) {
-
-        curCharIndex = 0;
-        curChar =  "";
-        dJSONString = [];
+        var curCharIndex = 0;
+        var dJSONString = [];
 
         while( true ) {
           curCharIndex = curCharIndex + 1;
           if( curCharIndex GT len( _data )) {
             break;
           } else {
-            curChar = mid( _data, curCharIndex, 1 );
+            var curChar = mid( _data, curCharIndex, 1 );
             if( curChar == "\" ) {
               curCharIndex = curCharIndex + 1;
               curChar = mid( _data, curCharIndex, 1 );
-              pos = listFind( unescapeVals2, curChar );
+              var pos = listFind( variables.escapeVals[3], curChar );
               if( pos ) {
-                arrayAppend( dJSONString, ListGetAt( unescapetoVals2, pos ));
+                arrayAppend( dJSONString, ListGetAt( variables.escapeVals[4], pos ));
               } else {
                 arrayAppend( dJSONString, "\" & curChar );
               }
@@ -115,9 +90,10 @@ component {
         return arrayToList( dJSONString, "" );
       }
 
-      return replaceList( _data, unescapeVals, unescapeToVals );
+      return replaceList( _data, variables.escapeVals[1], variables.escapeVals[2] );
 
     } else if(( left( _data, 1 ) == "[" && right( _data, 1 ) == "]" ) || ( left( _data, 1 ) == "{" && right( _data, 1 ) == "}" )) {
+      var dataType = "";
       if( left( _data, 1 ) == "[" && right( _data, 1 ) == "]" ) {
         dataType = "array";
       } else if( reFindNoCase( '^\{"ROWCOUNT":[0-9]+, "COLUMNS":\[( "[^"]+", ? )+\], "DATA":\{( "[^"]+":\[.*\], ? )+\}\}$', _data, 0 ) == 1 && !strictMapping ) {
@@ -138,17 +114,23 @@ component {
         }
       }
 
-      dataSize = len( _data ) + 1;
+      var dataSize = len( _data ) + 1;
+      var i=1;
+      var inQuotes = false;
+      var nestingLevel = 0;
+      var startPos = 1;
 
       while( i <= dataSize ) {
         var skipIncrement = false;
-        char = mid( _data, i, 1 );
+        var char = mid( _data, i, 1 );
 
         if( char == '"' ) {
           inQuotes = !inQuotes;
+
         } else if( char == "\" && inQuotes ) {
           i = i + 2;
           skipIncrement = true;
+
         } else if( ( char == "," && !inQuotes && nestingLevel == 0 ) || i == len( _data )+1 ) {
           var dataStr = trim( mid( _data, startPos, i-startPos ));
 
@@ -163,41 +145,42 @@ component {
               structKey = len( structKey ) > 2 ? mid( structKey, 2, len( structKey ) - 2 ) : "";
             }
 
-            structVal = mid( dataStr, colonPos.pos[1]+colonPos.len[1], len( dataStr ) - colonPos.pos[1] );
+            var structVal = mid( dataStr, colonPos.pos[1]+colonPos.len[1], len( dataStr ) - colonPos.pos[1] );
 
             if( dataType == "struct" && len( structKey )) {
               st[structKey] = deserializeFromJSON( structVal, strictMapping );
 
             } else if( dataType == "queryByColumns" ) {
+              var qRows = 0;
               if( structKey == "rowcount" ) {
                 qRows = deserializeFromJSON( structVal, strictMapping );
               } else if( structKey == "columns" ) {
-                qCols = deserializeFromJSON( structVal, strictMapping );
+                var qCols = deserializeFromJSON( structVal, strictMapping );
                 st = QueryNew( arrayToList( qCols ));
                 if( qRows ) {
                   QueryAddRow( st, qRows );
                 }
               } else if( structKey == "data" ) {
-                qData = deserializeFromJSON( structVal, strictMapping );
+                var qData = deserializeFromJSON( structVal, strictMapping );
                 ar = structKeyArray( qData );
 
                 for( var j=1; j<=ArrayLen( ar ); j++ ) {
                   for( var qRows=1; qRows<=st.recordcount; qRows++ ) {
-                    qCol = ar[j];
+                    var qCol = ar[j];
                     QuerySetCell( st, qCol, qData[qCol][qRows], qRows );
                   }
                 }
               }
             } else if( dataType == "query" ) {
               if( structKey == "columns" ) {
-                qCols = deserializeFromJSON( structVal, strictMapping );
+                var qCols = deserializeFromJSON( structVal, strictMapping );
                 st = QueryNew( arrayToList( qCols ));
               } else if( structKey == "data" ) {
-                qData = deserializeFromJSON( structVal, strictMapping );
+                var qData = deserializeFromJSON( structVal, strictMapping );
                 for( var qRows=1; qRows<=ArrayLen( qData ); qRows++ ) {
                   QueryAddRow( st );
                   for( var j=1; j<=ArrayLen( qCols ); j++ ) {
-                    qCol = qCols[j];
+                    var qCol = qCols[j];
                     QuerySetCell( st, qCol, qData[qRows][j], qRows );
                   }
                 }
@@ -212,6 +195,7 @@ component {
 
         } else if( "]}" CONTAINS char && !inQuotes ) {
           nestingLevel = nestingLevel - 1;
+
         }
 
         if( !skipIncrement ) {
@@ -463,7 +447,7 @@ component {
     }
   }
 
-  /** Returns a
+  /** Returns a valid json escaped string
     *
     * @data A string to serialze.
     */
