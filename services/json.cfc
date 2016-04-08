@@ -33,7 +33,7 @@ component {
     return this;
   }
 
-  /** Converts a JSON ( JavaScript Object Notation ) string data representation into CFML data, such as a CFML structure or array.
+  /** Converts a JSON (JavaScript Object Notation) string data representation into CFML data, such as a CFML structure or array.
     *
     * @JSONVar A string that contains a valid JSON construct, or variable that represents one.
     * @strictMapping A Boolean value that specifies whether to convert the JSON strictly, as follows:
@@ -217,7 +217,7 @@ component {
   /** Converts ColdFusion data into a JSON (JavaScript Object Notation) representation of the data.
     *
     * @variable A ColdFusion data value or variable that represents one.
-    * @serializequeryByColumns A Boolean value that specifies how to serialize ColdFusion queries.
+    * @serializeQueryByColumns A Boolean value that specifies how to serialize ColdFusion queries.
     *  <ul>
     *    <li><code>false</code>: (Default) Creates an object with two entries: an array of column names and an array of row arrays. This format is required by the HTML format cfgrid tag.</li>
     *    <li><code>true</code>: Creates an object that corresponds to WDDX query format.</li>
@@ -228,7 +228,7 @@ component {
     *    <li><code>true:</code> Convert the ColdFusion data to a JSON string using underlying Java/SQL data types.</li>
     *  </ul>
     */
-  public string function serializeToJSON( required any variable, boolean serializequeryByColumns=false, boolean strictMapping=false ) {
+  public string function serializeToJSON( required any variable, boolean serializeQueryByColumns=false, boolean strictMapping=false ) {
     var escapeToVals = variables.escapeVals[1];
     var escapeVals = variables.escapeVals[2];
     var _data = variable;
@@ -456,10 +456,10 @@ component {
     var result = '"';
     var end = len( data );
 
-    for( var i = 0; i < end; i++ ) {
+    for( var i=0; i<end; i++ ) {
       var nextChar = data.charAt( i );
 
-      if( nextChar < ' ' ) {
+      if( asc( nextChar ) < 32 ) {
         if( nextChar == chr( 8 )) {
           result &= "\b";
         } else if( nextChar == chr( 9 )) {

@@ -8,7 +8,12 @@ component accessors=true {
       return result;
     }
 
-    throw( type="dataService.sanitizeNumericValue", message="Source could not be converted to a number.", detail="Original value: #source#." );
+    throw( type="dataService.sanitizeNumericValue", message="Source (#source#) could not be converted to a number.", detail="Original value: #source#." );
+  }
+
+  public numeric function fixPercentageValue( required string source ) {
+    var newValue = sanitizeNumericValue( source );
+    return newValue * 100;
   }
 
   public date function sanitizeDateValue( required string source ) {
@@ -24,7 +29,11 @@ component accessors=true {
       source = reReplace( source, '\D+', '-', 'all' );
 
       if( !listLen( source, '-' ) >= 3 ) {
-        return source;
+        if( __isValidDate( source )) {
+          return source;
+        }
+
+        throw( "Error sanitizing date string.", "dataService.sanitizeDateValue", "Could not detect date format in '#source#'" );
       }
 
       if( arrayLen( arguments ) >= 2) {
@@ -241,5 +250,34 @@ component accessors=true {
     massagedText = insert( '-', massagedText, 8 );
 
     return massagedText;
+  }
+
+  private boolean function __isValidDate( required potentialDate ) {
+    if( __getClassName( potentialDate ) contains "date" ) {
+      return true;
+    }
+
+    if( !isSimpleValue( potentialDate )) {
+      return false;
+    }
+
+    try {
+      lsParseDateTime( potentialDate, getLocale());
+      return true;
+    } catch ( any e ) {
+      return false;
+    }
+  }
+
+  /** Returns a variable's underlying java Class name.
+    *
+    * @data A variable.
+    */
+  private string function __getClassName( required any data ) {
+    try {
+      return data.getClass().getName();
+    } catch( any e ) {
+      return "";
+    }
   }
 }
