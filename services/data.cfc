@@ -12,8 +12,23 @@ component accessors=true {
   }
 
   public numeric function fixPercentageValue( required string source ) {
-    var newValue = sanitizeNumericValue( source );
-    return newValue * 100;
+    var sanitizeNumber = sanitizeNumericValue( source );
+
+    if( val( sanitizeNumber ) == 0 ) {
+      return 0;
+    }
+
+    var result = sanitizeNumber * 100;
+
+    if( result > 100 ) {
+      result = result / 100;
+    }
+
+    if( result < 0.01 ) {
+      result = result * 100;
+    }
+
+    return result;
   }
 
   public date function sanitizeDateValue( required string source ) {
@@ -33,7 +48,7 @@ component accessors=true {
           return source;
         }
 
-        throw( "Error sanitizing date string.", "dataService.sanitizeDateValue", "Could not detect date format in '#source#'" );
+        throw( "Error sanitizing date string (#source#).", "dataService.sanitizeDateValue", "Could not detect date format in '#source#'" );
       }
 
       if( arrayLen( arguments ) >= 2) {
@@ -235,7 +250,7 @@ component accessors=true {
     }
   }
 
-  // PRIVATE HELPER METHODS
+  // private functions
 
   private string function __formatAsGUID( required string text ) {
     var massagedText = reReplace( text, '\W', '', 'all' );

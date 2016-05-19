@@ -328,7 +328,7 @@ component accessors=true {
       rc.allColumns[property.name] = property;
       rc.allColumns[property.name].columnIndex = orderNr;
 
-      if( structKeyExists( property, "inlist" )) {
+      if( structKeyExists( property, "inlist" ) || structKeyExists( property, "showInList" )) {
         indexNr++;
         columnsInList[indexNr] = property.name;
       }

@@ -11,14 +11,26 @@ component accessors=true {
   }
 
   public any function get() {
-    if( structCount( arguments ) == 1 && !isNull( arguments[1] ) && dataService.isGUID( arguments[1] )) {
-      return getOne( arguments[1] );
+    var argsToPass = {};
+    for( key in arguments ) {
+      if( !isNull( arguments[key] )) {
+        argsToPass[key] = arguments[key];
+      }
+    }
 
-    } else if( structCount( arguments )) {
-      return getSome( argumentCollection = arguments );
-
-    } else {
+    if( structIsEmpty( argsToPass )) {
       return getAll();
+    }
+
+    if( structCount( argsToPass ) > 1 ) {
+      return getSome( argumentCollection = argsToPass );
+    }
+
+    var allArgKeys = structKeyArray( argsToPass );
+    var firstArg = argsToPass[ allArgKeys[ 1 ]];
+
+    if( dataService.isGUID( firstArg )) {
+      return getOne( firstArg );
     }
   }
 

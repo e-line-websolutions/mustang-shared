@@ -1,9 +1,9 @@
 component accessors=true {
-  property numeric total;
-  property numeric current;
-  property numeric prevTime;
   property array timers;
   property boolean done;
+  property numeric current;
+  property numeric prevTime;
+  property numeric total;
   property string status;
 
   public component function init() {
@@ -13,44 +13,40 @@ component accessors=true {
 
   public void function addToTotal() {
     var persisted = getProgress();
-    setTotal( persisted.total + 1 );
+    variables.total = persisted.total + 1;
   }
 
   public void function updateProgress() {
     var persisted = getProgress();
-    setCurrent( persisted.current + 1 );
+    variables.current = persisted.current + 1;
 
-    if( getPrevTime() > 0 ) {
-      var timers = getTimers();
-      arrayAppend( timers, getTickCount() - getPrevTime());
-      setTimers( timers );
+    if( variables.prevTime > 0 ) {
+      var timers = variables.timers;
+      arrayAppend( timers, getTickCount() - variables.prevTime );
+      variables.timers = timers;
     }
 
-    setPrevTime( getTickCount());
+    variables.prevTime = getTickCount();
   }
 
   public void function done() {
-    setCurrent( getTotal());
-    setDone( true );
+    variables.current = variables.total;
+    variables.done = true;
   }
 
   public struct function getProgress() {
-    var millis = ( getTotal() - getCurrent()) * arrayAvg( getTimers());
-    var minutes = ( millis \ ( 60 * 1000 )) mod 60;
-    var seconds = ( millis \ 1000 ) mod 60;
-    var timeLeft = createTimespan( 0, 0, minutes, seconds );
-    var statusText = getStatus();
+    var statusText = variables.status;
 
     var result = duplicate({
-      "total" = getTotal(),
-      "current" = getCurrent(),
-      "done" = getDone(),
+      "current" = variables.current,
+      "done" = variables.done,
       "status" = statusText,
-      "timeLeft" = lsTimeFormat( timeLeft, "mm:ss" ),
-      "statusCode" = ( statusText contains "Error" ? 500 : 200 )
+      "statusCode" = ( statusText contains "Error" ? 500 : 200 ),
+      "timeLeft" = getCalculatedTimeLeft(),
+      "total" = variables.total
     });
 
-    if( getDone()) {
+    if( variables.done ) {
       reset();
     }
 
@@ -80,26 +76,36 @@ component accessors=true {
   }
 
   public void function setStatus( required string status ) {
+    writeLog( text = status, file = "progressService" );
     variables.status = status;
   }
 
   private numeric function calculateTime() {
-    if( getTotal() == 0 || getCurrent() == 0 || arrayLen( getTimers()) == 0 ) {
+    if( variables.total == 0 || variables.current == 0 || arrayLen( variables.timers ) == 0 ) {
       return 0;
     }
 
-    var avgTime = arrayAvg( getTimers()) / 1000; // seconds per step
-    var steps = getTotal() / getCurrent(); // number of steps
+    var avgTime = arrayAvg( variables.timers ) / 1000; // seconds per step
+    var steps = variables.total / variables.current; // number of steps
 
     return avgTime * steps;
   }
 
   private void function reset() {
-    setTotal( 0 );
-    setCurrent( 0 );
-    setTimers( [] );
-    setDone( true );
-    setStatus( "Waiting" );
-    setPrevTime( getTickCount());
+    variables.total = 0;
+    variables.current = 0;
+    variables.timers = [];
+    variables.done = true;
+    variables.status = "Waiting";
+    variables.prevTime = getTickCount();
+  }
+
+  private string function getCalculatedTimeLeft() {
+    var millis = ( variables.total - variables.current ) * arrayAvg( variables.timers );
+    var minutes = ( millis \ ( 60 * 1000 )) mod 60;
+    var seconds = ( millis \ 1000 ) mod 60;
+    var timeLeft = createTimespan( 0, 0, minutes, seconds );
+
+    return lsTimeFormat( timeLeft, "mm:ss" );
   }
 }

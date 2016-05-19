@@ -5,8 +5,8 @@ component accessors=true {
   property translationService;
 
   public void function load( rc ) {
-    rc.displaytitle = translationService.translate( framework.getfullyqualifiedaction() );
-    rc.content = contentService.getByFQA( framework.getfullyqualifiedaction(), localeService.get( translationService.getLocaleID() ));
+    rc.displaytitle = translationService.translate( framework.getfullyqualifiedaction());
+    rc.content = contentService.getByFQA( framework.getfullyqualifiedaction(), localeService.get( translationService.getLocaleID()));
 
     if( !structKeyExists( rc, "topnav" )){
       rc.topnav = "";
