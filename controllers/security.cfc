@@ -1,11 +1,12 @@
 component accessors=true {
   property framework;
-  property securityService;
+
   property contactService;
   property contentService;
+  property dataService;
   property mailService;
   property optionService;
-  property dataService;
+  property securityService;
 
   public void function login( required struct rc ) {
     framework.setLayout( "security" );
@@ -102,17 +103,17 @@ component accessors=true {
 
     writeLog( text="user #user.getUsername()# logged in.", type="information", file=request.appName );
 
+    rc.auth = securityService.getAuth();
+
     if( !rc.dontRedirect ) {
-      var loginscript = securityService.getAuth().role.loginscript;
+      var loginscript = rc.auth.role.loginscript;
 
       if( structKeyExists( rc , 'returnpage') ) {
-      	loginscript = rc.returnpage;
+        loginscript = rc.returnpage;
       } else if( isNull( loginscript ) || !len( trim( loginscript ))) {
         loginscript = ":";
       }
       framework.redirect( loginscript );
-    } else {
-      rc.auth = securityService.getAuth();
     }
   }
 

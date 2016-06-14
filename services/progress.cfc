@@ -102,10 +102,11 @@ component accessors=true {
 
   private string function getCalculatedTimeLeft() {
     var millis = ( variables.total - variables.current ) * arrayAvg( variables.timers );
+    var hours = ( millis \ ( 60 * ( 60 * 1000 ))) mod 60;
     var minutes = ( millis \ ( 60 * 1000 )) mod 60;
     var seconds = ( millis \ 1000 ) mod 60;
-    var timeLeft = createTimespan( 0, 0, minutes, seconds );
+    var timeLeft = createTimespan( 0, hours, minutes, seconds );
 
-    return lsTimeFormat( timeLeft, "mm:ss" );
+    return lsTimeFormat( timeLeft, "hh:mm:ss" );
   }
 }

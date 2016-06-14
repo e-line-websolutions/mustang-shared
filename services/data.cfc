@@ -1,6 +1,8 @@
 component accessors=true {
   property jsonService;
 
+  // sanitation functions:
+
   public numeric function sanitizeNumericValue( required string source ) {
     var result = reReplace( source, '[^\d-\.]+', '', 'all' );
 
@@ -8,19 +10,25 @@ component accessors=true {
       return result;
     }
 
-    throw( type="dataService.sanitizeNumericValue", message="Source (#source#) could not be converted to a number.", detail="Original value: #source#." );
+    throw( type="dataService.sanitizeNumericValue", message="Value could not be converted to a number.", detail="Original value: #source#." );
   }
 
-  public numeric function fixPercentageValue( required string source ) {
-    var sanitizeNumber = sanitizeNumericValue( source );
+  public numeric function sanitizePercentageValue( required string source ) {
+    try {
+      var result = sanitizeNumericValue( source );
+    } catch ( dataService e ) {
+      throw( type="dataService.sanitizePercentageValue", message=e.message, detail=e.detail );
+    }
 
-    if( val( sanitizeNumber ) == 0 ) {
+    if( val( result ) == 0 ) {
       return 0;
     }
 
-    var result = sanitizeNumber * 100;
-
     if( result > 100 ) {
+      result = result / 100;
+    }
+
+    if( result > 1 ) {
       result = result / 100;
     }
 
@@ -48,7 +56,7 @@ component accessors=true {
           return source;
         }
 
-        throw( "Error sanitizing date string (#source#).", "dataService.sanitizeDateValue", "Could not detect date format in '#source#'" );
+        throw( type="dataService.sanitizeDateValue", message="Error sanitizing date string (#source#).", detail="Could not detect date format in '#source#'" );
       }
 
       if( arrayLen( arguments ) >= 2) {
@@ -102,8 +110,24 @@ component accessors=true {
       rethrow;
     }
 
-    throw( type="dataService.sanitizeDateValue", message="Source could not be converted to a date.", detail="Original value: #source#." );
+    throw( type="dataService.sanitizeDateValue", message="Value could not be converted to a date.", detail="Original value: #source#." );
   }
+
+  public integer function sanitizeIntegerValue( required string source ) {
+    try {
+      var result = int( sanitizeNumericValue( source ));
+    } catch ( dataService e ) {
+      throw( type="dataService.sanitizePercentageValue", message=e.message, detail=e.detail );
+    }
+
+    if( isValid( "integer", result )) {
+      return javaCast( "int", result );
+    }
+
+    throw( type="dataService.sanitizeIntegerValue", message="Value could not be converted to an integer.", detail="Original value: #source#." );
+  }
+
+  // other data integrity and utility functions:
 
   public boolean function isGUID( required string text ) {
     if( len( text ) < 32 ) {
@@ -117,9 +141,6 @@ component accessors=true {
     }
 
     return isValid( "guid", __formatAsGUID( text ));
-  }
-
-  public void function nil() {
   }
 
   public any function processEntity( any data,
@@ -249,6 +270,12 @@ component accessors=true {
       return;
     }
   }
+
+  public void function nil() {
+  }
+
+
+
 
   // private functions
 
