@@ -7,7 +7,7 @@ component accessors=true {
     return this;
   }
 
-  public void function upload( required string uploadField, string destination="temp" ) {
+  public void function upload( required string uploadField, string destination="temp/" ) {
     try {
       if( destination contains '..' ) {
         throw( "path error" );
@@ -32,11 +32,15 @@ component accessors=true {
   }
 
   public string function getFileContent() {
-    return fileRead( getFilePath());
+    return fileRead( getFilePath() );
   }
 
   public any function getFileInputStream( required string filePath ) {
     var jFileInputStream = createObject( "java", "java.io.FileInputStream" );
     return jFileInputStream.init( filePath );
+  }
+
+  public component function getInstance(){
+    return duplicate( this );
   }
 }

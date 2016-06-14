@@ -75,7 +75,6 @@ component accessors=true {
       }
     }
 
-
     // Set auth struct:
     securityService.refreshSession( user );
 
@@ -111,7 +110,6 @@ component accessors=true {
       } else if( isNull( loginscript ) || !len( trim( loginscript ))) {
         loginscript = ":";
       }
-
       framework.redirect( loginscript );
     } else {
       rc.auth = securityService.getAuth();
