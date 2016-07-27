@@ -143,6 +143,8 @@ component accessors=true {
     return isValid( "guid", __formatAsGUID( text ));
   }
 
+  // convenience functions
+
   public any function processEntity( any data,
                                  numeric level=0,
                                  numeric maxLevel=0 ) {
@@ -169,7 +171,7 @@ component accessors=true {
       request.cacheID = createUUID();
     }
 
-    param request.objCache = {};
+    param request.objCache={};
 
     if( !structKeyExists( request.objCache, request.cacheID )) {
       request.objCache[request.cacheID] = {};
@@ -274,8 +276,78 @@ component accessors=true {
   public void function nil() {
   }
 
+  // XML conversion functions
 
+  public array function xmlToArrayOfStructs( required any xmlSource, required struct mapBy={id="id",name="name"} ) {
+    var result = [];
 
+    if( !isArray( xmlSource )) {
+      xmlSource = [ xmlSource ];
+    }
+
+    if( arrayIsEmpty( xmlSource )) {
+      return [];
+    }
+
+    if( structIsEmpty( mapBy )) {
+      for( var el in xmlSource[ 1 ].XmlChildren ) {
+        mapBy[ el.xmlName ] = el.xmlName;
+      }
+    }
+
+    for( var item in xmlSource ) {
+      var converted = {};
+      for( var key in mapBy ) {
+        if( structKeyExists( item, mapBy[ key ])) {
+          var value = item[ mapBy[ key ]];
+
+          if( len( trim( value.XmlText ))) {
+            value = value.XmlText;
+          } else if( structKeyExists( value, "Items" ) && structKeyExists( value.Items, "XmlChildren" )) {
+            value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
+          } else {
+            value = "";
+          }
+
+          converted[ key ] = value;
+        }
+      }
+      arrayAppend( result, converted );
+    }
+
+    return result;
+  }
+
+  public any function xmlFilter( xml data, string xPathString="//EntityTypes/PvEntityTypeData", struct filter ) {
+    if( !isNull( filter ) && !structIsEmpty( filter )) {
+      var filters = [];
+      for( var key in filter ) {
+        arrayAppend( filters, '#key#="#filter[key]#"' );
+      }
+      xPathString &= "[" & arrayToList( filters, " and " ) & "]";
+    }
+    return xmlSearch( data, xPathString );
+  }
+
+  public string function xmlFromStruct( struct source, string prefix="", string namespace="" ) {
+    var result = "";
+    var ns = len( trim( prefix )) ? "#prefix#:" : "";
+    var xmlns = len( trim( namespace )) ? ' xmlns="#namespace#"' : ""; // only on first element
+
+    for( var key in source ) {
+      if( isSimpleValue( source[ key ] )) {
+        result &= "<#ns##key##xmlns#>#source[ key ]#</#ns##key#>";
+      } else if( isStruct( source[ key ] )) {
+        result &= "<#ns##key##xmlns#>" & xmlFromStruct( source[ key ], prefix ) & "</#ns##key#>";
+      } else if( isArray( source[ key ] )) {
+        for( var item in source[ key ] ) {
+          result &= "<#ns##key##xmlns#>" & xmlFromStruct( item, prefix ) & "</#ns##key#>";
+        }
+      }
+    }
+
+    return result;
+  }
 
   // private functions
 

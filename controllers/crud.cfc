@@ -1,5 +1,6 @@
 component accessors=true {
   property framework;
+  property securityService;
 
   public any function init( framework ) {
     param variables.listitems="";
@@ -20,7 +21,7 @@ component accessors=true {
       return;
     }
 
-    if( framework.getItem() == "edit" && !rc.auth.role.can( "change", framework.getSection())) {
+    if( framework.getItem() == "edit" && !securityService.can( "change", framework.getSection())) {
       rc.alert = {
         "class" = "danger",
         "text"  = "privileges-error-1"
@@ -33,7 +34,7 @@ component accessors=true {
       "text"  = "privileges-error-2"
     };
 
-    if( rc.auth.role.can( "view", framework.getSection()) || framework.getSection() == "main" ) {
+    if( securityService.can( "view", framework.getSection()) || framework.getSection() == "main" ) {
       structDelete( rc, "alert" );
     }
 
@@ -59,16 +60,16 @@ component accessors=true {
       return;
     }
 
-    param rc.columns      = [];
-    param rc.offset       = 0;
-    param rc.maxResults   = 30;
-    param rc.d            = 0;// rc.d(escending) default false (ASC)
-    param rc.orderby      = "";
-    param rc.startsWith   = "";
-    param rc.showdeleted  = 0;
-    param rc.filters      = [];
-    param rc.filterType   = "contains";
-    param rc.classColumn  = "";
+    param rc.columns=[];
+    param rc.offset=0;
+    param rc.maxResults=30;
+    param rc.d=0;// rc.d(escending) default false (ASC)
+    param rc.orderby="";
+    param rc.startsWith="";
+    param rc.showdeleted=0;
+    param rc.filters=[];
+    param rc.filterType="contains";
+    param rc.classColumn="";
 
     // exit controller on non crud items
     switch( framework.getSection()) {
@@ -85,9 +86,9 @@ component accessors=true {
         break;
     }
 
-    param rc.lineView     = ":elements/line";
-    param rc.tableView    = ":elements/table";
-    param rc.fallbackView = ":elements/list";
+    param rc.lineView=":elements/line";
+    param rc.tableView=":elements/table";
+    param rc.fallbackView=":elements/list";
 
     // default crud behaviour continues:
     rc.entity = variables.entity;
@@ -132,7 +133,7 @@ component accessors=true {
       }
     }
 
-    if( !rc.auth.role.can( "change", variables.entity )) {
+    if( !securityService.can( "change", variables.entity )) {
       var lineactionPointer = listFind( rc.lineactions, '.edit' );
       if( lineactionPointer ) {
         rc.lineactions = listDeleteAt( rc.lineactions, lineactionPointer );
@@ -381,7 +382,7 @@ component accessors=true {
   }
 
   public void function new( rc ) {
-    if( !rc.auth.role.can( "change", framework.getSection())) {
+    if( !securityService.can( "change", framework.getSection())) {
       rc.alert = {
         "class" = "danger",
         "text"  = "privileges-error"
@@ -398,10 +399,10 @@ component accessors=true {
   }
 
   public void function edit( rc ) {
-    param rc.modal = false;
-    param rc.editable = true;
-    param rc.inline = false;
-    param rc.namePrepend = "";
+    param rc.modal=false;
+    param rc.editable=true;
+    param rc.inline=false;
+    param rc.namePrepend="";
 
     rc.submitButtons = variables.submitButtons;
     rc.fallbackView = ":elements/edit";
@@ -495,7 +496,7 @@ component accessors=true {
   }
 
   public void function delete( rc ) {
-    if( !rc.auth.role.can( "delete", framework.getSection())) {
+    if( !securityService.can( "delete", framework.getSection())) {
       rc.alert = {
         "class" = "danger",
         "text"  = "privileges-error"
@@ -509,7 +510,7 @@ component accessors=true {
     if( !isNull( entityToDelete )) {
       entityToDelete.save({ "deleted" = true });
 
-      if( entityToDelete.hasProperty( "log" )) {
+      if( entityToDelete.propertyExists( "log" )) {
           var logentry = entityNew( "logentry", { relatedEntity = entityToDelete } );
           rc.log = logentry.enterIntoLog( "removed" );
       }
@@ -528,7 +529,7 @@ component accessors=true {
     if( !isNull( entityToRestore )) {
       entityToRestore.save({ "deleted" = false });
 
-      if( entityToRestore.hasProperty( "log" )) {
+      if( entityToRestore.propertyExists( "log" )) {
           var logentry = entityNew( "logentry", { relatedEntity = entityToRestore } );
           rc.log = logentry.enterIntoLog( "restored" );
       }
@@ -549,7 +550,7 @@ component accessors=true {
       framework.redirect( ".default", "alert" );
     }
 
-    if( !rc.auth.role.can( "change", framework.getSection())) {
+    if( !securityService.can( "change", framework.getSection())) {
       rc.alert = {
         "class" = "danger",
         "text"  = "privileges-error"

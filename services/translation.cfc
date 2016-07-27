@@ -27,7 +27,7 @@ component accessors=true {
     return this;
   }
 
-  public string function translate( label, localeID=variables.localeID, alternative, stringVariables={}, capFirst=true ) {
+  public string function translate( label, localeID=getLocaleID(), alternative, stringVariables={}, capFirst=true ) {
     if( isNull( alternative )) {
       arguments.alternative = label;
     }
@@ -85,7 +85,7 @@ component accessors=true {
     return result;
   }
 
-  public string function cacheRead( required string translation, string localeID=variables.localeID, boolean reload=false ) {
+  public string function cacheRead( required string translation, string localeID = getLocaleID(), boolean reload = false ) {
     var result="";
 
     // SEARCH CACHE FOR LABEL:
@@ -108,7 +108,7 @@ component accessors=true {
         }
 
         if( !structKeyExists( application.translations[localeID], translation )) {
-          var lanStruct=getLanguageStruct();
+          var lanStruct = languageStruct;
           if( structKeyExists( lanStruct, translation )) {
             application.translations[localeID][translation]=lanStruct[translation];
           }

@@ -3,10 +3,16 @@ component accessors=true {
   property contentService;
   property localeService;
   property translationService;
+  property securityService;
 
   public void function load( rc ) {
+    var localeID = translationService.getLocaleID();
+    if( isNull( localeID )) {
+      var locale = localeService.get( );
+      rc.content = contentService.getByFQA( framework.getfullyqualifiedaction(), locale );
+    }
+
     rc.displaytitle = translationService.translate( framework.getfullyqualifiedaction());
-    rc.content = contentService.getByFQA( framework.getfullyqualifiedaction(), localeService.get( translationService.getLocaleID()));
 
     if( !structKeyExists( rc, "topnav" )){
       rc.topnav = "";
@@ -41,7 +47,7 @@ component accessors=true {
 
         if( len( trim( roleSubnav ))){
           for( var navItem in listToArray( roleSubnav )){
-            if( navItem == "-" || rc.auth.role.can( "view", navItem )){
+            if( navItem == "-" || securityService.can( "view", navItem )){
               rc.subnav = listAppend( rc.subnav, navItem );
             }
           }
@@ -57,7 +63,7 @@ component accessors=true {
 
             if( structKeyExists( entity, "hide" ) ||
                 listFindNoCase( hiddenMenuitems, entityName ) ||
-                ( rc.auth.isLoggedIn && !rc.auth.role.can( "view", entityName ))) {
+                ( rc.auth.isLoggedIn && !securityService.can( "view", entityName ))) {
               continue;
             }
 

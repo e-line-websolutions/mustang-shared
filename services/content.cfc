@@ -1,8 +1,8 @@
 component extends="baseService" {
-  public component function getByFQA( required  string            fqa,
-                                            root.model.locale locale,
-                                            boolean           deleted = false,
-                                            struct            options = { cacheable = true }) {
+  public component function getByFQA( required  string fqa,
+                                                   any locale,
+                                               boolean deleted = false,
+                                                struct options = { cacheable = true }) {
     var hql = "FROM content c WHERE c.fullyqualifiedaction = :fqa AND c.deleted != :deleted";
     var params = {
           fqa = fqa,

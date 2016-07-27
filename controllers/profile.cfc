@@ -16,12 +16,12 @@ component accessors=true {
     transaction {
       var currentUser = contactService.get( rc.auth.userID );
 
-      param rc.firstname ="";
-      param rc.infix ="";
-      param rc.lastname ="";
-      param rc.email ="";
-      param rc.phone ="";
-      param rc.photo ="";
+      param rc.firstname="";
+      param rc.infix="";
+      param rc.lastname="";
+      param rc.email="";
+      param rc.phone="";
+      param rc.photo="";
 
       formFields = {
         "firstname"     = rc.firstname,
@@ -52,7 +52,7 @@ component accessors=true {
   }
 
   public void function newpassword( required struct rc ) {
-    param rc.newPassword = rc.util.generatePassword( 8 );
+    param rc.newPassword=rc.util.generatePassword( 8 );
 
     if( len( trim( rc.newPassword )) lt 8 ) {
       lock scope="session" timeout="5" {

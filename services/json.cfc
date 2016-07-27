@@ -486,6 +486,8 @@ component {
   }
 
   private boolean function __isValidDate( required potentialDate ) {
+    var delims = "- /.";
+
     if( __getClassName( potentialDate ) contains "date" ) {
       return true;
     }
@@ -494,11 +496,18 @@ component {
       return false;
     }
 
+    if( listLen( potentialDate, delims ) == 3 ) {
+      var basicDateTest = "^([\d]{2}[#delims#][\d]{2}[#delims#][\d]{4})|([\d]{4}[#delims#][\d]{2}[#delims#][\d]{2})|([\d]{2}[#delims#][\d]{2}[#delims#][\d]{2})$";
+      if( reFind( basicDateTest, potentialDate ) == 0 ) {
+        return false;
+      }
+    }
+
     try {
       lsParseDateTime( potentialDate, getLocale());
       return true;
-    } catch ( any e ) {
-      return false;
-    }
+    } catch ( any e ) {}
+
+    return false;
   }
 }

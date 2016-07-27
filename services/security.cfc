@@ -1,53 +1,44 @@
 component accessors=true {
   property dataService;
+  property struct auth;
+  property struct instance;
 
-  property type="struct" name="auth";
-  property type="struct" name="instance";
-
-  public any function init( config ) {
-    var bCryptPath = "#request.root#/lib/java";
-
+  public component function init( root, config ) {
+    var bCryptPath = "#root#/lib/java";
     if( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ))) {
       bCryptPath = config.paths.bcrypt;
     }
-
     variables.instance.bcrypt = getBCrypt( bCryptPath );
+    return this;
   }
 
   public struct function getAuth() {
     var result = {};
-
     if( structKeyExists( variables, "auth" ) && isStruct( variables.auth )) {
-      result = variables.auth;
+      result = auth;
     }
-
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
       if( structKeyExists( session, "auth" )) {
         result = session.auth;
       }
     }
-
     if( !isStruct( result )) {
       result = {};
     }
-
     return result;
   }
 
-  public boolean function authIsValid( required struct auth ) {
+  public boolean function authIsValid( required struct checkAuth ) {
     var requiredKeys = [ 'isLoggedIn', 'user', 'userid', 'role' ];
-
     for( var key in requiredKeys ) {
-      if( !structKeyExists( auth, key )) {
+      if( !structKeyExists( checkAuth, key )) {
         return false;
       }
     }
-
-    if( !len( trim( auth.userid ))) { return false; }
-    if( !isStruct( auth.user )) { return false; }
-    if( !isStruct( auth.role )) { return false; }
-    if( !isBoolean( auth.isLoggedIn )) { return false; }
-
+    if( !len( trim( checkAuth.userid ))) { return false; }
+    if( !isStruct( checkAuth.user )) { return false; }
+    if( !isStruct( checkAuth.role )) { return false; }
+    if( !isBoolean( checkAuth.isLoggedIn )) { return false; }
     return true;
   }
 
@@ -62,16 +53,30 @@ component accessors=true {
         "canAccessAdmin" = false
       }
     };
-
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       structClear( session );
       structAppend( session, tmpSession );
     }
   }
 
+  public void function refreshFakeSession() {
+    createSession();
+    var tempAuth = {
+      isLoggedIn = true,
+      user = dataService.processEntity( getFakeUser()),
+      userid = createUUID(),
+      role = getFakeRole()
+    };
+    tempAuth.role.can = yesWeCan;
+    tempAuth.canAccessAdmin = true;
+    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
+      structAppend( session.auth, tempAuth, true );
+    }
+    variables.auth = tempAuth;
+  }
+
   public void function refreshSession( required root.model.contact user ) {
     createSession();
-
     var securityRole = user.getSecurityrole();
     var tempAuth = {
       isLoggedIn = true,
@@ -79,7 +84,6 @@ component accessors=true {
       userid = user.getID(),
       role = dataService.processEntity( securityRole )
     };
-
     if( isAdmin( securityRole.getName())) {
       tempAuth.role.can = yesWeCan;
       tempAuth.canAccessAdmin = true;
@@ -88,43 +92,37 @@ component accessors=true {
       tempAuth.role.can = can;
       tempAuth.canAccessAdmin = false;
     }
-
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       structAppend( session.auth, tempAuth, true );
     }
-
-    setAuth( tempAuth );
+    variables.auth = tempAuth;
   }
 
   public string function hashPassword( required string password ) {
     var t = 0;
     var cost = 4;
-
     while( t < 500 && cost <= 30 ) {
-      var salt = variables.instance.bcrypt.gensalt( cost );
-      var hashedPW = variables.instance.bcrypt.hashpw( password, salt );
-
+      var salt = instance.bcrypt.gensalt( cost );
+      var hashedPW = instance.bcrypt.hashpw( password, salt );
       // test speed of decryption:
       var start = getTickCount();
-      variables.instance.bcrypt.checkpw( password, hashedPW );
+      instance.bcrypt.checkpw( password, hashedPW );
       t = getTickCount() - start;
       cost++;
     }
-
     return hashedPW;
   }
 
   public boolean function comparePassword( required string password, required string storedPW ) {
     try {
       // FIRST TRY BCRYPT:
-      return variables.instance.bcrypt.checkpw( password, storedPW );
-    } catch( Any e ) {
+      return instance.bcrypt.checkpw( password, storedPW );
+    } catch ( any e ) {
       try {
         // THEN TRY THE OLD SHA-512 WAY:
         var storedsalt = right( storedPW, 16 );
-
         return 0 == compare( storedPW, hash( password & storedsalt, 'SHA-512' ) & storedsalt );
-      } catch( Any e ) {
+      } catch ( any e ) {
         return false;
       }
     }
@@ -139,8 +137,8 @@ component accessors=true {
     return jl.create( "org.mindrot.jbcrypt.BCrypt" );
   }
 
-  public boolean function isAdmin( required string roleName ) {
-    return ( roleName == "Administrator" || roleName == "Admin" );
+  public boolean function isAdmin( string roleName=getAuth().role.name ) {
+    return roleName == "Administrator" || roleName == "Admin";
   }
 
   public boolean function yesWeCan() {
@@ -149,30 +147,45 @@ component accessors=true {
 
   public boolean function can( string action="", string section="" ) {
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
-      allPermissions = session.can;
+      if( !structKeyExists( session, "can" )){
+        session["can"] = {};
+      }
+      var allPermissions = session.can;
     }
 
-    return structKeyExists( allPermissions, "#action#-#section#" );
+    return structKeyExists( allPermissions, "#action#-#section#" ) || isAdmin(  );
   }
 
   public void function cachePermissions( required component securityRole ) {
     var cachedPermissions = {};
     var allPermissions = dataService.processEntity( securityRole.getPermissions(), 0, 2 );
-
     for( var permission in allPermissions ) {
       if( !structKeyExists( permission, "section" ) || !len( trim( permission.section ))) {
         continue;
       }
-
       for( var action in [ "view", "change", "delete", "approve", "create" ]) {
         if( structKeyExists( permission, action ) && isBoolean( permission[action] ) && permission[action] ) {
           cachedPermissions["#action#-#permission.section#"] = true;
         }
       }
     }
-
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       session.can = cachedPermissions;
     }
+  }
+
+  public struct function getFakeUser() {
+    return {
+      "name" = "Administrator",
+      "firstname" = "John",
+      "lastname" = "Doe"
+    };
+  }
+
+  public struct function getFakeRole() {
+    return {
+      "name" = "Administrator",
+      "menuList" = ""
+    };
   }
 }

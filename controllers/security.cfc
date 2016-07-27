@@ -59,7 +59,7 @@ component accessors=true {
       // CHECK PASSWORD:
       var decryptSpeed = getTickCount();
       var passwordIsCorrect = securityService.comparePassword( password=rc.password, storedPW=user.getPassword());
-      decryptSpeed=getTickCount() - decryptSpeed;
+      decryptSpeed=getTickCount()-decryptSpeed;
 
       if( !passwordIsCorrect ) {
         rc.alert={
@@ -70,7 +70,7 @@ component accessors=true {
         doLogout( rc );
       }
 
-      if( passwordIsCorrect && ( decryptSpeed < 250 || decryptSpeed > 1000 )) {
+      if( decryptSpeed < 250 || decryptSpeed > 1000 ) {
         // re-encrypt if decryption is too slow, or too fast:
         updateUserWith.password = securityService.hashPassword( rc.password );
       }
@@ -97,7 +97,9 @@ component accessors=true {
     var originalLogSetting = rc.config.log;
     request.context.config.log = false;
 
-    user.save( updateUserWith );
+    transaction {
+      user.save( updateUserWith );
+    }
 
     request.context.config.log=originalLogSetting;
 
@@ -113,6 +115,7 @@ component accessors=true {
       } else if( isNull( loginscript ) || !len( trim( loginscript ))) {
         loginscript = ":";
       }
+
       framework.redirect( loginscript );
     }
   }
@@ -177,9 +180,7 @@ component accessors=true {
     rc.auth = { isLoggedIn = false };
 
     if( rc.config.disableSecurity ) {
-      rc.auth.isLoggedIn = true;
-      rc.auth.user = new root.lib.fakeUser();
-      rc.auth.role = new root.lib.fakeRole();
+      securityService.refreshFakeSession();
       return;
     }
 
