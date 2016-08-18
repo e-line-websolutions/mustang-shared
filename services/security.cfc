@@ -128,15 +128,6 @@ component accessors=true {
     }
   }
 
-  private any function getBCrypt( required string pathToBcrypt ) {
-    var system = createObject( "java", "java.lang.System" );
-    var javaVersion = listGetAt( system.getProperty( "java.version" ), 2, "." );
-    var bCryptLocation = directoryList( pathToBcrypt & "/" & javaVersion, false, "path", "*.jar" );
-    var jl = new javaloader.javaloader( bCryptLocation );
-
-    return jl.create( "org.mindrot.jbcrypt.BCrypt" );
-  }
-
   public boolean function isAdmin( string roleName=getAuth().role.name ) {
     return roleName == "Administrator" || roleName == "Admin";
   }
@@ -187,5 +178,14 @@ component accessors=true {
       "name" = "Administrator",
       "menuList" = ""
     };
+  }
+
+  private any function getBCrypt( required string pathToBcrypt ) {
+    var system = createObject( "java", "java.lang.System" );
+    var javaVersion = listGetAt( system.getProperty( "java.version" ), 2, "." );
+    var bCryptLocation = directoryList( pathToBcrypt & "/" & javaVersion, false, "path", "*.jar" );
+    var jl = new javaloader.javaloader( bCryptLocation );
+
+    return jl.create( "org.mindrot.jbcrypt.BCrypt" );
   }
 }
