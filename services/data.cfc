@@ -273,7 +273,7 @@ component accessors=true {
   public void function nil( ) {
   }
 
-  // conversion functions
+  // conversion / mapping functions
 
   public array function xmlToArrayOfStructs(
     required any xmlSource,
@@ -363,13 +363,17 @@ component accessors=true {
    * Convert a CFML date object to an ISO 8601 formatted date string.
    * Output like this: 2014-07-08T12:05:25.8Z
    */
-  public string function convertToISO8601( required date datetime, boolean convertToUTC=true ) {
+  public string function convertToISO8601( required date datetime, boolean convertToUTC = true ) {
     if ( convertToUTC ) {
       datetime = dateConvert( "local2utc", datetime );
     }
     return ( dateFormat( datetime, "yyyy-mm-dd" ) & "T" & timeFormat( datetime, "HH:mm:ss" ) & ".0Z" );
   }
 
+  public array function dataAsArray( data, xpath = "", filter = { }, map = { id = "id", name = "name" } ) {
+    var filtered = xmlFilter( data, xpath, filter );
+    return xmlToArrayOfStructs( filtered, map );
+  }
 
   /**
     * Builds nested structs into a single struct.
@@ -396,6 +400,21 @@ component accessors=true {
     }
 
     return flattened;
+  }
+
+  public struct function mapToTemplateFields( data, template ) {
+    var flattenedData = flattenStruct( data );
+    var result = { };
+
+    for ( var key in flattenedData ) {
+      try {
+        var mappedKey = evaluate( "template.#key#" );
+        result[ mappedKey ] = flattenedData[ key ];
+      } catch ( any e ) {
+      }
+    }
+
+    return result;
   }
 
   // private functions
