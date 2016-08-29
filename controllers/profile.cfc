@@ -13,35 +13,33 @@ component accessors=true {
   }
 
   public void function save( required struct rc ) {
+    var currentUser = contactService.get( rc.auth.userID );
+
+    param rc.firstname="";
+    param rc.infix="";
+    param rc.lastname="";
+    param rc.email="";
+    param rc.phone="";
+    param rc.photo="";
+
+    formFields = {
+      "firstname"     = rc.firstname,
+      "infix"         = rc.infix,
+      "lastname"      = rc.lastname,
+      "email"         = rc.email,
+      "phone"         = rc.phone,
+      "contactID"     = currentUser.getID()
+	  };
+
+		if( len( trim( rc.photo ))) {
+      formFields["photo"] = rc.photo;
+		}
+
     transaction {
-      var currentUser = contactService.get( rc.auth.userID );
-
-      param rc.firstname="";
-      param rc.infix="";
-      param rc.lastname="";
-      param rc.email="";
-      param rc.phone="";
-      param rc.photo="";
-
-      formFields = {
-        "firstname"     = rc.firstname,
-        "infix"         = rc.infix,
-        "lastname"      = rc.lastname,
-        "email"         = rc.email,
-        "phone"         = rc.phone,
-        "contactID"     = currentUser.getID()
-  	  };
-
-  		if( len( trim( rc.photo ))) {
-        formFields["photo"] = rc.photo;
-  		}
-
       currentUser.save( formFields );
-
-
     }
 
-    session.auth.user = contactService.get( rc.auth.userID );
+    securityService.refreshSession( currentUser );
 
     rc.alert = {
       class = "success",

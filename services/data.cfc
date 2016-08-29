@@ -1,5 +1,6 @@
 component accessors=true {
   property jsonService;
+  property utilityService;
 
   // sanitation functions:
 
@@ -148,126 +149,108 @@ component accessors=true {
 
   // convenience functions
 
-  public any function processEntity( any data, numeric level = 0, numeric maxLevel = 0 ) {
-    if ( isNull( data ) ) {
+  public any function processEntity( any data,
+                                 numeric level=0,
+                                 numeric maxLevel=1,
+                                 boolean basicsOnly=false ) {
+    if( level == 0 ) {
+      utilityService.setCFSetting( "requesttimeout", 10 );
+    }
+
+    level = max( 0, level );
+    maxLevel = min( 5, maxLevel );
+
+    if( isNull( data ) || (
+          maxLevel > 0 &&
+          level > maxLevel &&
+          !isSimpleValue( data )
+        )) {
       return;
     }
 
-    // doesn't work on non-basecfc objects
-    if ( isObject( data ) && !structKeyExists( data, "getID" ) ) {
-      return;
-    }
+    var nextLevel = level + 1;
+    var maxArrayItt = 100;
+    var result = "";
 
-    // beyond maxLevel depth, only return ID and name (or the value if it's a string)
-    if ( maxLevel != 0 && level >= maxLevel ) {
-      if ( isObject( data ) && structKeyExists( data, "getID" ) ) {
-        return data.getID( );
-      } else if ( !isSimpleValue( data ) ) {
-        return;
-      }
-    }
+    // data parsing:
+    if( isSimpleValue( data )) {
+      var result = data;
 
-    // object caching:
-    if ( level == 0 ) {
-      request.cacheID = createUUID( );
-    }
-
-    param request.objCache={
-    };
-
-    if ( !structKeyExists( request.objCache, request.cacheID ) ) {
-      request.objCache[ request.cacheID ] = { };
-    }
-
-    var cache = request.objCache[ request.cacheID ];
-
-    try {
-      // data parsing:
-      if ( isSimpleValue( data ) ) {
-        var result = data;
-      } else if ( isObject( data ) ) {
-        var result = { };
-        var md = getMetadata( data );
-
-        if ( structKeyExists( data, "getID" ) && structKeyExists( cache, data.getID( ) ) ) {
-          result = cache[ data.getID( ) ];
+    } else if( isArray( data )) {
+      var result = [];
+      var itemCounter = 0;
+      for( var el in data ) {
+        if( ++itemCounter > maxArrayItt ) {
+          arrayAppend( result, "capped at #maxArrayItt# results" );
+          break;
         } else {
-          do {
-            if ( structKeyExists( md, "properties" ) ) {
-              for ( var i = 1; i <= arrayLen( md.properties ); i++ ) {
-                var prop = md.properties[ i ];
-
-                param boolean prop.inapi=true;
-                param string prop.fieldtype="column";
-
-                if ( prop.inapi && structKeyExists( data, "get" & prop.name ) ) {
-                  var allowedFieldTypes = "id,column,many-to-one,many-to-many,one-to-many";
-
-                  if ( level >= 3 ) {
-                    allowedFieldTypes = "id,column,many-to-one";
-                  }
-
-                  if ( level >= 4 ) {
-                    allowedFieldTypes = "id,column";
-                  }
-
-                  if ( level >= 4 && !listFindNoCase( "id,name", prop.name ) ) {
-                    continue;
-                  }
-
-                  if ( listFindNoCase( allowedFieldTypes, prop.fieldtype ) ) {
-                    var value = evaluate( "data.get#prop.name#()" );
-                    if ( !isNull( value ) ) {
-                      if ( isObject( value ) && structKeyExists( value, "getID" ) && structKeyExists( cache, value.getID( ) ) ) {
-                        continue;
-                      } else if ( structKeyExists( prop, "dataType" ) && prop.dataType == "json" ) {
-                        structAppend( result, jsonService.deserialize( value ) );
-                      } else {
-                        result[ prop.name ] = processEntity( value, level + 1, maxLevel );
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            if ( structKeyExists( md, "extends" ) ) {
-              md = md.extends;
-            }
-          } while ( structKeyExists( md, "extends" ) && structKeyExists( md, "properties" ) );
-
-          cache[ data.getID( ) ] = result;
-        }
-      } else if ( isArray( data ) ) {
-        var result = [ ];
-        var itemCounter = 0;
-
-        for ( var i = 1; i <= arrayLen( data ); i++ ) {
-          var el = data[ i ];
-          var newData = processEntity( el, level + 1, maxLevel );
-
-          if ( !isNull( newData ) ) {
-            itemCounter++;
-
-            if ( itemCounter > 100 ) {
-              arrayAppend( result, "capped at 100 results" );
-              break;
-            }
-
+          var newData = this.processEntity( el, level, maxLevel, basicsOnly );
+          if( !isNull( newData )) {
             arrayAppend( result, newData );
           }
         }
-      } else if ( isStruct( data ) ) {
-        var result = { };
-        for ( var key in data ) {
-          result[ key ] = processEntity( data[ key ], level + 1, maxLevel );
+      }
+
+    } else if( isObject( data )) {
+      if( !isInstanceOf( data, "basecfc.base" )) {
+        return; // doesn't work on non-basecfc objects
+      }
+
+      var allowedFieldTypes = "id,column,many-to-one,one-to-many,many-to-many"; // level 0 only
+
+      if( level > 1 || basicsOnly ) {
+        allowedFieldTypes = "id,column,many-to-one";
+      }
+
+      if( level >= maxLevel && !maxLevel == 0 ) {
+        allowedFieldTypes = "id,column";
+      }
+
+      var result = {};
+      var objProps = data.getInstanceVariables().properties;
+
+      for( var key in objProps ) {
+        var prop = {
+          "inapi" = true,
+          "fieldtype" = "column",
+          "dataType" = ""
+        };
+
+        structAppend( prop, objProps[ key ], true );
+
+        if( prop.inapi &&
+            structKeyExists( data, "get#prop.name#" ) &&
+            listFindNoCase( allowedFieldTypes, prop.fieldtype )) {
+          var value = evaluate( "data.get#prop.name#()" );
+
+          if( isNull( value )) {
+            continue;
+          }
+
+          if( prop.dataType == "json" ) {
+            structAppend( result, jsonService.deserialize( value ));
+            continue;
+          }
+
+          if( compareNoCase( prop.fieldtype, "one-to-many" ) == 0 ||
+              compareNoCase( prop.fieldtype, "many-to-many" ) == 0 ) {
+            basicsOnly = true; // next level only allow to-one
+          }
+
+          result[ prop.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
         }
       }
 
-      return result;
-    } catch ( any e ) {
-      return;
+    } else if( isStruct( data )) {
+      var result = {};
+      for( var key in data ) {
+        var value = data[ key ];
+        result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
+      }
+
     }
+
+    return result;
   }
 
   public void function nil( ) {
@@ -275,13 +258,7 @@ component accessors=true {
 
   // conversion / mapping functions
 
-  public array function xmlToArrayOfStructs(
-    required any xmlSource,
-    required struct mapBy = {
-      id = "id",
-      name = "name"
-    }
-  ) {
+  public array function xmlToArrayOfStructs( required any xmlSource, required struct mapBy = { id = "id", name = "name" } ) {
     var result = [ ];
 
     if ( !isArray( xmlSource ) ) {
@@ -325,10 +302,18 @@ component accessors=true {
     if ( !isNull( filter ) && !structIsEmpty( filter ) ) {
       var filters = [ ];
       for ( var key in filter ) {
-        arrayAppend( filters, '#key#="#filter[ key ]#"' );
+        var values = listToArray( filter[ key ], "|" );
+
+        if( arrayLen( values ) == 1 ) {
+          arrayAppend( filters, '#key#="#values[ 1 ]#"' );
+        } else {
+          var multipleValues = __toXpathStringOr( values );
+          arrayAppend( filters, '#key#[#multipleValues#]' );
+        }
       }
       xPathString &= "[" & arrayToList( filters, " and " ) & "]";
     }
+
     return xmlSearch( data, xPathString );
   }
 
@@ -461,5 +446,15 @@ component accessors=true {
     } catch ( any e ) {
       return "";
     }
+  }
+
+  private string function __toXpathStringOr( required array source ) {
+    var result = [];
+
+    for( var item in source ) {
+      arrayAppend( result, ". = '" & trim( item ) & "'" );
+    }
+
+    return arrayToList( result, " or " );
   }
 }
