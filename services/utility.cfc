@@ -232,6 +232,7 @@
     <cfif structIsEmpty( arguments )>
       <cfreturn />
     </cfif>
+    <cfset arguments.operation = "HTTPRequest" />
     <cfschedule attributeCollection="#arguments#" />
   </cffunction>
 
