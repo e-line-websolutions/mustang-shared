@@ -30,24 +30,11 @@ component accessors=true {
       framework.redirect( ":", "alert" );
     }
 
-    rc.alert = {
-      "class" = "danger",
-      "text" = "privileges-error-2"
-    };
-
-    if ( securityService.can( "view", framework.getSection( ) ) || framework.getSection( ) == "main" ) {
-      structDelete( rc, "alert" );
-    }
-
-    if ( framework.getSection( ) == "api" ) {
+    if ( !framework.getSection( ) == "main" && !securityService.can( "view", framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
-        "text" = "privileges-error-3"
+        "text" = "privileges-error-2"
       };
-      framework.redirect( "api:", "alert" );
-    }
-
-    if ( structKeyExists( rc, "alert" ) ) {
       framework.redirect( ":", "alert" );
     }
 
