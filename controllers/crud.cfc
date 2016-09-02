@@ -1,6 +1,7 @@
 component accessors=true {
   property framework;
   property securityService;
+  property jsonJavaService;
 
   public any function init( framework ) {
     param variables.listitems="";
@@ -579,20 +580,45 @@ component accessors=true {
       framework.redirect( ".default", "alert" );
     }
 
-    transaction {
-      // Load existing, or create a new entity
-      if ( structKeyExists( rc, "#variables.entity#id" ) ) {
-        rc.savedEntity = entityLoadByPK( variables.entity, rc[ "#variables.entity#id" ] );
-      } else {
-        rc.savedEntity = entityNew( variables.entity );
-        entitySave( rc.savedEntity );
+    // Load existing, or create a new entity
+    if ( structKeyExists( rc, "#variables.entity#id" ) ) {
+      rc.savedEntity = entityLoadByPK( variables.entity, rc[ "#variables.entity#id" ] );
+    } else {
+      rc.savedEntity = entityNew( variables.entity );
+      entitySave( rc.savedEntity );
+    }
+
+    var formData = { };
+    structAppend( formData, url, true );
+    structAppend( formData, form, true );
+
+    var entityProperties = rc.savedEntity.getInheritedProperties();
+    var inlineEditProperties = structFindKey( entityProperties, "inlineedit" );
+
+    for( var property in inlineEditProperties ) {
+      var property = property.owner;
+      var fieldPrefix = property.name;
+      var prefixedFields = reMatchNoCase( "#fieldPrefix#_[^,]+", form.FIELDNAMES );
+      var inlineData = {};
+      if( !arrayIsEmpty( prefixedFields ) ) {
+        var pkField = "#fieldPrefix#id";
+        if( structKeyExists( form, pkField ) ) {
+          structDelete( formData, pkField );
+          inlineData[ "#pkField#" ] = form[ pkField ];
+        }
+        for( var field in prefixedFields ) {
+          structDelete( formData, field );
+          if( len( form[ field ] ) ) {
+            inlineData[ listRest( field, "_" ) ] = form[ field ];
+          }
+        }
+        if( !structIsEmpty( inlineData ) ) {
+          formData[ fieldPrefix ] = inlineData;
+        }
       }
+    }
 
-      var formData = { };
-      structAppend( formData, url, true );
-      structAppend( formData, form, true );
-
-      // Log create/update time and user if( object supprts it:
+    transaction {
       rc.savedEntity = rc.savedEntity.save( formData );
     }
 

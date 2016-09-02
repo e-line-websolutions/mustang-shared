@@ -164,17 +164,18 @@ component accessors=true {
 
   public boolean function can( string action = "", string section = "" ) {
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      var auth = session.auth;
       param session.can={ };
       var cachedCan = session.can;
+      var auth = session.auth;
     }
 
-    return structKeyExists( cachedCan, "#action#-#section#" );
+    return structKeyExists( cachedCan, "#action#-#section#" ) || auth.canAccessAdmin;
   }
 
   public void function cachePermissions( required component securityRole ) {
     var cachedPermissions = { };
     var allPermissions = dataService.processEntity( securityRole.getPermissions( ), 0, 2 );
+
     for ( var permission in allPermissions ) {
       if ( !structKeyExists( permission, "section" ) || !len( trim( permission.section ) ) ) {
         continue;
@@ -185,6 +186,7 @@ component accessors=true {
         }
       }
     }
+
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       session.can = cachedPermissions;
     }

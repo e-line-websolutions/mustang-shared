@@ -228,6 +228,13 @@
     </cfif>
   </cffunction>
 
+  <cffunction name="cfschedule" output="false" access="public">
+    <cfif structIsEmpty( arguments )>
+      <cfreturn />
+    </cfif>
+    <cfschedule attributeCollection="#arguments#" />
+  </cffunction>
+
   <cffunction name="setCFSetting" output="false" access="public">
     <cfargument name="settingName" type="string" required="true" hint="requesttimeout,showdebugoutput,enablecfoutputonly" />
     <cfargument name="settingValue" type="any" required="true" />
