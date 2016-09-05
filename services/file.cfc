@@ -1,6 +1,7 @@
 component accessors=true {
   property string filePath;
   property string fileName;
+  property numeric fileSize;
   property any fileContent;
 
   public file function init() {
@@ -18,9 +19,9 @@ component accessors=true {
                                   uploadField,
                                   "",
                                   "MakeUnique" );
-
         setFilePath( uploadState.serverDirectory & "/" & uploadState.serverFile );
         setFileName( uploadState.serverFile );
+        setFileSize( uploadState.fileSize  );
       } catch( any e ) {
         // TODO: file upload error handling
         rethrow;
