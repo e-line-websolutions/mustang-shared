@@ -1,4 +1,13 @@
-component {
+component accessors=true {
+  property config;
+  property utilityService;
+  property string dbvendor;
+
+  public component function init( utilityService ) {
+    setupVendor( utilityService );
+    return this;
+  }
+
   /** Converts query to an array full of structs
     *
     * @query    A ColdFusion query
@@ -84,5 +93,100 @@ component {
     }
 
     return returnVal;
+  }
+
+  public any function ormNativeQuery( string sql, struct where={}, struct options={}, array entities=[], unique=false ) {
+    var ormSession = ormGetSession();
+    var sqlQuery = ormSession.createSQLQuery( sql );
+    var paramMetadata = sqlQuery.getParameterMetadata();
+
+    for( var key in where ) {
+      var value = where[ key ];
+
+      if( isBoolean( value )) {
+        sqlQuery = sqlQuery.setBoolean( key, value );
+      } else if( isArray( value )) {
+        sqlQuery = sqlQuery.setParameterList( key, value );
+      } else if( isDate( value )) {
+        var asJavaDate = createObject( "java", "java.util.Date" ).init( value.getTime() );
+        sqlQuery = sqlQuery.setDate( key, asJavaDate );
+      } else if( isNull( value )) {
+        sqlQuery = sqlQuery.setParameter( key, javaCast( "null", 0 ) );
+      } else if( isSimpleValue( value )) {
+        sqlQuery = sqlQuery.setString( key, value );
+      }
+    }
+
+    for( var key in options ) {
+      if( key == "maxResults" ) {
+        sqlQuery = sqlQuery.setMaxResults( options[ key ]);
+        sqlQuery = sqlQuery.setFetchSize( options[ key ]);
+      } else if( key == "offset" ) {
+        sqlQuery = sqlQuery.setFirstResult( options[ key ]);
+      } else if( key == "cacheable" && !arrayIsEmpty( entities )) {
+        sqlQuery = sqlQuery.setCacheable( true );
+      }
+    }
+
+    for( var entity in entities ) {
+      if( isStruct( entity )) {
+        var key = structKeyArray( entity )[ 1 ];
+        var value = entity[ key ];
+        sqlQuery = sqlQuery.addEntity( key, value );
+      } else {
+        sqlQuery = sqlQuery.addEntity( entity );
+      }
+    }
+
+    if( unique ) {
+      return sqlQuery.uniqueResult();
+    }
+
+    try {
+      return sqlQuery.list();
+    } catch ( any e ) {
+      writeDump( sql );
+      writeDump( sqlQuery );
+      writeDump( e );
+      abort;
+    }
+  }
+
+  public string function buildQueryForEntity( entityName ) {
+    var entity = entityNew( entityName );
+    var tableName = entity.getTableName();
+    var sqlEntities = [ entityName ];
+    var metaDataTable = "mainEntity";
+    var SQLSelect = " SELECT DISTINCT mainEntity.* ";
+    var SQLFrom = " FROM #tableName# mainEntity ";
+    if( isInstanceOf( entity, "#config.root#.model.logged" )) {
+      var loggedObj = createObject( "#config.root#.model.logged" ).init();
+      metaDataTable = loggedObj.getTableName();
+      SQLFrom &= " INNER JOIN #metaDataTable# ON mainEntity.id = #metaDataTable#.id ";
+      SQLSelect &= ", #metaDataTable#.* ";
+    }
+    var SQLWhere = " WHERE #metaDataTable#.deleted IS NULL OR #metaDataTable#.deleted != #config.booleans.true# ";
+    var SQLOrder = " ORDER BY #metaDataTable#.sortorder, #metaDataTable#.name ";
+    return SQLSelect & SQLFrom & SQLWhere & SQLOrder;
+  }
+
+  private string function setupVendor( utilityService ) {
+    variables.dbvendor = "unknown";
+
+    if( val( server.coldfusion.productversion ) < 10 ) {
+      var appMetadata = application.getApplicationSettings();
+      var ds = appMetadata.datasource;
+    } else {
+      var appMetadata = getApplicationMetaData();
+      if( structKeyExists( appMetadata, "ormsettings" ) && structKeyExists( appMetadata.ormsettings, "datasource" ) ) {
+        var ds = appMetadata.ormsettings.datasource;
+      } else if ( structKeyExists( appMetadata, "datasource" ) ) {
+        var ds = appMetadata.datasource;
+      }
+    }
+
+    var dbinfo = utilityService.getDbInfo( ds );
+
+    variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
   }
 }

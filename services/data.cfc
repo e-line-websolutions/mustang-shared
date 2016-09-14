@@ -355,6 +355,28 @@ component accessors=true {
     return ( dateFormat( datetime, "yyyy-mm-dd" ) & "T" & timeFormat( datetime, "HH:mm:ss" ) & ".0Z" );
   }
 
+  public string function convertToCFDatePart( required string part ) {
+    var validDateParts = listToArray( "yyyy,q,m,d,w,ww,h,n,s" );
+
+    if( arrayFindNoCase( validDateParts, part ) ) {
+      return part;
+    }
+
+    switch( part ) {
+      case 'years':     case 'year':    case 'y':   return validDateParts[ 1 ];
+      case 'quarters':  case 'quarter':             return validDateParts[ 2 ];
+      case 'months':    case 'month':               return validDateParts[ 3 ];
+      case 'days':      case 'day':                 return validDateParts[ 4 ];
+      case 'weekdays':  case 'weekday': case 'wd':  return validDateParts[ 5 ];
+      case 'weeks':     case 'week':                return validDateParts[ 6 ];
+      case 'hours':     case 'hour':                return validDateParts[ 7 ];
+      case 'minutes':   case 'minute':              return validDateParts[ 8 ];
+      case 'seconds':   case 'second':              return validDateParts[ 9 ];
+    }
+
+    throw( type = "dataService.convertToCFDatePart", message = "Invalid date part" );
+  }
+
   public array function dataAsArray( data, xpath = "", filter = { }, map = { id = "id", name = "name" } ) {
     var filtered = xmlFilter( data, xpath, filter );
     return xmlToArrayOfStructs( filtered, map );

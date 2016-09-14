@@ -252,4 +252,10 @@
       </cfcase>
     </cfswitch>
   </cffunction>
+
+  <cffunction name="getDbInfo" output="false" access="public">
+    <cfargument name="datasource" required=true />
+    <cfdbinfo name="dbinfo" type="version" datasource="#datasource#" />
+    <cfreturn dbinfo />
+  </cffunction>
 </cfcomponent>
