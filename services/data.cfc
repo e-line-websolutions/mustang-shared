@@ -58,7 +58,7 @@ component accessors=true {
         }
 
         throw(
-          type = "dataService.sanitizeDateValue",
+          type = "dataService.sanitizeDateValue.noDateDetectedError",
           message = "Error sanitizing date string (#source#).",
           detail = "Could not detect date format in '#source#'"
         );

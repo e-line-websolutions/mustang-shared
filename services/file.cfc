@@ -1,6 +1,7 @@
 component accessors=true {
   property string filePath;
   property string fileName;
+  property string originalFileName;
   property numeric fileSize;
   property any fileContent;
 
@@ -20,6 +21,7 @@ component accessors=true {
                                   "",
                                   "MakeUnique" );
         setFilePath( uploadState.serverDirectory & "/" & uploadState.serverFile );
+        setOriginalFileName( uploadState.clientFile );
         setFileName( uploadState.serverFile );
         setFileSize( uploadState.fileSize  );
       } catch( any e ) {
