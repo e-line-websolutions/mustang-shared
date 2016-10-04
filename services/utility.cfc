@@ -200,6 +200,20 @@
 
     return cachedPaths[absolutePath];
   }
+
+  public struct function mergeStructs( required struct from, struct to = { } ) {
+    // also append nested struct keys:
+    for ( var key in to ) {
+      if ( isStruct( to[ key ] ) && structKeyExists( from, key ) ) {
+        structAppend( to[ key ], from[ key ] );
+      }
+    }
+
+    // copy the other keys:
+    structAppend( to, from );
+
+    return to;
+  }
   </cfscript>
 
   <cffunction name="cfcontent" output="false" access="public">
