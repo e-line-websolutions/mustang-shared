@@ -49,6 +49,7 @@ component accessors=true {
     var filter = {
           hidedirs = [
             '.svn',
+            '.git',
             '.DS_Store',
             '__MACOSX',
             'WEB-INF',

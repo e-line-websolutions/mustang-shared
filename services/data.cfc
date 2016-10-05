@@ -341,7 +341,15 @@ component accessors=true {
    * Convert a date in ISO 8601 format to a CFML date object.
    */
   public date function convertToCfDate( required string source ) {
-    return parseDateTime( reReplace( source, "(\d{4})-?(\d{2})-?(\d{2})T([\d:]+).*", "\1-\2-\3 \4" ) );
+    source = trim( source );
+
+    var result = parseDateTime( reReplace( source, "(\d{4})-?(\d{2})-?(\d{2})T([\d:]+).*", "\1-\2-\3 \4" ) );
+
+    if ( right( source, 1 ) == "Z" ) {
+      result = dateConvert( "utc2local", result );
+    }
+
+    return result;
   }
 
   /**
