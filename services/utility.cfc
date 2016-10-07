@@ -217,29 +217,11 @@
   </cfscript>
 
   <cffunction name="cfcontent" output="false" access="public">
-    <cfargument name="reset" type="boolean" />
-    <cfargument name="type" type="string" />
-
-    <cfif structKeyExists( arguments, "reset" )>
-      <cfcontent reset="#reset#" />
-    </cfif>
-
-    <cfif structKeyExists( arguments, "type" )>
-      <cfcontent type="#type#" />
-    </cfif>
+    <cfcontent attributeCollection="#arguments#" />
   </cffunction>
 
   <cffunction name="cfheader" output="false" access="public">
-    <cfargument name="statusCode" type="numeric" />
-    <cfargument name="statusText" type="string" />
-
-    <cfset pc = getpagecontext().getresponse() />
-
-    <cfif structKeyExists( arguments, "statusCode" ) and structKeyExists( arguments, "statusText" )>
-      <cfset pc.getresponse().setstatus( statusCode, statusText ) />
-    <cfelseif structKeyExists( arguments, "statusCode" )>
-      <cfset pc.getresponse().setstatus( statusCode ) />
-    </cfif>
+    <cfheader attributeCollection="#arguments#" />
   </cffunction>
 
   <cffunction name="cfschedule" output="false" access="public">
