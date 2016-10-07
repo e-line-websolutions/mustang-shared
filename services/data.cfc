@@ -324,7 +324,7 @@ component accessors=true {
 
     for ( var key in source ) {
       if ( isSimpleValue( source[ key ] ) ) {
-        result &= "<#ns##key##xmlns#>#source[ key ]#</#ns##key#>";
+        result &= "<#ns##key##xmlns#>#xmlFormat( source[ key ] )#</#ns##key#>";
       } else if ( isStruct( source[ key ] ) ) {
         result &= "<#ns##key##xmlns#>" & xmlFromStruct( source[ key ], prefix ) & "</#ns##key#>";
       } else if ( isArray( source[ key ] ) ) {

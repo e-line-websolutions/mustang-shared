@@ -38,7 +38,7 @@ component accessors=true {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
             } catch ( any e ) {
-              savecontent variable="debug" {
+              savecontent variable="local.debug" {
                 writeDump( taskItem.taskArguments );
                 writeDump( e );
               }

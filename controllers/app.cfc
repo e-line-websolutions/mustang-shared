@@ -1,5 +1,6 @@
 component accessors=true {
   property framework;
+  property config;
   property queryService;
 
   public void function error( required struct rc ) {
@@ -36,8 +37,8 @@ component accessors=true {
     }
 
     mailService = new mail(
-      to      = rc.config.debugEmail,
-      from    = rc.config.debugEmail,
+      to      = config.debugEmail,
+      from    = config.debugEmail,
       subject = mailSubject,
       body    = errorMessage
     ).send();
@@ -146,7 +147,7 @@ component accessors=true {
   }
 
   public void function diagram( required struct rc ) {
-    location( "#rc.config.webroot#/diagram", false );
+    location( "#config.webroot#/diagram", false );
   }
 
   public void function testService( required struct rc ) {

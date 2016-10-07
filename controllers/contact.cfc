@@ -9,8 +9,8 @@ component extends=crud accessors=true {
   }
 
   public void function save( required struct rc ) {
-    if( structKeyExists( rc, "password" )) {
-      if( len( trim( rc.password )) < 2 ) {
+    if( structKeyExists( rc, "password" ) and len( trim( rc.password )) > 0 ) {
+      if( len( trim( rc.password )) < 2  ) {
         rc.alert = { "class" = "danger", "text"  = "password-too-short" };
         framework.redirect( "contact", "alert" );
       }
