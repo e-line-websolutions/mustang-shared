@@ -1,3 +1,4 @@
 sftp-config.json
 *.sublime-workspace
 sftp-config-alt.json
+tests/testdata/json-file-001.json
