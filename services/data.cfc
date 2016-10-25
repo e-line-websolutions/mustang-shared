@@ -323,12 +323,14 @@ component accessors=true {
     var xmlns = len( trim( namespace ) ) ? ' xmlns="#namespace#"' : ""; // only on first element
 
     for ( var key in source ) {
-      if ( isSimpleValue( source[ key ] ) ) {
-        result &= "<#ns##key##xmlns#>#xmlFormat( source[ key ] )#</#ns##key#>";
-      } else if ( isStruct( source[ key ] ) ) {
-        result &= "<#ns##key##xmlns#>" & xmlFromStruct( source[ key ], prefix ) & "</#ns##key#>";
-      } else if ( isArray( source[ key ] ) ) {
-        for ( var item in source[ key ] ) {
+      var value = source[ key ];
+
+      if ( isSimpleValue( value ) ) {
+        result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
+      } else if ( isStruct( value ) ) {
+        result &= "<#ns##key##xmlns#>" & xmlFromStruct( value, prefix ) & "</#ns##key#>";
+      } else if ( isArray( value ) ) {
+        for ( var item in value ) {
           result &= "<#ns##key##xmlns#>" & xmlFromStruct( item, prefix ) & "</#ns##key#>";
         }
       }
