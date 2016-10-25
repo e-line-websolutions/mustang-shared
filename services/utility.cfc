@@ -230,7 +230,7 @@
         writeDump( variables.newLocale );
         writeDump( e );
       }
-      emailService.send( "email@mingo.nl", "email@mingo.nl", "updateLocale Error", messageBody );
+      emailService.send( "bugs@mstng.info", "bugs@mstng.info", "updateLocale Error", messageBody );
       throw( errorMessage, "utilityService.updateLocale.invalidLocaleError" );
     }
   }
