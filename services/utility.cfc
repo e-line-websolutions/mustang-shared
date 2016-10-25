@@ -1,4 +1,7 @@
-<cfcomponent output="false"><cfscript>
+<cfcomponent output="false" accessors="true">
+  <cfproperty name="emailService" />
+
+  <cfscript>
   public any function init() {
     return this;
   }
@@ -213,6 +216,23 @@
     structAppend( to, from );
 
     return to;
+  }
+
+  public string function updateLocale( string newLocale="" ) {
+    try {
+      var result = setLocale( newLocale );
+      writeLog( text = "Locale changed to #newLocale#", file = request.appName );
+      return result;
+    } catch ( any e ) {
+      var errorMessage = "Error setting locale to '#newLocale#'";
+      writeLog( text = errorMessage, file = request.appName );
+      savecontent variable="local.messageBody" {
+        writeDump( variables.newLocale );
+        writeDump( e );
+      }
+      emailService.send( "email@mingo.nl", "email@mingo.nl", "updateLocale Error", messageBody );
+      throw( errorMessage, "utilityService.updateLocale.invalidLocaleError" );
+    }
   }
   </cfscript>
 
