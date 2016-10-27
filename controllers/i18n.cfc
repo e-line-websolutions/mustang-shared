@@ -1,8 +1,9 @@
 component accessors=true {
   property localeService;
+  property config;
 
   public void function load( required struct rc ) {
-    var defaultLanguage = rc.config.defaultLanguage;
+    var defaultLanguage = config.defaultLanguage;
     var localeID = createUUID();
     var reload = false;
 

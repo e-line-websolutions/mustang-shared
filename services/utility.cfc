@@ -227,7 +227,7 @@
       var errorMessage = "Error setting locale to '#newLocale#'";
       writeLog( text = errorMessage, file = request.appName );
       savecontent variable="local.messageBody" {
-        writeDump( variables.newLocale );
+        writeDump( newLocale );
         writeDump( e );
       }
       emailService.send( "bugs@mstng.info", "bugs@mstng.info", "updateLocale Error", messageBody );

@@ -3,7 +3,7 @@ component accessors=true {
   property securityService;
   property jsonJavaService;
 
-  public any function init( framework ) {
+  public any function init( fw ) {
     param variables.listitems="";
     param variables.listactions=".new";
     param variables.lineactions=".view,.edit";
@@ -11,7 +11,7 @@ component accessors=true {
     param variables.showSearch=false;
     param variables.showAlphabet=false;
     param variables.showPager=true;
-    param variables.entity=framework.getSection( );
+    param variables.entity=fw.getSection( );
     param array variables.submitButtons=[ ];
 
     return this;
