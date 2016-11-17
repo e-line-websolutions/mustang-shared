@@ -424,6 +424,7 @@ component accessors=true {
     var result = { };
 
     for ( var key in flattenedData ) {
+
       try {
         var mappedKey = evaluate( "template.#key#" );
         result[ mappedKey ] = flattenedData[ key ];

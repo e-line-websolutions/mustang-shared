@@ -122,32 +122,32 @@ component accessors=true {
 
   public void function doLogout( required struct rc ) {
     // reset session
-    securityService.createSession();
+    securityService.createSession( );
 
-    if( isDefined( "rc.auth.isLoggedIn" ) && isBoolean( rc.auth.isLoggedIn ) && rc.auth.isLoggedIn && !structKeyExists( rc, "alert" )) {
-      rc.alert={
-        "class"="success",
-        "text"="logout-success"
+    if ( isDefined( "rc.auth.isLoggedIn" ) && isBoolean( rc.auth.isLoggedIn ) && rc.auth.isLoggedIn && !structKeyExists( rc, "alert" ) ) {
+      rc.alert = {
+        "class" = "success",
+        "text" = "logout-success"
       };
     }
 
-    var logMessage="user logged out.";
+    var logMessage = "user logged out.";
 
-    if( rc.config.log && isDefined( "rc.auth.userid" ) && dataService.isGUID( rc.auth.userid )) {
-      var user=contactService.get( rc.auth.userid );
+    if ( rc.config.log && isDefined( "rc.auth.userid" ) && dataService.isGUID( rc.auth.userid ) ) {
+      var user = contactService.get( rc.auth.userid );
 
-      if( !isNull( user )) {
-        logMessage=user.getUsername() & " logged out.";
+      if ( !isNull( user ) ) {
+        logMessage = user.getUsername( ) & " logged out.";
       }
 
       var updateUserLog = {
-        contactID = user.getID(),
+        contactID = user.getID( ),
         add_logEntry = {
           relatedEntity = user,
           logaction = optionService.getOptionByName( "logaction", "security" ),
           note = logMessage,
           by = user,
-          dd = now(),
+          dd = now( ),
           ip = cgi.remote_addr
         }
       };
@@ -160,17 +160,17 @@ component accessors=true {
       request.context.config.log = originalLogSetting;
     }
 
-    writeLog( text=logMessage, type="information", file=request.appName );
+    writeLog( text = logMessage, type = "information", file = request.appName );
 
-    if( framework.getSubsystem() == "api" || listFirst( cgi.PATH_INFO, "/" ) == "api" ) {
+    if ( framework.getSubsystem( ) == "api" || listFirst( cgi.PATH_INFO, "/" ) == "api" ) {
       var isLucee = listFindNoCase( "lucee,railo", server.ColdFusion.ProductName );
-      var pageContext=getPageContext();
-      var response = isLucee ? pageContext.getResponse() : pageContext.getFusionContext().getResponse();
+      var pageContext = getPageContext( );
+      var response = isLucee ? pageContext.getResponse( ) : pageContext.getFusionContext( ).getResponse( );
 
-      response.setHeader( "WWW-Authenticate", "Basic realm=""#request.appName#-API""" );
+      response.setHeader( "WWW-Authenticate", 'Basic realm="#request.appName#-API"' );
 
       framework.renderData( "rawjson", '{"status":"error","detail":"Unauthorized"}', 401 );
-      framework.abortController();
+      framework.abortController( );
     }
 
     framework.redirect( ":security.login", "alert" );

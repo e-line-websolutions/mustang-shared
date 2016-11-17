@@ -2,6 +2,8 @@ component accessors=true {
   property framework;
   property config;
   property queryService;
+  property securityService;
+  property utilityService;
 
   public void function error( required struct rc ) {
     var pageContext = getPageContext();
@@ -155,5 +157,10 @@ component accessors=true {
 
     writeDump( createObject( rc.service ));
     abort;
+  }
+
+  public void function genPw( required struct rc ) {
+    param rc.pw=utilityService.generatePassword( 8 );
+    framework.renderData( "text", htmlEditFormat( rc.pw ) & "|" & securityService.hashPassword( rc.pw ) );
   }
 }
