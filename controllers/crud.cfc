@@ -222,41 +222,51 @@ component accessors=true {
         }
 
         for ( var filter in rc.filters ) {
-          if ( len( filter.field ) gt 2 && right( filter.field, 2 ) == "id" ) {
-            whereBlock &= "AND mainEntity.#left( filter.field, len( filter.field ) - 2 )# = ( FROM #left( filter.field, len( filter.field ) - 2 )# WHERE id = :where_id )";
-            whereParameters[ "where_id" ] = filter.filterOn;
-          } else {
-            if ( filter.filterOn == "NULL" ) {
-              whereBlock &= " AND ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )# IS NULL ";
-            } else if ( structKeyExists( rc.properties[ filter.field ], "cfc" ) ) {
-              whereBlock &= " AND ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )#.id = :where_#lCase( filter.field )# ";
-              whereParameters[ "where_#lCase( filter.field )#" ] = filter.filterOn;
-            } else {
-              if ( rc.filterType == "contains" ) {
-                filter.filterOn = "%#filter.filterOn#";
-              }
-
-              filter.filterOn = "#filter.filterOn#%";
-
-              whereBlock &= " AND ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )# LIKE :where_#lCase( filter.field )# ";
-              whereParameters[ "where_#lCase( filter.field )#" ] = filter.filterOn;
-            }
-
-            for ( var alsoFilterKey in alsoFilterKeys ) {
-              if ( alsoFilterKey.owner.name neq filter.field ) {
-                continue;
-              }
-
-              counter++;
-              alsoFilterEntity &= " LEFT JOIN mainEntity.#listFirst( alsoFilterKey.owner.alsoFilter, '.' )# AS entity_#counter# ";
-              whereBlock &= " OR entity_#counter#.#listLast( alsoFilterKey.owner.alsoFilter, '.' )# LIKE '#filter.filterOn#' ";
-              whereParameters[ "where_#listLast( alsoFilterKey.owner.alsoFilter, '.' )#" ] = filter.filterOn;
-            }
-            whereBlock &= " ) ";
+          if( !isArray( filter.filterOn ) ) {
+            filter.filterOn = [ filter.filterOn ];
           }
+
+          whereBlock &= " AND ( 1 = 0 ";
+
+          for( var filterOn in filter.filterOn ) {
+            if ( len( filter.field ) gt 2 && right( filter.field, 2 ) == "id" ) {
+              whereBlock &= "OR mainEntity.#left( filter.field, len( filter.field ) - 2 )# = ( FROM #left( filter.field, len( filter.field ) - 2 )# WHERE id = :where_id )";
+              whereParameters[ "where_id" ] = filterOn;
+            } else {
+              if ( filterOn == "NULL" ) {
+                whereBlock &= " OR ( ";
+                whereBlock &= " mainEntity.#lCase( filter.field )# IS NULL ";
+              } else if ( structKeyExists( rc.properties[ filter.field ], "cfc" ) ) {
+                whereBlock &= " OR ( ";
+                whereBlock &= " mainEntity.#lCase( filter.field )#.id = :where_#lCase( filter.field )# ";
+                whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
+              } else {
+                if ( rc.filterType == "contains" ) {
+                  filterOn = "%#filterOn#";
+                }
+
+                filterOn = "#filterOn#%";
+
+                whereBlock &= " OR ( ";
+                whereBlock &= " mainEntity.#lCase( filter.field )# LIKE :where_#lCase( filter.field )# ";
+                whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
+              }
+
+              for ( var alsoFilterKey in alsoFilterKeys ) {
+                if ( alsoFilterKey.owner.name neq filter.field ) {
+                  continue;
+                }
+
+                counter++;
+                alsoFilterEntity &= " LEFT JOIN mainEntity.#listFirst( alsoFilterKey.owner.alsoFilter, '.' )# AS entity_#counter# ";
+                whereBlock &= " OR entity_#counter#.#listLast( alsoFilterKey.owner.alsoFilter, '.' )# LIKE '#filterOn#' ";
+                whereParameters[ "where_#listLast( alsoFilterKey.owner.alsoFilter, '.' )#" ] = filterOn;
+              }
+              whereBlock &= " ) ";
+            }
+          }
+
+          whereBlock &= " ) ";
         }
 
         if ( structKeyExists( entityProperties, "where" ) && len( trim( entityProperties.where ) ) ) {
@@ -432,6 +442,8 @@ component accessors=true {
     rc.entity = variables.entity;
     var object = entityNew( rc.entity );
 
+    rc.subClasses = object.getSubclasses();
+
     // is this a loggable object?
     rc.canBeLogged = ( rc.config.log && isInstanceOf( object, "root.model.logged" ) );
     if ( rc.entity == "logentry" ) {
@@ -465,7 +477,7 @@ component accessors=true {
     }
 
     if ( isNull( rc.data ) ) {
-      rc.data = entityNew( rc.entity );
+      rc.data = object;
     }
 
     // prep the form fields and sort them in the right order

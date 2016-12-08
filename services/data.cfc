@@ -435,6 +435,15 @@ component accessors=true {
     return result;
   }
 
+  public boolean function notEmpty( any variable ) {
+    if( isNull( variable ) || !isSimpleValue( variable ) || !len( trim( variable ) ) ) {
+      return false;
+    }
+
+    return true;
+  }
+
+
   // private functions
 
   private string function __formatAsGUID( required string text ) {

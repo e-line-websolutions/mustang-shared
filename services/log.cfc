@@ -3,12 +3,12 @@ component accessors=true {
   property contactService;
   property config;
 
-  public string function reportError( message, file, sendMail=true ) {
+  public string function reportError( message, file = request.appName, sendMail = true ) {
     writeLog( text = message, file = file );
 
-    if( sendMail ) {
+    if ( sendMail ) {
       var sendTo = contactService.getByUsername( "admin" );
-      if( !isNull( sendTo ) ) {
+      if ( !isNull( sendTo ) ) {
         emailService.send( config.debugEmail, sendTo, "Error in #request.appName#", message );
       }
     }
