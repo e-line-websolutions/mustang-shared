@@ -6,6 +6,7 @@ component accessors=true {
   public any function init( fw ) {
     param variables.listitems="";
     param variables.listactions=".new";
+    param variables.confirmactions=".delete";
     param variables.lineactions=".view,.edit";
     param variables.showNavbar=true;
     param variables.showSearch=false;
@@ -107,6 +108,7 @@ component accessors=true {
     rc.properties = object.getInheritedProperties( );
     rc.lineactions = variables.lineactions;
     rc.listactions = variables.listactions;
+    rc.confirmactions = variables.confirmactions;
     rc.showNavbar = variables.showNavbar;
     rc.showSearch = variables.showSearch;
     rc.showAlphabet = variables.showAlphabet;
@@ -425,6 +427,8 @@ component accessors=true {
     param rc.modal=false;
     param rc.editable=true;
     param rc.inline=false;
+    param rc.formprepend="";
+    param rc.formappend="";
     param rc.namePrepend="";
 
     rc.submitButtons = variables.submitButtons;
@@ -442,7 +446,7 @@ component accessors=true {
     rc.entity = variables.entity;
     var object = entityNew( rc.entity );
 
-    rc.subClasses = object.getSubclasses();
+    rc.subClasses = object.getSubClasses();
 
     // is this a loggable object?
     rc.canBeLogged = ( rc.config.log && isInstanceOf( object, "root.model.logged" ) );
