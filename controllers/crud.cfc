@@ -446,8 +446,6 @@ component accessors=true {
     rc.entity = variables.entity;
     var object = entityNew( rc.entity );
 
-    rc.subClasses = object.getSubClasses();
-
     // is this a loggable object?
     rc.canBeLogged = ( rc.config.log && isInstanceOf( object, "root.model.logged" ) );
     if ( rc.entity == "logentry" ) {
@@ -596,12 +594,13 @@ component accessors=true {
     structAppend( formData, form, true );
 
     var entityProperties = rc.savedEntity.getInheritedProperties();
-    var inlineEditProperties = structFindKey( entityProperties, "inlineedit" );
+    var inlineEditProperties = structFindKey( entityProperties, "inlineedit", "all" );
 
     for( var property in inlineEditProperties ) {
       var property = property.owner;
       var fieldPrefix = property.name;
       var prefixedFields = reMatchNoCase( "#fieldPrefix#_[^,]+", form.FIELDNAMES );
+
       var inlineData = {};
       if( !arrayIsEmpty( prefixedFields ) ) {
         var pkField = "#fieldPrefix#id";
@@ -611,7 +610,7 @@ component accessors=true {
         }
         for( var field in prefixedFields ) {
           structDelete( formData, field );
-          if( len( form[ field ] ) ) {
+          if( structKeyExists( form, field ) && len( form[ field ] ) ) {
             inlineData[ listRest( field, "_" ) ] = form[ field ];
           }
         }
