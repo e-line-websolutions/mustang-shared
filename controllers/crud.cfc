@@ -308,13 +308,7 @@ component accessors=true {
           HQL &= " ORDER BY #orderByString# ";
         }
 
-        try {
-          rc.alldata = ORMExecuteQuery( HQL, { }, queryOptions );
-        } catch ( any e ) {
-          writeDump( e );
-          abort;
-          rc.alldata = [ ];
-        }
+        rc.alldata = ORMExecuteQuery( HQL, { }, queryOptions );
 
         if ( arrayLen( rc.alldata ) gt 0 ) {
           rc.recordCounter = ORMExecuteQuery(
@@ -593,28 +587,39 @@ component accessors=true {
     structAppend( formData, url, true );
     structAppend( formData, form, true );
 
-    var entityProperties = rc.savedEntity.getInheritedProperties();
+    var entityProperties = rc.savedEntity.getInheritedProperties( );
     var inlineEditProperties = structFindKey( entityProperties, "inlineedit", "all" );
 
-    for( var property in inlineEditProperties ) {
+    for ( var property in inlineEditProperties ) {
       var property = property.owner;
       var fieldPrefix = property.name;
       var prefixedFields = reMatchNoCase( "#fieldPrefix#_[^,]+", form.FIELDNAMES );
+      var inlineData = { };
 
-      var inlineData = {};
-      if( !arrayIsEmpty( prefixedFields ) ) {
-        var pkField = "#fieldPrefix#id";
-        if( structKeyExists( form, pkField ) ) {
-          structDelete( formData, pkField );
-          inlineData[ "#pkField#" ] = form[ pkField ];
+      if ( !arrayIsEmpty( prefixedFields ) ) {
+        var subclass = fieldPrefix;
+
+        if( structKeyExists( form, "_#fieldPrefix#_subclass" ) ) {
+          subclass = form[ "_#fieldPrefix#_subclass" ];
+          inlineData[ "__subclass" ] = subclass;
         }
-        for( var field in prefixedFields ) {
+
+        var pkField = "#subclass#id";
+
+        if ( structKeyExists( form, pkField ) ) {
+          structDelete( formData, pkField );
+          inlineData[ pkField ] = form[ pkField ];
+        }
+
+        for ( var field in prefixedFields ) {
           structDelete( formData, field );
-          if( structKeyExists( form, field ) && len( form[ field ] ) ) {
+
+          if ( structKeyExists( form, field ) && len( form[ field ] ) ) {
             inlineData[ listRest( field, "_" ) ] = form[ field ];
           }
         }
-        if( !structIsEmpty( inlineData ) ) {
+
+        if ( !structIsEmpty( inlineData ) ) {
           formData[ fieldPrefix ] = inlineData;
         }
       }
