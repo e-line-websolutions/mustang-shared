@@ -194,7 +194,7 @@ component accessors=true {
     var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity ? true : false;
     var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css" ? true : false;
 
-    if( dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
+    if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
       return;
     }
 
