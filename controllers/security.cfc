@@ -190,6 +190,7 @@ component accessors=true {
     var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem())) ? listFindNoCase( rc.config.securedSubsystems, framework.getSubsystem()) eq 0 : false;
     var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth" ? true : false;
 
+    var dontSecureThisFQA = structKeyExists( rc.config, "dontSecureFQA" ) && len( rc.config.dontSecureFQA ) && listFindNoCase( rc.config.dontSecureFQA, rc.action ) ? true : false;
     var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem ? true : false;
     var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity ? true : false;
     var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css" ? true : false;
