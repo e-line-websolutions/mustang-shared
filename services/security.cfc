@@ -84,11 +84,11 @@ component accessors=true {
   }
 
   public void function refreshSession( root.model.contact user ) {
-    if( isNull( user ) ) {
+    if ( isNull( user ) ) {
       lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
-        if( structKeyExists( session, "auth" ) ) {
+        if ( structKeyExists( session, "auth" ) ) {
           var currentAuth = session.auth;
-          if( structKeyExists( currentAuth, "userid" ) ) {
+          if ( structKeyExists( currentAuth, "userid" ) ) {
             user = entityLoadByPK( "contact", currentAuth.userid );
           }
         }
@@ -96,26 +96,30 @@ component accessors=true {
     }
 
     createSession( );
-    // var securityRole = user.getSecurityrole( );
-    var userAsStruct = dataService.processEntity( user, 0, 2 );
-    var securityRole = userAsStruct.securityrole;
+
+    var userAsStruct = dataService.processEntity( user, 0, 1, false );
+    var securityRole = dataService.processEntity( user.getSecurityRole(), 0, 1, false );
+
     var tempAuth = {
       isLoggedIn = true,
       user = userAsStruct,
       userid = user.getID( ),
       role = securityRole
     };
+
     if ( isAdmin( securityRole.name ) ) {
       tempAuth.role.can = yesWeCan;
       tempAuth.canAccessAdmin = true;
     } else {
-      cachePermissions( user.getSecurityRole() );
+      cachePermissions( securityRole.permissions );
       tempAuth.role.can = can;
       tempAuth.canAccessAdmin = false;
     }
+
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       structAppend( session.auth, tempAuth, true );
     }
+
     variables.auth = tempAuth;
   }
 
@@ -172,9 +176,8 @@ component accessors=true {
     return structKeyExists( cachedCan, "#action#-#section#" ) || auth.canAccessAdmin;
   }
 
-  public void function cachePermissions( required component securityRole ) {
+  public void function cachePermissions( required array allPermissions ) {
     var cachedPermissions = { };
-    var allPermissions = dataService.processEntity( securityRole.getPermissions( ), 0, 2 );
 
     for ( var permission in allPermissions ) {
       if ( !structKeyExists( permission, "section" ) || !len( trim( permission.section ) ) ) {

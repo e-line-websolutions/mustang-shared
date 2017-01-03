@@ -108,7 +108,11 @@ component accessors=true {
     rc.auth = securityService.getAuth();
 
     if( !rc.dontRedirect ) {
-      var loginscript = rc.auth.role.loginscript;
+      var loginscript = "";
+
+      if( !isNull( rc.auth.role.loginscript ) ) {
+        loginscript = rc.auth.role.loginscript;
+      }
 
       if( structKeyExists( rc , 'returnpage') ) {
         loginscript = rc.returnpage;
