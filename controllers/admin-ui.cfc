@@ -9,9 +9,11 @@ component accessors=true {
     var localeID = translationService.getLocaleID( );
     if ( isNull( localeID ) ) {
       var locale = localeService.get( );
-      rc.content = contentService.getByFQA( framework.getfullyqualifiedaction( ), locale );
+    }else{
+      var locale = localeService.get( localeID );
     }
 
+    rc.content = contentService.getByFQA( framework.getfullyqualifiedaction( ), locale );
     rc.displaytitle = translationService.translate( framework.getfullyqualifiedaction( ) );
 
     if ( !structKeyExists( rc, "topnav" ) ) {
