@@ -195,9 +195,9 @@ component accessors=true {
       if( !isInstanceOf( data, "basecfc.base" )) {
         if( level == 0 ) {
           throw( "Doesn't work on non-basecfc objects" );
-        } else {
-          return; // Doesn't work on non-basecfc objects
         }
+
+        return; // Doesn't work on non-basecfc objects
       }
 
       var allowedFieldTypes = "id,column,many-to-one,one-to-many,many-to-many"; // level 0 only

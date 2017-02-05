@@ -2,60 +2,63 @@
   <cfproperty name="emailService" />
 
   <cfscript>
-  public any function init() {
+  public any function init( ) {
     return this;
   }
 
-  public string function parseStringVariables( required string stringToParse, struct stringVariables={}) {
-    if( not isDefined( "stringVariables" ) or not structCount( stringVariables )) {
+  public string function parseStringVariables( required string stringToParse, struct stringVariables = { } ) {
+    if ( not isDefined( "stringVariables" ) or not structCount( stringVariables ) ) {
       return stringToParse;
     }
 
-    for( var key in stringVariables ) {
-      if( not isNull( stringVariables[key] )) {
-        stringToParse = replaceNoCase( stringToParse, '###key###', stringVariables[key], 'all' );
+    for ( var key in stringVariables ) {
+      if ( not isNull( stringVariables[ key ] ) ) {
+        stringToParse = replaceNoCase( stringToParse, '###key###', stringVariables[ key ], 'all' );
       }
     }
 
     return stringToParse;
   }
 
-  public void function limiter( numeric duration=5, numeric maxAttempts=100, numeric timespan=10 ) {
+  public void function limiter( numeric duration = 5, numeric maxAttempts = 100, numeric timespan = 10 ) {
     var cacheID = hash( "rate_limiter_" & CGI.REMOTE_ADDR );
     var rate = cacheGet( cacheId );
     var cacheTime = createTimeSpan( 0, 0, 0, timespan );
 
-    if( isNull( rate ) ||
+    if ( isNull( rate ) ||
         !isStruct( rate ) ||
         !structKeyExists( rate, "start" ) ||
-        !structKeyExists( rate, "attempts" )) {
+        !structKeyExists( rate, "attempts" ) ) {
       // initialize limiter:
-      var rate = { attempts = 0, start = now()};
+      var rate = {
+        attempts = 0,
+        start = now( )
+      };
       cachePut( cacheID, rate, cacheTime );
       return;
     }
 
-    var timeout = dateDiff( "s", rate.start, now());
+    var timeout = dateDiff( "s", rate.start, now( ) );
     rate.attempts++;
 
-    if( timeout < duration ) {
-      if( rate.attempts > maxAttempts ) {
+    if ( timeout < duration ) {
+      if ( rate.attempts > maxAttempts ) {
         writeOutput( '<p>You are making too many requests too fast, please slow down and wait #duration# seconds</p>' );
-        var context = getPageContext();
-        var response = context.getResponse().getResponse();
+        var context = getPageContext( );
+        var response = context.getResponse( ).getResponse( );
 
         response.setStatus( 503 );
         response.setHeader( "Retry-After", duration );
 
-        context.getCFOutput().clear();
+        context.getCFOutput( ).clear( );
 
         writeLog(
-                  file = "limiter",
-                  text = "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#"
-                );
+          file = "limiter",
+          text = "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#"
+        );
 
         // set cache timeout to duration, so user remains locked out for the duration:
-        cachePut( cacheID, rate, createTimeSpan( 0, 0, 0, duration ));
+        cachePut( cacheID, rate, createTimeSpan( 0, 0, 0, duration ) );
         abort;
       }
 
@@ -68,15 +71,15 @@
   }
 
   public string function generatePassword( numeric length = 8, string type = "uc,lc,num" ) {
-    if( length <= 0 ) {
-      throw( type="util.generatePassword", message = "generatePassword(): Length must be > 0" );
+    if ( length <= 0 ) {
+      throw( type = "util.generatePassword", message = "generatePassword(): Length must be > 0" );
     }
 
-    if( !listFindNoCase( type, "uc" ) &&
+    if ( !listFindNoCase( type, "uc" ) &&
         !listFindNoCase( type, "lc" ) &&
         !listFindNoCase( type, "num" ) &&
-        !listFindNoCase( type, "oth" )) {
-      throw( type="util.generatePassword", message = "generatePassword(): Type must be one or more of these: uc, lc, num, oth." );
+        !listFindNoCase( type, "oth" ) ) {
+      throw( type = "util.generatePassword", message = "generatePassword(): Type must be one or more of these: uc, lc, num, oth." );
     }
 
     var result = "";
@@ -84,26 +87,21 @@
     var illegelChars = "o,O,0,l,I,1,B,8";
     var tryChar = chr( 0 );
 
-    while( len( result ) < length ) {
-      if( randRange( 1, 4 ) == 1 && listFindNoCase( type, 'uc' )) {
-        tryChar = chr( randRange( 65, 90 ));
-      } else if( randRange( 1, 4 ) == 2 && listFindNoCase( type, 'lc' )) {
-        tryChar = chr( randRange( 97, 122 ));
-      } else if( randRange( 1, 4 ) == 3 && listFindNoCase( type, 'num' )) {
-        tryChar = chr( randRange( 48, 57 ));
-      } else if( randRange( 1, 4 ) == 4 && listFindNoCase( type, 'oth' )) {
-        var oth = [
-          chr( randRange( 33, 47 )),
-          chr( randRange( 58, 64 )),
-          chr( randRange( 91, 96 )),
-          chr( randRange( 123, 126 ))
-        ];
-        tryChar = oth[randRange(1,4)];
+    while ( len( result ) < length ) {
+      if ( randRange( 1, 4 ) == 1 && listFindNoCase( type, 'uc' ) ) {
+        tryChar = chr( randRange( 65, 90 ) );
+      } else if ( randRange( 1, 4 ) == 2 && listFindNoCase( type, 'lc' ) ) {
+        tryChar = chr( randRange( 97, 122 ) );
+      } else if ( randRange( 1, 4 ) == 3 && listFindNoCase( type, 'num' ) ) {
+        tryChar = chr( randRange( 48, 57 ) );
+      } else if ( randRange( 1, 4 ) == 4 && listFindNoCase( type, 'oth' ) ) {
+        var oth = [ chr( randRange( 33, 47 ) ), chr( randRange( 58, 64 ) ), chr( randRange( 91, 96 ) ), chr( randRange( 123, 126 ) ) ];
+        tryChar = oth[ randRange( 1, 4 ) ];
       }
 
-      if( tryChar == chr( 0 ) ||
+      if ( tryChar == chr( 0 ) ||
           tryChar == charUsed ||
-          listFind( illegelChars, tryChar )) {
+          listFind( illegelChars, tryChar ) ) {
         continue;
       }
 
@@ -117,11 +115,11 @@
   public string function capFirst( required word ) {
     word = trim( word );
 
-    if( len( word ) <= 1 ) {
+    if ( len( word ) <= 1 ) {
       return uCase( word );
     }
 
-    return uCase( left( word, 1 )) & right( word, len( word ) - 1 );
+    return uCase( left( word, 1 ) ) & right( word, len( word ) - 1 );
   }
 
   /**
@@ -136,35 +134,35 @@
    * @author Nathan Dintenfass
    * @version 1, April 4, 2013
    */
-  public array function arrayOfStructsSort( required array aOfS, required string key ){
+  public array function arrayOfStructsSort( required array aOfS, required string key ) {
     var sortOrder = "asc";
     var sortType = "textnocase";
     var delim = ".";
-    var sortArray = [];
-    var returnArray = [];
+    var sortArray = [ ];
+    var returnArray = [ ];
     var count = arrayLen( aOfS );
     var ii = 1;
 
-    if( arraylen( arguments ) > 2 ) {
-      sortOrder = arguments[3];
+    if ( arraylen( arguments ) > 2 ) {
+      sortOrder = arguments[ 3 ];
     }
 
-    if( arraylen( arguments ) > 3) {
-      sortType = arguments[4];
+    if ( arraylen( arguments ) > 3 ) {
+      sortType = arguments[ 4 ];
     }
 
-    if( arraylen( arguments ) > 4) {
-      delim = arguments[5];
+    if ( arraylen( arguments ) > 4 ) {
+      delim = arguments[ 5 ];
     }
 
-    for( ii = 1; ii <= count; ii++ ) {
-      sortArray[ii] = aOfS[ii][key] & delim & ii;
+    for ( ii = 1; ii <= count; ii++ ) {
+      sortArray[ ii ] = aOfS[ ii ][ key ] & delim & ii;
     }
 
     arraySort( sortArray, sortType, sortOrder );
 
-    for( ii = 1; ii <= count; ii++ ) {
-      returnArray[ii] = aOfS[listLast( sortArray[ii], delim )];
+    for ( ii = 1; ii <= count; ii++ ) {
+      returnArray[ ii ] = aOfS[ listLast( sortArray[ ii ], delim ) ];
     }
 
     return returnArray;
@@ -189,19 +187,27 @@
     return charsetEncode( bytes, "utf-8" );
   }
 
+  public string function encryptForUrl( stringToEncrypt, encryptKey ) {
+    return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey ) ) );
+  }
+
+  public string function decryptForUrl( stringToEncrypt, encryptKey ) {
+    return decrypt( toString( toBinary( base64URLDecode( stringToEncrypt ) ) ), encryptKey );
+  }
+
   public boolean function fileExistsUsingCache( required string absolutePath ) {
     var cachedPaths = cacheGet( "cachedPaths-#request.appName#" );
 
-    if( isNull( cachedPaths ) || request.reset ) {
-      var cachedPaths = {};
+    if ( isNull( cachedPaths ) || request.reset ) {
+      var cachedPaths = { };
     }
 
-    if( !structKeyExists( cachedPaths, absolutePath )) {
-      cachedPaths[absolutePath] = fileExists( absolutePath );
+    if ( !structKeyExists( cachedPaths, absolutePath ) ) {
+      cachedPaths[ absolutePath ] = fileExists( absolutePath );
       cachePut( "cachedPaths-#request.appName#", cachedPaths );
     }
 
-    return cachedPaths[absolutePath];
+    return cachedPaths[ absolutePath ];
   }
 
   public struct function mergeStructs( required struct from, struct to = { } ) {
@@ -218,7 +224,7 @@
     return to;
   }
 
-  public string function updateLocale( string newLocale="" ) {
+  public string function updateLocale( string newLocale = "" ) {
     try {
       var result = setLocale( newLocale );
       writeLog( text = "Locale changed to #newLocale#", file = request.appName );

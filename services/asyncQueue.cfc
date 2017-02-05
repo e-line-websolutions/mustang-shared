@@ -4,7 +4,7 @@ component accessors=true {
 
   // constructor
 
-  public any function init( ) {
+  public component function init( ) {
     variables.taskQueue = [ ];
     variables.taskQueueID = lcase( createUUID( ) );
     variables.asyncTaskThreadIndex = 1;
@@ -12,11 +12,16 @@ component accessors=true {
     variables.isThreadRunning = false;
     variables.asyncTaskLockName = getAsyncTaskLockName( );
     variables.asyncTaskLockTimeout = 30;
+    variables.queueNr = 1;
 
     return this;
   }
 
   // public methods
+
+  public component function getInstance( ) {
+    return init( );
+  }
 
   public void function addTask( required any taskMethod, any taskArguments = structNew() ) {
     lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
@@ -37,7 +42,9 @@ component accessors=true {
           while ( structKeyExists( local, "taskItem" ) ) {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
+              writeLog( text = "Executed task part #variables.queueNr#.", file = "asyncQueue" );
             } catch ( any e ) {
+              writeLog( text = "Error executing task part #variables.queueNr#. (#e.message#)", file = "asyncQueue" );
               savecontent variable="local.debug" {
                 writeDump( taskItem.taskArguments );
                 writeDump( e );
@@ -45,6 +52,8 @@ component accessors=true {
               fileWrite( "C:\TEMP\THREADOUTPUT\error-#variables.asyncTaskThreadName#.html", debug );
               // throw( "Error in thread, see C:\TEMP\THREADOUTPUT" );
             }
+
+            variables.queueNr++;
 
             lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
               taskItem = getNextTaskItem( );
