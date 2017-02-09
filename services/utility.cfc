@@ -280,4 +280,18 @@
     <cfdbinfo name="dbinfo" type="version" datasource="#datasource#" />
     <cfreturn dbinfo />
   </cffunction>
+
+  <cffunction name="cfinvoke">
+    <cfargument name="comp" />
+    <cfargument name="func" />
+    <cfargument name="args" default="#{}#" />
+    <cfinvoke component="#comp#" method="#func#" returnvariable="local.result">
+      <cfloop collection="#args#" item="local.key">
+        <cfinvokeargument name="#key#" value="#args[key]#" />
+      </cfloop>
+    </cfinvoke>
+    <cfif not isNull( result )>
+      <cfreturn result />
+    </cfif>
+  </cffunction>
 </cfcomponent>

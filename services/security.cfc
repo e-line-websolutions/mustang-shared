@@ -100,6 +100,10 @@ component accessors=true {
     var userAsStruct = dataService.processEntity( user, 0, 1, false );
     var securityRole = dataService.processEntity( user.getSecurityRole(), 0, 1, false );
 
+    if ( isNull( securityRole ) || structIsEmpty( securityRole ) || !structKeyExists( securityRole, "name" ) ) {
+      throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
+    }
+
     var tempAuth = {
       isLoggedIn = true,
       user = userAsStruct,
