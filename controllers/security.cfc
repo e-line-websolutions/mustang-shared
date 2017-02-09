@@ -1,5 +1,6 @@
 component accessors=true {
   property framework;
+  property config;
 
   property contactService;
   property contentService;
@@ -29,7 +30,7 @@ component accessors=true {
     if( structKeyExists( rc, "authhash" ) && len( trim( rc.authhash ))) {
       writeLog( text="trying authhash", type="information", file=request.appName );
 
-      var contactID = decrypt( rc.util.base64urlDecode( rc.authhash ), rc.config.encryptKey );
+      var contactID = decrypt( rc.util.base64urlDecode( rc.authhash ), config.encryptKey );
       var user = contactService.get( contactID );
 
       if( isNull( user )) {
@@ -81,7 +82,7 @@ component accessors=true {
 
     updateUserWith.contactID = user.getID();
 
-    if( rc.config.log ) {
+    if( config.log ) {
       structAppend( updateUserWith, {
         add_logEntry = {
           relatedEntity = user,
@@ -94,7 +95,7 @@ component accessors=true {
       });
     }
 
-    var originalLogSetting = rc.config.log;
+    var originalLogSetting = config.log;
     request.context.config.log = false;
 
     transaction {
@@ -137,7 +138,7 @@ component accessors=true {
 
     var logMessage = "user logged out.";
 
-    if ( rc.config.log && isDefined( "rc.auth.userid" ) && dataService.isGUID( rc.auth.userid ) ) {
+    if ( config.log && isDefined( "rc.auth.userid" ) && dataService.isGUID( rc.auth.userid ) ) {
       var user = contactService.get( rc.auth.userid );
 
       if ( !isNull( user ) ) {
@@ -156,7 +157,7 @@ component accessors=true {
         }
       };
 
-      var originalLogSetting = rc.config.log;
+      var originalLogSetting = config.log;
       request.context.config.log = false;
 
       user.save( updateUserLog );
@@ -183,18 +184,18 @@ component accessors=true {
   public void function authorize( required struct rc ) {
     rc.auth = { isLoggedIn = false };
 
-    if( rc.config.disableSecurity ) {
+    if( config.disableSecurity ) {
       securityService.refreshFakeSession();
       return;
     }
 
     // Always allow access to security && api:css
     var isDefaultSubsystem = framework.getSubsystem() == framework.getDefaultSubsystem() ? true : false;
-    var dontSecureDefaultSubsystem = isDefaultSubsystem && !rc.config.secureDefaultSubsystem ? true : false;
-    var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem())) ? listFindNoCase( rc.config.securedSubsystems, framework.getSubsystem()) eq 0 : false;
+    var dontSecureDefaultSubsystem = isDefaultSubsystem && !config.secureDefaultSubsystem ? true : false;
+    var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem())) ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0 : false;
     var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth" ? true : false;
 
-    var dontSecureThisFQA = structKeyExists( rc.config, "dontSecureFQA" ) && len( rc.config.dontSecureFQA ) && listFindNoCase( rc.config.dontSecureFQA, rc.action ) ? true : false;
+    var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) && len( config.dontSecureFQA ) && listFindNoCase( config.dontSecureFQA, rc.action ) ? true : false;
     var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem ? true : false;
     var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity ? true : false;
     var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css" ? true : false;
@@ -204,11 +205,7 @@ component accessors=true {
     }
 
     // Use auth struct that's stored in session
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
-      if( structKeyExists( session, "auth" )) {
-        structAppend( rc.auth, session.auth );
-      }
-    }
+    rc.auth = securityService.getAuth( );
 
     // check validity of auth struct
     if( !structKeyExists( rc, "auth" )) {
@@ -259,7 +256,7 @@ component accessors=true {
       var user=contactService.getByEmail( rc.email );
 
       if( !isNull( user )) {
-        var authhash=toBase64( encrypt( user.getID(), rc.config.encryptKey ));
+        var authhash=toBase64( encrypt( user.getID(), config.encryptKey ));
         var activationEmails=contentService.getByFQA( "mail.activation" );
 
         if( arrayLen( activationEmails ) gt 0 ) {
@@ -273,7 +270,7 @@ component accessors=true {
         }
 
         mailService.send(
-          rc.config.ownerEmail,
+          config.ownerEmail,
           user,
           emailText.getTitle(),
           rc.util.parseStringVariables(
