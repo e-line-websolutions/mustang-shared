@@ -200,12 +200,12 @@ component accessors=true {
     var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity ? true : false;
     var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css" ? true : false;
 
+    // Use auth struct that's stored in session
+    rc.auth = securityService.getAuth( );
+
     if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
       return;
     }
-
-    // Use auth struct that's stored in session
-    rc.auth = securityService.getAuth( );
 
     // check validity of auth struct
     if( !structKeyExists( rc, "auth" )) {
