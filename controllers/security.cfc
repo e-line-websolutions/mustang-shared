@@ -182,10 +182,12 @@ component accessors=true {
   }
 
   public void function authorize( required struct rc ) {
-    rc.auth = { isLoggedIn = false };
+    // Use auth struct that's stored in session
+    rc.auth = securityService.getAuth( );
 
     if( config.disableSecurity ) {
       securityService.refreshFakeSession();
+      rc.auth = securityService.getAuth( );
       return;
     }
 
@@ -199,9 +201,6 @@ component accessors=true {
     var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem ? true : false;
     var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity ? true : false;
     var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css" ? true : false;
-
-    // Use auth struct that's stored in session
-    rc.auth = securityService.getAuth( );
 
     if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
       return;

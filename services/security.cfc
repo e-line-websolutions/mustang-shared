@@ -1,104 +1,97 @@
 component accessors=true {
   property dataService;
-  property struct auth;
-  property struct instance;
+  property utilityService;
+  property bcrypt;
 
   public component function init( root, config ) {
     var bCryptPath = "#root#/lib/java";
+
     if ( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ) ) ) {
       bCryptPath = config.paths.bcrypt;
     }
-    variables.instance.bcrypt = getBCrypt( bCryptPath );
+
+    variables.bcrypt = getBCrypt( bCryptPath );
+
     return this;
   }
 
   public struct function getAuth( ) {
-    var result = { };
-    if ( structKeyExists( variables, "auth" ) && isStruct( variables.auth ) ) {
-      result = auth;
-    }
+    var result = getEmptyAuth( );
+
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
-      if ( structKeyExists( session, "auth" ) ) {
-        result = session.auth;
+      if ( !isNull( session.auth ) ) {
+        writeLog( text = "auth retrieved from session scope", file = "securityService" );
+        var result = session.auth;
+      } else {
+        writeLog( text = "empty auth retrieved", file = "securityService" );
       }
     }
-    if ( !isStruct( result ) ) {
-      result = { };
-    }
+
     return result;
   }
 
   public boolean function authIsValid( required struct checkAuth ) {
     var requiredKeys = [ 'isLoggedIn', 'user', 'userid', 'role' ];
+
     for ( var key in requiredKeys ) {
       if ( !structKeyExists( checkAuth, key ) ) {
         return false;
       }
     }
-    if ( !len( trim( checkAuth.userid ) ) ) {
+
+    if ( !len( trim( checkAuth.userid ) ) ||
+         !isStruct( checkAuth.user ) ||
+         !isStruct( checkAuth.role ) ||
+         !isBoolean( checkAuth.isLoggedIn ) ) {
       return false;
     }
-    if ( !isStruct( checkAuth.user ) ) {
-      return false;
-    }
-    if ( !isStruct( checkAuth.role ) ) {
-      return false;
-    }
-    if ( !isBoolean( checkAuth.isLoggedIn ) ) {
-      return false;
-    }
+
     return true;
   }
 
   public void function createSession( ) {
     var tmpSession = {
       "can" = { },
-      "auth" = {
-        "isLoggedIn" = false,
-        "user" = 0,
-        "role" = 0,
-        "userid" = '',
-        "canAccessAdmin" = false
-      }
+      "auth" = getEmptyAuth( )
     };
+
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       structClear( session );
       structAppend( session, tmpSession );
     }
+
+    writeLog( text = "session struct created", file = "securityService" );
   }
 
   public void function refreshFakeSession( ) {
     createSession( );
+
     var tempAuth = {
+      canAccessAdmin = true,
       isLoggedIn = true,
+      role = getFakeRole( ),
       user = dataService.processEntity( getFakeUser( ) ),
-      userid = createUUID( ),
-      role = getFakeRole( )
+      userid = createUUID( )
     };
-    tempAuth.role.can = yesWeCan;
-    tempAuth.canAccessAdmin = true;
+
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       structAppend( session.auth, tempAuth, true );
     }
-    variables.auth = tempAuth;
   }
 
   public void function refreshSession( root.model.contact user ) {
     if ( isNull( user ) ) {
-      lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
-        if ( structKeyExists( session, "auth" ) ) {
-          var currentAuth = session.auth;
-          if ( structKeyExists( currentAuth, "userid" ) ) {
-            user = entityLoadByPK( "contact", currentAuth.userid );
-          }
-        }
+      var currentAuth = getAuth( );
+
+      if ( utilityService.isGuid( currentAuth.userId ) ) {
+        user = entityLoadByPK( "contact", currentAuth.userId );
       }
     }
 
     createSession( );
 
     var userAsStruct = dataService.processEntity( user, 0, 1, false );
-    var securityRole = dataService.processEntity( user.getSecurityRole(), 0, 1, false );
+    var securityRole = dataService.processEntity( user.getSecurityRole( ), 0, 1, false );
 
     if ( isNull( securityRole ) || structIsEmpty( securityRole ) || !structKeyExists( securityRole, "name" ) ) {
       throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
@@ -123,19 +116,17 @@ component accessors=true {
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
       structAppend( session.auth, tempAuth, true );
     }
-
-    variables.auth = tempAuth;
   }
 
   public string function hashPassword( required string password ) {
     var t = 0;
     var cost = 4;
     while ( t < 500 && cost <= 30 ) {
-      var salt = instance.bcrypt.gensalt( cost );
-      var hashedPW = instance.bcrypt.hashpw( password, salt );
+      var salt = variables.bcrypt.gensalt( cost );
+      var hashedPW = variables.bcrypt.hashpw( password, salt );
       // test speed of decryption:
       var start = getTickCount( );
-      instance.bcrypt.checkpw( password, hashedPW );
+      variables.bcrypt.checkpw( password, hashedPW );
       t = getTickCount( ) - start;
       cost++;
     }
@@ -145,7 +136,7 @@ component accessors=true {
   public boolean function comparePassword( required string password, required string storedPW ) {
     try {
       // FIRST TRY BCRYPT:
-      return instance.bcrypt.checkpw( password, storedPW );
+      return variables.bcrypt.checkpw( password, storedPW );
     } catch ( any e ) {
       try {
         // THEN TRY THE OLD SHA-512 WAY:
@@ -158,9 +149,9 @@ component accessors=true {
   }
 
   public boolean function isAdmin( string roleName ) {
-    if( isNull( roleName ) ) {
-      var auth = getAuth( );
-      roleName=auth.role.name;
+    if ( isNull( roleName ) ) {
+      var tempAuth = getAuth( );
+      roleName = tempAuth.role.name;
     }
 
     return roleName == "Administrator" || roleName == "Admin";
@@ -172,15 +163,18 @@ component accessors=true {
 
   public boolean function can( string action = "", string section = "" ) {
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      param session.can={ };
+      param session.can={
+      };
       var cachedCan = session.can;
-      var auth = session.auth;
+      var tempAuth = session.auth;
     }
 
-    return structKeyExists( cachedCan, "#action#-#section#" ) || auth.canAccessAdmin;
+    return structKeyExists( cachedCan, "#action#-#section#" ) || tempAuth.canAccessAdmin;
   }
 
-  public void function cachePermissions( required array allPermissions ) {
+  // private
+
+  private void function cachePermissions( required array allPermissions ) {
     var cachedPermissions = { };
 
     for ( var permission in allPermissions ) {
@@ -199,7 +193,7 @@ component accessors=true {
     }
   }
 
-  public struct function getFakeUser( ) {
+  private struct function getFakeUser( ) {
     return {
       "name" = "Administrator",
       "firstname" = "John",
@@ -207,10 +201,11 @@ component accessors=true {
     };
   }
 
-  public struct function getFakeRole( ) {
+  private struct function getFakeRole( ) {
     return {
       "name" = "Administrator",
-      "menuList" = ""
+      "menuList" = "",
+      "can" = yesWeCan
     };
   }
 
@@ -221,5 +216,15 @@ component accessors=true {
     var jl = new javaloader.javaloader( bCryptLocation );
 
     return jl.create( "org.mindrot.jbcrypt.BCrypt" );
+  }
+
+  private struct function getEmptyAuth( ) {
+    return {
+      "isLoggedIn" = false,
+      "user" = { },
+      "role" = { },
+      "userid" = '',
+      "canAccessAdmin" = false
+    };
   }
 }
