@@ -210,8 +210,10 @@ component accessors=true {
     if( !structKeyExists( rc, "auth" )) {
       rc.alert = { "class"="danger", "text"="no-auth-in-session" };
       rc.auth.isLoggedIn = false;
-    } else if( !structKeyExists( rc.auth, "isLoggedIn" ) || !isBoolean( rc.auth.isLoggedIn ) || !securityService.authIsValid( rc.auth )) {
+    } else if( !securityService.authIsValid( rc.auth )) {
       rc.alert = { "class"="danger", "text"="invalid-auth-struct" };
+      rc.auth.isLoggedIn = false;
+    } else if( !structKeyExists( rc.auth, "isLoggedIn" ) || !isBoolean( rc.auth.isLoggedIn ) ){
       rc.auth.isLoggedIn = false;
     }
 
