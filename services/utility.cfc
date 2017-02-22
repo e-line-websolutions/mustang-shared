@@ -240,6 +240,11 @@
       throw( errorMessage, "utilityService.updateLocale.invalidLocaleError" );
     }
   }
+
+  public string function enterFormat( string source="" ) {
+    return reReplace( source, '\n', '<br />', 'all' );
+  }
+
   </cfscript>
 
   <cffunction name="cfcontent" output="false" access="public">
