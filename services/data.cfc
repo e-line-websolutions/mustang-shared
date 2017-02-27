@@ -231,7 +231,7 @@ component accessors=true {
             continue;
           }
 
-          if( prop.dataType == "json" ) {
+          if( prop.dataType == "json" && isSimpleValue( value ) && left( trim( value ), 1 ) == "{" ) {
             structAppend( result, jsonService.deserialize( value ));
             continue;
           }
