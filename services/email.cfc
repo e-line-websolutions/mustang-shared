@@ -27,6 +27,7 @@ component accessors=true {
       message.setTo( sendTo );
       message.setSubject( subject );
       message.setBody( body );
+
       message.send( );
 
       writeLog( text = "email sent: '#subject#' to #sendTo#.", type = "information", file = request.appName );

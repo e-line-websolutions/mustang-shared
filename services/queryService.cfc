@@ -185,8 +185,10 @@ component accessors=true {
       }
     }
 
-    var dbinfo = utilityService.getDbInfo( ds );
+    if ( !isNull( ds ) ) {
+      var dbinfo = utilityService.getDbInfo( ds );
 
-    variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
+      variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
+    }
   }
 }

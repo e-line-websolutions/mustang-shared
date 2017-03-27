@@ -122,6 +122,27 @@
     return uCase( left( word, 1 ) ) & right( word, len( word ) - 1 );
   }
 
+  public string function variableFormat( inputString ) {
+    var result = "";
+
+    inputString = lCase( trim( inputString ) );
+    var len = len( trim( inputString ) );
+
+    for ( var i = 1; i <= len; i++ ) {
+      var char = mid( inputString, i, 1 );
+
+      if ( !( ( char >= 'a' && char <= 'z' ) || ( char >= 'A' && char <= 'Z' ) || isNumeric( char ) ) ) {
+        if ( char == ' ' || char == '_' || char == '-' ) {
+          result &= '-';
+        }
+      } else {
+        result &= char;
+      }
+    }
+
+    return result;
+  }
+
   /**
    * Sorts an array of structures based on a key in the structures.
    *
@@ -166,6 +187,50 @@
     }
 
     return returnArray;
+  }
+
+  public array function arrayRotateTo( required array inputArray, required string searchFor ) {
+    if ( !arrayFindNoCase( inputArray, searchFor ) ) {
+      throw( "inputArray must contain searchFor string." );
+    }
+
+    var failsafe = 0;
+
+    while ( inputArray[ 1 ] != searchFor && failsafe < arrayLen( inputArray ) ) {
+      failsafe++;
+      inputArray = arrayShift( inputArray );
+    }
+
+    return inputArray;
+  }
+
+  public array function arrayShift( required array inputArray ) {
+    arrayPrepend( inputArray, inputArray[ arrayLen( inputArray ) ] );
+    arrayDeleteAt( inputArray, arrayLen( inputArray ) );
+
+    return inputArray;
+  }
+
+  public array function arrayTrim( required array inputArray, required numeric trimAt ) {
+    var result = [ ];
+    var len = min( arrayLen( inputArray ), trimAt );
+
+    for ( var i = 1; i <= len; i++ ) {
+      arrayAppend( result, inputArray[ i ] );
+    }
+
+    return result;
+  }
+
+  public array function arrayReverse( required array inputArray ) {
+    var len = arrayLen( inputArray );
+    var end = ceiling( len / 2 );
+    for ( var i = 1; i <= end; i++ ) {
+      var temp = inputArray[ i ];
+      inputArray[ i ] = inputArray[ ( len + 1 ) - i ];
+      inputArray[ ( len + 1 ) - i ] = temp;
+    }
+    return inputArray;
   }
 
   public string function base64URLEncode( required string value ) {

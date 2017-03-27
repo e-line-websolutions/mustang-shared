@@ -6,6 +6,7 @@ component accessors=true {
   property any fileContent;
 
   public file function init() {
+    variables.jFileInputStream = createObject( "java", "java.io.FileInputStream" );
     return this;
   }
 
@@ -39,8 +40,7 @@ component accessors=true {
   }
 
   public any function getFileInputStream( required string filePath ) {
-    var jFileInputStream = createObject( "java", "java.io.FileInputStream" );
-    return jFileInputStream.init( filePath );
+    return variables.jFileInputStream.init( filePath );
   }
 
   public component function getInstance(){
