@@ -104,11 +104,15 @@ component accessors=true {
   }
 
   private string function getCalculatedTimeLeft( ) {
-    var millis = ( variables.total - variables.current ) * arrayAvg( variables.timers );
-    var days = ( millis \ ( 24 * 60 * 60 * 1000 ) ) mod 60;
-    var hours = ( millis \ ( 60 * 60 * 1000 ) ) mod 60;
-    var minutes = ( millis \ ( 60 * 1000 ) ) mod 60;
-    var seconds = ( millis \ 1000 ) mod 60;
+    try {
+      var millis = ( variables.total - variables.current ) * arrayAvg( variables.timers );
+      var days = ( millis \ ( 24 * 60 * 60 * 1000 ) ) mod 60;
+      var hours = ( millis \ ( 60 * 60 * 1000 ) ) mod 60;
+      var minutes = ( millis \ ( 60 * 1000 ) ) mod 60;
+      var seconds = ( millis \ 1000 ) mod 60;
+    } catch ( any e ) {
+      return "Out of range";
+    }
 
     return "#numberFormat( days, '00' )#:#numberFormat( hours, '00' )#:#numberFormat( minutes, '00' )#:#numberFormat( seconds, '00' )#";
   }
