@@ -1,4 +1,5 @@
 component accessors=true {
+  property config;
   property dataService;
   property utilityService;
   property bcrypt;
@@ -20,10 +21,7 @@ component accessors=true {
 
     lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
       if ( !isNull( session.auth ) ) {
-        writeLog( text = "auth retrieved from session scope", file = "securityService" );
         var result = session.auth;
-      } else {
-        writeLog( text = "empty auth retrieved", file = "securityService" );
       }
     }
 
@@ -59,8 +57,6 @@ component accessors=true {
       structClear( session );
       structAppend( session, tmpSession );
     }
-
-    writeLog( text = "session struct created", file = "securityService" );
   }
 
   public void function refreshFakeSession( ) {
@@ -170,6 +166,58 @@ component accessors=true {
     }
 
     return structKeyExists( cachedCan, "#action#-#section#" ) || tempAuth.canAccessAdmin;
+  }
+
+  public boolean function canIgnoreSecurity( string subsystem="",
+                                             string section="",
+                                             string fqa="",
+                                             string defaultSubsystem="" ) {
+    if ( listFindNoCase( variables.config.dontSecureFQA, fqa ) ) {
+      return true;
+    }
+
+    if ( subsystem == "adminapi" && section == "css" ) {
+      return true;
+    }
+
+    if ( subsystem == "api" && section == "auth" ) {
+      return true;
+    }
+
+    var inDefaultSubsystem = subsystem == defaultSubsystem;
+
+    if ( inDefaultSubsystem && section == "security" ) {
+      return true;
+    }
+
+    if ( inDefaultSubsystem && !variables.config.secureDefaultSubsystem ) {
+      return true;
+    }
+
+    if ( listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
+      return true;
+    }
+
+    return false;
+
+
+
+
+    // REPLACES THIS:
+
+    // var isDefaultSubsystem = framework.getSubsystem() == framework.getDefaultSubsystem();
+    // var dontSecureDefaultSubsystem = isDefaultSubsystem && !config.secureDefaultSubsystem;
+    // var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem())) ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0 : false;
+    // var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth";
+    // var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) && len( config.dontSecureFQA ) && listFindNoCase( config.dontSecureFQA, rc.action );
+    // var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem;
+    // var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity;
+    // var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css";
+
+    // if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
+    //   return;
+    // }
+
   }
 
   // private

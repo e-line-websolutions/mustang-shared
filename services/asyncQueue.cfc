@@ -2,6 +2,9 @@ component accessors=true {
   // Taken from http://www.bennadel.com/blog/2528-asynctaskqueue-cfc---running-low-priority-tasks-in-a-single-cfthread.htm
   // de-ben-ified by mjhagen.
 
+  property config;
+  property logService;
+
   // constructor
 
   public component function init( ) {
@@ -42,15 +45,15 @@ component accessors=true {
           while ( structKeyExists( local, "taskItem" ) ) {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
-              writeLog( text = "Executed task part #variables.queueNr#.", file = "asyncQueue" );
+              logService.writeLogLevel( text = "Executed task part #variables.queueNr#.", file = "asyncQueue", type = "information" );
             } catch ( any e ) {
-              writeLog( text = "Error executing task part #variables.queueNr#. (#e.message#)", file = "asyncQueue" );
-              savecontent variable="local.debug" {
-                writeDump( taskItem.taskArguments );
-                writeDump( e );
+              logService.writeLogLevel( text = "Error executing task part #variables.queueNr#. (#e.message#)", file = "asyncQueue", type = "fatal" );
+              if ( config.showDebug ) {
+                logService.dumpToFile( [
+                  taskItem.taskArguments,
+                  e
+                ] );
               }
-              fileWrite( "C:\TEMP\THREADOUTPUT\error-#variables.asyncTaskThreadName#.html", debug );
-              // throw( "Error in thread, see C:\TEMP\THREADOUTPUT" );
             }
 
             variables.queueNr++;

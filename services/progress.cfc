@@ -5,6 +5,9 @@ component accessors=true {
   property numeric prevTime;
   property numeric total;
   property string status;
+  property string enabled;
+
+  property logService;
 
   public component function init( ) {
     reset( );
@@ -12,11 +15,17 @@ component accessors=true {
   }
 
   public void function addToTotal( ) {
+    if ( !variables.enabled ) {
+      return;
+    }
     var persisted = getProgress( );
     variables.total = persisted.total + 1;
   }
 
   public void function updateProgress( ) {
+    if ( !variables.enabled ) {
+      return;
+    }
     var persisted = getProgress( );
     variables.current = persisted.current + 1;
 
@@ -30,23 +39,33 @@ component accessors=true {
   }
 
   public void function done( ) {
+    if ( !variables.enabled ) {
+      return;
+    }
     variables.current = variables.total;
     variables.done = true;
   }
 
   public struct function getProgress( ) {
-    var statusText = variables.status;
+    if ( !variables.enabled ) {
+      return {
+        "current" = 0,
+        "done" = true,
+        "status" = "not-monitored",
+        "statusCode" = 200,
+        "timeLeft" = "00:00:00:00",
+        "total" = 0
+      };
+    }
 
-    var result = duplicate(
-      {
-        "current" = variables.current,
-        "done" = variables.done,
-        "status" = statusText,
-        "statusCode" = ( statusText contains "Error" ? 500 : 200 ),
-        "timeLeft" = getCalculatedTimeLeft( ),
-        "total" = variables.total
-      }
-    );
+    var result = {
+      "current" = variables.current,
+      "done" = variables.done,
+      "status" = variables.status,
+      "statusCode" = ( variables.status contains "Error" ? 500 : 200 ),
+      "timeLeft" = getCalculatedTimeLeft( ),
+      "total" = variables.total
+    };
 
     if ( variables.done ) {
       reset( );
@@ -78,8 +97,15 @@ component accessors=true {
   }
 
   public void function setStatus( required string status ) {
-    writeLog( text = "#variables.name# - " & status, file = "progressService" );
+    if ( !variables.enabled ) {
+      return;
+    }
+    logService.writeLogLevel( "#variables.name# - " & status, "progressService", "information" );
     variables.status = status;
+  }
+
+  public void function disable( ) {
+    variables.enabled = false;
   }
 
   private numeric function calculateTime( ) {
@@ -94,6 +120,7 @@ component accessors=true {
   }
 
   private void function reset( ) {
+    variables.enabled = true;
     variables.total = 0;
     variables.current = 0;
     variables.timers = [ ];

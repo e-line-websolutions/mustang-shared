@@ -1,5 +1,6 @@
 <cfcomponent output="false" accessors="true">
   <cfproperty name="emailService" />
+  <cfproperty name="logService" />
 
   <cfscript>
   public any function init( ) {
@@ -52,7 +53,7 @@
 
         context.getCFOutput( ).clear( );
 
-        writeLog(
+        logService.writeLogLevel(
           file = "limiter",
           text = "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#"
         );
@@ -292,11 +293,11 @@
   public string function updateLocale( string newLocale = "" ) {
     try {
       var result = setLocale( newLocale );
-      writeLog( text = "Locale changed to #newLocale#", file = request.appName );
+      logService.writeLogLevel( text = "Locale changed to #newLocale#", file = request.appName );
       return result;
     } catch ( any e ) {
       var errorMessage = "Error setting locale to '#newLocale#'";
-      writeLog( text = errorMessage, file = request.appName );
+      logService.writeLogLevel( text = errorMessage, file = request.appName );
       savecontent variable="local.messageBody" {
         writeDump( newLocale );
         writeDump( e );

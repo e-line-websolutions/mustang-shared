@@ -1,5 +1,6 @@
 component accessors=true {
   property config;
+  property logService;
 
   public void function send(
     required  string  from,
@@ -30,9 +31,9 @@ component accessors=true {
 
       message.send( );
 
-      writeLog( text = "email sent: '#subject#' to #sendTo#.", type = "information", file = request.appName );
+      logService.writeLogLevel( text = "email sent: '#subject#' to #sendTo#.", type = "information", file = request.appName );
     } catch ( any e ) {
-      writeLog( text = "Error sending email.", type = "fatal", file = request.appName );
+      logService.writeLogLevel( text = "Error sending email.", type = "fatal", file = request.appName );
       rethrow;
     }
   }
