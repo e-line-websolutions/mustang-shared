@@ -1,8 +1,10 @@
 component accessors=true {
   property config;
   property dataService;
+  property logService;
   property utilityService;
-  property bcrypt;
+
+  property any bcrypt;
 
   public component function init( root, config ) {
     var bCryptPath = "#root#/lib/java";
@@ -173,41 +175,47 @@ component accessors=true {
                                              string fqa="",
                                              string defaultSubsystem="" ) {
     if ( listFindNoCase( variables.config.dontSecureFQA, fqa ) ) {
+      logService.writeLogLevel( "canIgnoreSecurity true: (1)", "securityService" );
       return true;
     }
 
     if ( subsystem == "adminapi" && section == "css" ) {
+      logService.writeLogLevel( "canIgnoreSecurity true: (2)", "securityService" );
       return true;
     }
 
     if ( subsystem == "api" && section == "auth" ) {
+      logService.writeLogLevel( "canIgnoreSecurity true: (3)", "securityService" );
       return true;
     }
 
     var inDefaultSubsystem = subsystem == defaultSubsystem;
 
     if ( inDefaultSubsystem && section == "security" ) {
+      logService.writeLogLevel( "canIgnoreSecurity true: (4)", "securityService" );
       return true;
     }
 
     if ( inDefaultSubsystem && !variables.config.secureDefaultSubsystem ) {
+      logService.writeLogLevel( "canIgnoreSecurity true: (5)", "securityService" );
       return true;
     }
 
-    if ( listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
+    if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
+      logService.writeLogLevel( "canIgnoreSecurity true: (6)", "securityService" );
       return true;
     }
 
+    logService.writeLogLevel( "canIgnoreSecurity false", "securityService" );
     return false;
-
-
-
 
     // REPLACES THIS:
 
     // var isDefaultSubsystem = framework.getSubsystem() == framework.getDefaultSubsystem();
     // var dontSecureDefaultSubsystem = isDefaultSubsystem && !config.secureDefaultSubsystem;
-    // var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem())) ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0 : false;
+    // var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem()))
+    //       ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0
+    //       : false;
     // var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth";
     // var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) && len( config.dontSecureFQA ) && listFindNoCase( config.dontSecureFQA, rc.action );
     // var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem;
@@ -217,7 +225,6 @@ component accessors=true {
     // if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
     //   return;
     // }
-
   }
 
   // private
