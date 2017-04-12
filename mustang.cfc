@@ -5,7 +5,10 @@ component extends="framework.one" {
   cleanXHTMLQueryString( );
 
   // CF application setup:
-  this.mappings[ "/root" ] = request.root = getDirectoryFromPath( getBaseTemplatePath( ) ) & "../";
+  request.root = fixPath( getDirectoryFromPath( getBaseTemplatePath( ) ) );
+  request.root = listDeleteAt( request.root, listLen( request.root, '/' ), '/' ) & "/";
+
+  this.mappings[ "/root" ] = request.root;
   this.sessionManagement = true;
   this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
 
@@ -41,12 +44,11 @@ component extends="framework.one" {
   this.datasource = variables.cfg.datasource;
   this.ormEnabled = true;
   this.ormSettings = {
-    CFCLocation = "/root/model",
+    CFCLocation = request.root & "model",
     DBCreate = ( variables.live ? ( request.reset ? "update" : "none" ) : ( request.reset ? "dropcreate" : "update" ) ),
     SQLScript = variables.cfg.nukescript,
     secondaryCacheEnabled = variables.live ? true : false,
-    cacheProvider = "ehcache",
-    cacheConfig = "ehcache-config_ORM_mustang.xml"
+    cacheProvider = "ehcache"
   };
 
   // framework settings:
@@ -296,5 +298,13 @@ component extends="framework.one" {
     }
 
     return resources;
+  }
+
+  private string function fixPath( string originalPath ) {
+    var result = replace( originalPath, "\", "/", "all" );
+    if ( right( result, 1 ) == "/" ) {
+      result = removeChars( result, len( result ), 1 );
+    }
+    return result;
   }
 }
