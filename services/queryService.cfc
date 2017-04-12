@@ -1,10 +1,14 @@
 component accessors=true {
   property config;
+  property ds;
   property utilityService;
   property string dbvendor;
 
-  public component function init( utilityService ) {
-    setupVendor( utilityService );
+  public component function init( utilityService, config, ds ) {
+    if ( isNull( ds ) && !isNull( config.datasource ) ) {
+      ds = config.datasource;
+    }
+    setupVendor( utilityService, ds );
     return this;
   }
 
@@ -170,18 +174,20 @@ component accessors=true {
     return SQLSelect & SQLFrom & SQLWhere & SQLOrder;
   }
 
-  private string function setupVendor( utilityService ) {
+  private string function setupVendor( utilityService, ds ) {
     variables.dbvendor = "unknown";
 
-    if( val( server.coldfusion.productversion ) < 10 ) {
-      var appMetadata = application.getApplicationSettings();
-      var ds = appMetadata.datasource;
-    } else {
-      var appMetadata = getApplicationMetaData();
-      if( structKeyExists( appMetadata, "ormsettings" ) && structKeyExists( appMetadata.ormsettings, "datasource" ) ) {
-        var ds = appMetadata.ormsettings.datasource;
-      } else if ( structKeyExists( appMetadata, "datasource" ) ) {
-        var ds = appMetadata.datasource;
+    if ( isNull( ds ) ) {
+      if( val( server.coldfusion.productversion ) < 10 ) {
+        var appMetadata = application.getApplicationSettings();
+        ds = appMetadata.datasource;
+      } else {
+        var appMetadata = getApplicationMetaData();
+        if( structKeyExists( appMetadata, "ormsettings" ) && structKeyExists( appMetadata.ormsettings, "datasource" ) ) {
+          ds = appMetadata.ormsettings.datasource;
+        } else if ( structKeyExists( appMetadata, "datasource" ) ) {
+          ds = appMetadata.datasource;
+        }
       }
     }
 

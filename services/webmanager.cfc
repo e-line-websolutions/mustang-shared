@@ -9,17 +9,20 @@ component accessors=true {
   public component function init( ds, websiteId ) {
     variables.datasource = ds;
     variables.websiteId = websiteId;
-    variables.queryOptions = { "datasource" = variables.datasource };
+    variables.queryOptions = {
+      "datasource" = variables.datasource,
+      "cachedWithin" = createTimespan( 0, 0, 0, 30 )
+    };
     return this;
   }
 
   public struct function getPageData( required string seoPath ) {
-    var result = { };
-
-    result.variableFormat = utilityService.variableFormat;
-    result.basePath = "";
-    result.navPath = "";
-    result.currentBaseMenuItem = "";
+    var result = {
+      variableFormat = utilityService.variableFormat,
+      basePath = "",
+      navPath = "",
+      currentBaseMenuItem = ""
+    };
 
     var seoPathArray = listToArray( seoPath, "/" );
 
@@ -34,6 +37,8 @@ component accessors=true {
     if ( pathLength > 1 ) {
       result.currentBaseMenuItem = seoPathArray[ 2 ];
     }
+
+    result.currentMenuItem = seoPathArray[ pathLength ];
 
     for ( var i = 1; i <= pathLength; i++ ) {
       var seoPathArrayAtCurrentLevel = utilityService.arrayTrim( seoPathArray, i );
@@ -73,8 +78,12 @@ component accessors=true {
     };
 
     for ( var i = 2; i <= pathLength; i++ ) {
-      sql_from &= " INNER JOIN mid_assetmetaAssetmeta AS link_#i-1#_#i# ON nav_level_#i-1#.assetmeta_nID = link_#i-1#_#i#.assetmetaAssetmeta_x_nParentID ";
-      sql_from &= " INNER JOIN vw_selectAsset AS nav_level_#i# ON link_#i-1#_#i#.assetmetaAssetmeta_x_nChildID = nav_level_#i#.assetmeta_nID ";
+      sql_from &= "
+        INNER JOIN mid_assetmetaAssetmeta AS link_#i-1#_#i#
+          ON nav_level_#i-1#.assetmeta_nID = link_#i-1#_#i#.assetmetaAssetmeta_x_nParentID
+        INNER JOIN vw_selectAsset AS nav_level_#i#
+          ON link_#i-1#_#i#.assetmetaAssetmeta_x_nChildID = nav_level_#i#.assetmeta_nID
+      ";
       sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsID = :websiteId AND nav_level_#i#.assetmeta_x_nTypeID = 2 AND nav_level_#i#.assetmeta_x_nBmID = 14 AND dbo.variableFormat( nav_level_#i#.assetcontent_sTitleText ) LIKE :nav_level_#i#_name ";
       queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
     }
@@ -104,6 +113,7 @@ component accessors=true {
         AND     vw_selectAsset.assetmeta_x_nBmID = 14
         AND     vw_selectAsset.assetmeta_x_nStatusID = 100
         AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = :parentId
+        AND     LEFT( vw_selectAsset.assetcontent_sTitleText, 1 ) <> '_'
 
       ORDER BY  vw_selectAsset.assetmeta_nSortKey,
                 vw_selectAsset.assetcontent_sTitleText
