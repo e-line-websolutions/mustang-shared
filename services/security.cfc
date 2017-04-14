@@ -21,10 +21,8 @@ component accessors=true {
   public struct function getAuth( ) {
     var result = getEmptyAuth( );
 
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="readonly" timeout="5" {
-      if ( !isNull( session.auth ) ) {
-        var result = session.auth;
-      }
+    if ( !isNull( session.auth ) ) {
+      var result = session.auth;
     }
 
     return result;
@@ -55,26 +53,22 @@ component accessors=true {
       "auth" = getEmptyAuth( )
     };
 
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      structClear( session );
-      structAppend( session, tmpSession );
-    }
+    structClear( session );
+    structAppend( session, tmpSession );
   }
 
   public void function refreshFakeSession( ) {
     createSession( );
 
     var tempAuth = {
-      canAccessAdmin = true,
-      isLoggedIn = true,
-      role = getFakeRole( ),
-      user = dataService.processEntity( getFakeUser( ) ),
-      userid = createUUID( )
+      "canAccessAdmin" = true,
+      "isLoggedIn" = true,
+      "role" = getFakeRole( ),
+      "user" = dataService.processEntity( getFakeUser( ) ),
+      "userid" = createUUID( )
     };
 
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      structAppend( session.auth, tempAuth, true );
-    }
+    structAppend( session.auth, tempAuth, true );
   }
 
   public void function refreshSession( root.model.contact user ) {
@@ -111,9 +105,7 @@ component accessors=true {
       tempAuth.canAccessAdmin = false;
     }
 
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      structAppend( session.auth, tempAuth, true );
-    }
+    structAppend( session.auth, tempAuth, true );
   }
 
   public string function hashPassword( required string password ) {
@@ -160,12 +152,9 @@ component accessors=true {
   }
 
   public boolean function can( string action = "", string section = "" ) {
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      param session.can={
-      };
-      var cachedCan = session.can;
-      var tempAuth = session.auth;
-    }
+    param session.can={};
+    var cachedCan = session.can;
+    var tempAuth = session.auth;
 
     return structKeyExists( cachedCan, "#action#-#section#" ) || tempAuth.canAccessAdmin;
   }
@@ -175,38 +164,31 @@ component accessors=true {
                                              string fqa="",
                                              string defaultSubsystem="" ) {
     if ( listFindNoCase( variables.config.dontSecureFQA, fqa ) ) {
-      logService.writeLogLevel( "canIgnoreSecurity true: (1)", "securityService" );
       return true;
     }
 
     if ( subsystem == "adminapi" && section == "css" ) {
-      logService.writeLogLevel( "canIgnoreSecurity true: (2)", "securityService" );
       return true;
     }
 
     if ( subsystem == "api" && section == "auth" ) {
-      logService.writeLogLevel( "canIgnoreSecurity true: (3)", "securityService" );
       return true;
     }
 
     var inDefaultSubsystem = subsystem == defaultSubsystem;
 
     if ( inDefaultSubsystem && section == "security" ) {
-      logService.writeLogLevel( "canIgnoreSecurity true: (4)", "securityService" );
       return true;
     }
 
     if ( inDefaultSubsystem && !variables.config.secureDefaultSubsystem ) {
-      logService.writeLogLevel( "canIgnoreSecurity true: (5)", "securityService" );
       return true;
     }
 
     if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
-      logService.writeLogLevel( "canIgnoreSecurity true: (6)", "securityService" );
       return true;
     }
 
-    logService.writeLogLevel( "canIgnoreSecurity false", "securityService" );
     return false;
 
     // REPLACES THIS:
@@ -217,7 +199,9 @@ component accessors=true {
     //       ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0
     //       : false;
     // var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth";
-    // var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) && len( config.dontSecureFQA ) && listFindNoCase( config.dontSecureFQA, rc.action );
+    // var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) &&
+    //       len( config.dontSecureFQA ) &&
+    //       listFindNoCase( config.dontSecureFQA, rc.action );
     // var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem;
     // var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity;
     // var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css";
@@ -243,9 +227,7 @@ component accessors=true {
       }
     }
 
-    lock name="lock_#request.appName#_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-      session.can = cachedPermissions;
-    }
+    session.can = cachedPermissions;
   }
 
   private struct function getFakeUser( ) {

@@ -75,25 +75,15 @@ component accessors=true {
   }
 
   public component function getInstance( boolean reInit = false ) {
-    if ( !reInit ) {
-      lock name="progress_#cfid#_#cftoken#" type="readonly" timeout="5" {
-        if ( !structKeyExists( session, "progress" ) ) {
-          reInit = true;
-        }
-      }
+    if ( !reInit && !structKeyExists( session, "progress" ) ) {
+      reInit = true;
     }
 
     if ( reInit ) {
-      lock name="progress_#cfid#_#cftoken#" type="exclusive" timeout="5" {
-        session.progress = init( );
-      }
+      session.progress = init( );
     }
 
-    lock name="progress_#cfid#_#cftoken#" type="readonly" timeout="5" {
-      var progressInstance = session.progress;
-    }
-
-    return progressInstance;
+    return session.progress;
   }
 
   public void function setStatus( required string status ) {

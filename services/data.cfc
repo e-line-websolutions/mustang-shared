@@ -147,6 +147,15 @@ component accessors=true {
     return isValid( "guid", __formatAsGUID( text ) );
   }
 
+  public boolean function arrayOfStructsContains( string needle, array haystack, string key ) {
+    for ( var str in haystack ) {
+      if ( str[ key ] == needle ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // convenience functions
 
   public any function processEntity( any data,
