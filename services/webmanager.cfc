@@ -2,64 +2,137 @@ component accessors=true {
   property queryService;
   property utilityService;
   property datasource;
+  property root;
+  property config;
   property websiteId;
 
-  variables.safeDelim = chr( 0182 );
+  property string allLanguages;
+  property struct supportedLocales;
+  property string safeDelim;
 
-  public component function init( ds, websiteId ) {
+  public component function init( ds, websiteId, config ) {
+    structAppend( variables, arguments, true );
+
+    variables.supportedLocales = {
+      "nl" = "nl_NL",
+      "uk" = "en_US",
+      "fr" = "fr_FR",
+      "de" = "de_DE"
+    };
+    variables.allLanguages = "nl,uk,fr,de";
+    variables.safeDelim = chr( 0182 );
+    variables.defaultLanguage = lCase( listLast( config.defaultLanguage, "_" ) );
     variables.datasource = ds;
     variables.websiteId = websiteId;
     variables.queryOptions = {
       "datasource" = variables.datasource,
       "cachedWithin" = createTimespan( 0, 0, 0, 30 )
     };
+
     return this;
   }
 
-  public struct function getPageData( required string seoPath ) {
-    var result = {
-      variableFormat = utilityService.variableFormat,
-      basePath = "",
-      navPath = "",
-      currentBaseMenuItem = ""
+  public array function seoPathAsArray( ) {
+    var seoPath = utilityService.fixPathInfo( );
+    var tmp = listToArray( seoPath, "/" );
+    var seoPathArray = [ ];
+
+    for ( var item in tmp ) {
+      arrayAppend( seoPathArray, reReplace( item, "^[-_]", "", "one" ) );
+    }
+
+    if ( arrayIsEmpty( seoPathArray ) || !listFindNoCase( variables.allLanguages, seoPathArray[ 1 ] ) ) {
+      arrayPrepend( seoPathArray, variables.defaultLanguage );
+    }
+
+    return seoPathArray;
+  }
+
+  public void function appendPageDataToRequestContext( required struct requestContext ) {
+    var seoPathArray = seoPathAsArray( );
+    var pageData = {
+      "basePath" = getBasePath( seoPathArray ),
+      "currentBaseMenuItem" = getCurrentBaseMenuItem( seoPathArray ),
+      "currentMenuItem" = getCurrentMenuItem( seoPathArray ),
+      "pageTitle" = getPageTitle( seoPathArray ),
+      "pageTemplate" = "",
+      "pageDetails" = { },
+      "articles" = [ ],
+      "navigation" = [ ],
+      "navPath" = ""
     };
 
-    var seoPathArray = listToArray( seoPath, "/" );
-
-    if ( !arrayIsEmpty( seoPathArray ) && listFindNoCase( "uk,fr", seoPathArray[ 1 ] ) ) {
-      result.basePath = "/#seoPathArray[ 1 ]#";
-    } else {
-      arrayPrepend( seoPathArray, "nl" );
-    }
-
     var pathLength = arrayLen( seoPathArray );
-
-    if ( pathLength > 1 ) {
-      result.currentBaseMenuItem = seoPathArray[ 2 ];
-    }
-
-    result.currentMenuItem = seoPathArray[ pathLength ];
 
     for ( var i = 1; i <= pathLength; i++ ) {
       var seoPathArrayAtCurrentLevel = utilityService.arrayTrim( seoPathArray, i );
       var currentMenuId = getMenuIdFromPath( seoPathArrayAtCurrentLevel );
 
       if ( i == pathLength ) {
-        result.articles = getArticles( currentMenuId );
+        pageData.articles = getArticles( currentMenuId );
+        pageData.pageDetails = getPageDetails( currentMenuId );
       }
 
       if ( currentMenuId > 0 ) {
-        result[ "navLevel" & i ] = getMenuItems( currentMenuId );
+        pageData[ "navigation" ][ i ] = getMenuItems( currentMenuId );
 
         if ( seoPathArray[ i ] != "nl" && i > 1 && pathLength > 1 && i <= ( min( 2, pathLength ) ) ) {
-          result.navPath &= "/" & seoPathArray[ i ];
+          pageData.navPath &= "/" & seoPathArray[ i ];
         }
       }
     }
 
-    result.pageTitle = replace( arrayToList( utilityService.arrayReverse( seoPathArray ), variables.safeDelim ), variables.safeDelim, ' - ', 'all' );
+    pageData[ "pageTemplate" ] = getTemplate( pageData );
 
-    return result;
+    structAppend( requestContext, pageData );
+  }
+
+  public string function getCurrentLanguage( required array seoPathArray ) {
+    var currentLanguage = variables.defaultLanguage;
+
+    if ( !arrayIsEmpty( seoPathArray ) && listFindNoCase( variables.allLanguages, seoPathArray[ 1 ] ) ) {
+      currentLanguage = seoPathArray[ 1 ];
+    }
+
+    return currentLanguage;
+  }
+
+  public string function getBasePath( required array seoPathArray ) {
+    if ( seoPathArray[ 1 ] != variables.defaultLanguage ) {
+      return "/#seoPathArray[ 1 ]#";
+    }
+
+    return "";
+  }
+
+  public string function getCurrentBaseMenuItem( required array seoPathArray ) {
+    if ( arrayLen( seoPathArray ) > 1 ) {
+      return seoPathArray[ 2 ];
+    }
+
+    return "";
+  }
+
+  public string function getCurrentMenuItem( required array seoPathArray ) {
+    return seoPathArray[ arrayLen( seoPathArray ) ];
+  }
+
+  public string function getPageTitle( required array seoPathArray, string titleDelimiter = " - " ) {
+    if ( arrayIsEmpty( seoPathArray ) ) {
+      return "";
+    }
+
+    var allLocales = structKeyArray( variables.supportedLocales );
+
+    if ( arrayFindNoCase( allLocales, seoPathArray[ 1 ] ) ) {
+      arrayDeleteAt( seoPathArray, 1 );
+    }
+
+    var reversedSeoPath = utilityService.arrayReverse( seoPathArray );
+    var fullPath = arrayToList( reversedSeoPath, variables.safeDelim );
+    var asTitle = replace( fullPath, variables.safeDelim, titleDelimiter, 'all' );
+
+    return asTitle;
   }
 
   public numeric function getMenuIdFromPath( required any path ) {
@@ -71,27 +144,33 @@ component accessors=true {
     }
 
     var sql_from = " FROM vw_selectAsset AS nav_level_1 ";
-    var sql_where = " WHERE nav_level_1.assetmeta_x_nBwsID = :websiteId AND nav_level_1.assetmeta_x_nTypeID = 2 AND nav_level_1.assetmeta_x_nBmID = 14 AND dbo.variableFormat( nav_level_1.assetcontent_sTitleText ) LIKE :nav_level_1_name ";
+    var sql_where = " WHERE nav_level_1.assetmeta_x_nBwsId = :websiteId AND
+                            nav_level_1.assetmeta_x_nTypeId = 2 AND
+                            nav_level_1.assetmeta_x_nBmId = 14 AND
+                            dbo.variableFormat( nav_level_1.assetcontent_sTitleText ) IN ( :nav_level_1_name, :_nav_level_1_name ) ";
     var queryParams = {
       "nav_level_1_name" = replace( pathArray[ 1 ], "-", "_", "all" ),
+      "_nav_level_1_name" = "_" & replace( pathArray[ 1 ], "-", "_", "all" ),
       "websiteId" = variables.websiteId
     };
 
     for ( var i = 2; i <= pathLength; i++ ) {
       sql_from &= "
         INNER JOIN mid_assetmetaAssetmeta AS link_#i-1#_#i#
-          ON nav_level_#i-1#.assetmeta_nID = link_#i-1#_#i#.assetmetaAssetmeta_x_nParentID
+          ON nav_level_#i-1#.assetmeta_nId = link_#i-1#_#i#.assetmetaAssetmeta_x_nParentID
         INNER JOIN vw_selectAsset AS nav_level_#i#
-          ON link_#i-1#_#i#.assetmetaAssetmeta_x_nChildID = nav_level_#i#.assetmeta_nID
+          ON link_#i-1#_#i#.assetmetaAssetmeta_x_nChildId = nav_level_#i#.assetmeta_nID
       ";
-      sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsID = :websiteId AND nav_level_#i#.assetmeta_x_nTypeID = 2 AND nav_level_#i#.assetmeta_x_nBmID = 14 AND dbo.variableFormat( nav_level_#i#.assetcontent_sTitleText ) LIKE :nav_level_#i#_name ";
+      sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId AND
+                         nav_level_#i#.assetmeta_x_nTypeId = 2 AND
+                         nav_level_#i#.assetmeta_x_nBmId = 14 AND
+                         dbo.variableFormat( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, :_nav_level_#i#_name ) ";
       queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
+      queryParams[ "_nav_level_#i#_name" ] = "_" & replace( pathArray[ i ], "-", "_", "all" );
     }
 
     var sql_select = " SELECT nav_level_#pathLength#.assetmeta_nID ";
-
     var sql = sql_select & sql_from & sql_where;
-
     var pathQuery = queryService.execute( sql, queryParams, queryOptions );
 
     if ( pathQuery.recordCount == 1 ) {
@@ -101,22 +180,58 @@ component accessors=true {
     return - 1;
   }
 
+  public struct function getPageDetails( pageId ) {
+    var sql = "
+      SELECT    assetmeta_nID               AS pageId,
+                assetcontent_sTitleText     AS name,
+                assetmeta_nRating           AS template,
+                assetcontent_sPath          AS htmlTitle,
+                assetcontent_sName          AS htmlKeywords,
+                assetcontent_sFileExtension AS htmlDescription,
+                assetcontent_sIntroText     AS unknown_1,
+                assetcontent_sBodyText      AS unknown_2
+
+      FROM      vw_selectAsset
+
+      WHERE     assetmeta_nid = :pageId
+        AND     assetmeta_x_nBwsId = :websiteId
+        AND     assetmeta_x_nBmId = 14
+        AND     assetmeta_x_nStatusId = 100
+        AND     assetmeta_x_nTypeId = 2
+        AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
+    ";
+
+    var queryParams = {
+      "pageId" = pageId,
+      "websiteId" = variables.websiteId
+    };
+
+    var queryResult = queryService.execute( sql, queryParams, queryOptions );
+
+    if ( queryResult.recordCount == 0 ) {
+      return {};
+    }
+
+    return queryService.toArray( queryResult )[ 1 ];
+  }
+
   public array function getMenuItems( required numeric parentId ) {
     var sql = "
-      SELECT    vw_selectAsset.assetcontent_sTitleText
+      SELECT    assetcontent_sTitleText
 
       FROM      mid_assetmetaAssetmeta
-                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID = vw_selectAsset.assetmeta_nID
+                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
 
-      WHERE     vw_selectAsset.assetmeta_x_nBwsID = :websiteId
-        AND     vw_selectAsset.assetmeta_x_nTypeID = 2
-        AND     vw_selectAsset.assetmeta_x_nBmID = 14
-        AND     vw_selectAsset.assetmeta_x_nStatusID = 100
-        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = :parentId
-        AND     LEFT( vw_selectAsset.assetcontent_sTitleText, 1 ) <> '_'
+      WHERE     assetmeta_x_nBwsId = :websiteId
+        AND     assetmeta_x_nTypeId = 2
+        AND     assetmeta_x_nBmId = 14
+        AND     assetmeta_x_nStatusId = 100
+        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :parentId
+        AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
+        AND     LEFT( assetcontent_sTitleText, 1 ) <> '_'
 
-      ORDER BY  vw_selectAsset.assetmeta_nSortKey,
-                vw_selectAsset.assetcontent_sTitleText
+      ORDER BY  assetmeta_nSortKey,
+                assetcontent_sTitleText
     ";
 
     var queryParams = {
@@ -138,13 +253,13 @@ component accessors=true {
                 vw_selectAsset.assetcontent_sbodytext       AS [body]
 
       FROM      mid_assetmetaAssetmeta
-                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID = vw_selectAsset.assetmeta_nID
+                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
 
-      WHERE     vw_selectAsset.assetmeta_x_nBwsID = :websiteId
-        AND     vw_selectAsset.assetmeta_x_nTypeID = 3
-        AND     vw_selectAsset.assetmeta_x_nBmID = 14
-        AND     vw_selectAsset.assetmeta_x_nStatusID = 100
-        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = :pageId
+      WHERE     vw_selectAsset.assetmeta_x_nBwsId = :websiteId
+        AND     vw_selectAsset.assetmeta_x_nTypeId = 3
+        AND     vw_selectAsset.assetmeta_x_nBmId = 14
+        AND     vw_selectAsset.assetmeta_x_nStatusId = 100
+        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :pageId
 
       ORDER BY  vw_selectAsset.assetmeta_nSortKey,
                 vw_selectAsset.assetcontent_sTitleText
@@ -155,10 +270,126 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
+    var articles = queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+
+    var row = 0;
+    for ( var article in articles ) {
+      row++;
+      articles[ row ][ "images" ] = getArticleImages( article.articleId );
+    }
+
+    return articles;
+  }
+
+  public any function getArticle( required numeric articleId ) {
+    var sql = "
+      SELECT    assetmeta_nid                AS [articleId],
+                assetmeta_dcreationdatetime  AS [creationDate],
+                assetcontent_stitletext      AS [title],
+                assetcontent_sintrotext      AS [teaser],
+                assetcontent_sbodytext       AS [body]
+
+      FROM      vw_selectAsset
+
+      WHERE     assetmeta_x_nBwsId = :websiteId
+        AND     assetmeta_x_nTypeId = 3
+        AND     assetmeta_x_nBmId = 14
+        AND     assetmeta_x_nStatusId = 100
+        AND     assetmeta_nid = :articleId
+
+      ORDER BY  assetmeta_nSortKey,
+                assetcontent_sTitleText
+    ";
+
+    var queryParams = {
+      "pageId" = pageId,
+      "websiteId" = variables.websiteId
+    };
+
+    var queryResult = queryService.execute( sql, queryParams, queryOptions );
+
+    if ( queryResult.recordCount == 0 ) {
+      return;
+    }
+
+    var article = queryService.toArray( queryResult )[ 1 ];
+
+    article[ "images" ] = getArticleImages( article.articleId );
+
+    return article;
+  }
+
+  public array function getArticleImages( required numeric articleId ) {
+    var sql = "
+      SELECT    vw_selectAsset.assetcontent_sFileExtension AS src,
+                vw_selectAsset.assetcontent_sTitleText AS alt,
+                vw_selectAsset.assetcontent_sIntroText AS other
+
+      FROM      vw_selectAsset
+                INNER JOIN mid_assetmetaAssetmeta ON vw_selectAsset.assetmeta_nID = mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID
+
+      WHERE     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = :articleId
+        AND     vw_selectAsset.assetmeta_x_nBwsID = :websiteId
+        AND     vw_selectAsset.assetmeta_x_nTypeID = 1
+        AND     vw_selectAsset.assetmeta_x_nBmID IS NULL
+        AND     vw_selectAsset.assetmeta_x_nStatusID = 100
+        AND     GETDATE( ) BETWEEN vw_selectAsset.assetmeta_dOnlineDateTime AND vw_selectAsset.assetmeta_dOfflineDateTime
+
+      ORDER BY  vw_selectAsset.assetmeta_nSortKey
+    ";
+
+    var queryParams = {
+      "articleId" = articleId,
+      "websiteId" = variables.websiteId
+    };
+
     return queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
   }
 
-  public struct function getArticle( required numeric articleId ) {
-    return { };
+  public string function getTemplate( required struct requestContext ) {
+    var defaultTemplate = "main.default";
+
+    if ( !structKeyExists( requestContext, "pageDetails" ) ||
+         !structKeyExists( requestContext.pageDetails, "template" ) ||
+         !len( requestContext.pageDetails.template ) ||
+         !isNumeric( requestContext.pageDetails.template ) ||
+         requestContext.pageDetails.template < 1 ||
+         requestContext.pageDetails.template > arrayLen( config.templates ) ) {
+      return defaultTemplate;
+    }
+
+    return config.templates[ requestContext.pageDetails.template ];
+  }
+
+  public string function asLocale( required string webmanagerLanguage ) {
+    return variables.supportedLocales[ webmanagerLanguage ];
+  }
+
+  public boolean function actionHasView( required string action ) {
+    return utilityService.fileExistsUsingCache( root & "/views/" & replace( action, '.', '/', 'all' ) & ".cfm" );
+  }
+
+  public void function relocateOnce( required string domainname ) {
+    var relocateTo = (
+        cgi.server_port_secure == 1
+          ? 'https'
+          : 'http'
+      ) &
+      '://' & domainname &
+      cgi.path_info & (
+        cgi.script_name == "/index.cfm"
+          ? len( cgi.path_info )
+              ? ''
+              : '/'
+          : cgi.script_name
+      ) & (
+        len( trim( cgi.query_string )) > 0
+          ? '?' & cgi.query_string
+          : ''
+      );
+
+    if( cgi.server_name != domainname ) {
+      location( relocateTo, false, 301 );
+    }
   }
 }

@@ -50,6 +50,8 @@ component accessors=true {
     };
 
     try {
+      source = dateDeFuckulator( source );
+
       source = reReplace( source, '\D+', '-', 'all' );
 
       if ( !listLen( source, '-' ) >= 3 ) {
@@ -154,6 +156,23 @@ component accessors=true {
       }
     }
     return false;
+  }
+
+  public string function dateDeFuckulator( string potentialDate ) {
+    potentialDate = reReplace( potentialDate, '\W', '/', 'all' );
+    potentialDate = reReplace( potentialDate, '(\d+)(?:[a-zA-Z]+)', '\1', 'all' );
+
+    var months = listToArray( "jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec" );
+
+    var i = 0;
+    for ( var m in months ) {
+        i++;
+        if ( potentialDate contains m ) {
+            return replaceNoCase( potentialDate, m, i, 'one' );
+        }
+    }
+
+    return potentialDate;
   }
 
   // convenience functions
@@ -267,6 +286,14 @@ component accessors=true {
   }
 
   public void function nil( ) {
+  }
+
+  public boolean function notEmpty( any variable ) {
+    if( isNull( variable ) || !isSimpleValue( variable ) || !len( trim( variable ) ) ) {
+      return false;
+    }
+
+    return true;
   }
 
   // conversion / mapping functions
@@ -447,15 +474,6 @@ component accessors=true {
 
     return result;
   }
-
-  public boolean function notEmpty( any variable ) {
-    if( isNull( variable ) || !isSimpleValue( variable ) || !len( trim( variable ) ) ) {
-      return false;
-    }
-
-    return true;
-  }
-
 
   // private functions
 

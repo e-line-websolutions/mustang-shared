@@ -311,74 +311,79 @@
     return reReplace( source, '\n', '<br />', 'all' );
   }
 
+  public string function fixPathInfo( string pathInfo = cgi.path_info ) {
+    return replace( pathInfo, "index.cfm", "", "one" );
+  }
+
   /**
-   * This function takes URLs in a text string and turns them into links.
-   * Version 2 by Lucas Sherwood, lucas@thebitbucket.net.
-   * Version 3 Updated to allow for ;
+   * this function takes urls in a text string and turns them into links.
+   * version 2 by lucas sherwood, lucas@thebitbucket.net.
+   * version 3 updated to allow for ;
    *
-   * @param string      Text to parse. (Required)
-   * @param target      Optional target for links. Defaults to "". (Optional)
-   * @param paragraph      Optionally add paragraphFormat to returned string. (Optional)
-   * @return Returns a string.
-   * @author Joel Mueller (lucas@thebitbucket.netjmueller@swiftk.com)
-   * @version 3, August 11, 2004
+   * @param string      text to parse. (required)
+   * @param target      optional target for links. defaults to ""
+   * @param paragraph   optionally add paragraphformat to returned string
+   * @param replaceWith text to use between the a-tags
+   * @return returns a string.
+   * @author joel mueller (lucas@thebitbucket.netjmueller@swiftk.com)
+   * @author mjhagen
+   * @version 3, august 11, 2004
+   * @version 4, may 5, 2017
    */
-  function activateURL( string ) {
-    if ( isNull( string ) ) {
+  function activateUrl( required string input, string target = "", string paragraph = false, string replaceWith = "Info" ) {
+    if ( isNull( input ) ) {
       return '';
     }
 
+    var result = "";
     var nextMatch = 1;
-    var objMatch = "";
-    var outstring = "";
-    var thisURL = "";
-    var thisLink = "";
-    var target = IIf( arrayLen( arguments ) gte 2, "arguments[2]", DE( "" ) );
-    var paragraph = IIf( arrayLen( arguments ) gte 3, "arguments[3]", DE( "false" ) );
+    var useReplaceWith = len ( replaceWith ) > 0;
 
     do {
-      objMatch = REFindNoCase( "(((https?:|ftp:|gopher:)\/\/)|(www\.|ftp\.))[-[:alnum:]\?%,\.\/&##!;@:=\+~_]+[A-Za-z0-9\/]", string, nextMatch, true );
-        if ( objMatch.pos[ 1 ] GT nextMatch OR objMatch.pos[ 1 ] EQ nextMatch ) {
-          outString = outString & Mid( String, nextMatch, objMatch.pos[ 1 ] - nextMatch );
-        } else {
-          outString = outString & Mid( String, nextMatch, Len( string ) );
-        }
-        nextMatch = objMatch.pos[ 1 ] + objMatch.len[ 1 ];
-        if ( ArrayLen( objMatch.pos ) GT 1 ) {
-          // If the preceding character is an @, assume this is an e-mail address
-            // (for addresses like admin@ftp.cdrom.com)
-            if ( Compare( Mid( String, Max( objMatch.pos[ 1 ] - 1, 1 ), 1 ), "@" ) NEQ 0 ) {
-              thisURL = Mid( String, objMatch.pos[ 1 ], objMatch.len[ 1 ] );
-                thisLink = "<a href=""";
-                switch ( LCase( Mid( String, objMatch.pos[ 2 ], objMatch.len[ 2 ] ) ) ) {
-                  case "www.":
-                    thisLink = thisLink & "http://";
-                    break;
-                  case "ftp.":
-                    thisLink = thisLink & "ftp://";
-                    break;
-                }
-                thisLink = thisLink & thisURL & """";
-                if ( Len( Target ) GT 0 ) {
-                  thisLink = thisLink & " target=""" & Target & """";
-                }
-                thisLink = thisLink & ">Info</a>";
-                outString = outString & thisLink;
-                // String = Replace(String, thisURL, thisLink);
-                // nextMatch = nextMatch + Len(thisURL);
-            } else {
-              outString = outString & Mid( String, objMatch.pos[ 1 ], objMatch.len[ 1 ] );
-            }
-        }
-    } while ( nextMatch GT 0 );
+      var objMatch = reFindNoCase( "(((https?:|ftp:|gopher:)\/\/)|(www\.|ftp\.))[-[:alnum:]\?%,\.\/&##!;@:=\+~_]+[a-za-z0-9\/]", input, nextMatch, true );
 
-    // Now turn e-mail addresses into mailto: links.
-    outString = REReplace( outString, "([[:alnum:]_\.\-]+@([[:alnum:]_\.\-]+\.)+[[:alpha:]]{2,4})", "<A HREF=""mailto:\1"">\1</A>", "ALL" );
+      if ( objMatch.pos[ 1 ] > nextMatch || objMatch.pos[ 1 ] == nextMatch ) {
+        result = result & mid( input, nextMatch, objMatch.pos[ 1 ] - nextMatch );
+      } else {
+        result = result & mid( input, nextMatch, len( input ) );
+      }
+
+      nextMatch = objMatch.pos[ 1 ] + objMatch.len[ 1 ];
+
+      if ( arrayLen( objMatch.pos ) > 1 ) {
+        if ( compare( mid( input, max( objMatch.pos[ 1 ] - 1, 1 ), 1 ), "@" ) != 0 ) {
+          var thisUrl = mid( input, objMatch.pos[ 1 ], objMatch.len[ 1 ] );
+          var thisLink = "<a href=""";
+          switch ( lCase( mid( input, objMatch.pos[ 2 ], objMatch.len[ 2 ] ) ) ) {
+            case "www.":
+              thisLink = thisLink & "http://";
+              break;
+            case "ftp.":
+              thisLink = thisLink & "ftp://";
+              break;
+          }
+          thisLink = thisLink & thisUrl & """";
+          if ( len( target ) > 0 ) {
+            thisLink = thisLink & " target=""" & target & """";
+          }
+          if ( !useReplaceWith ) {
+            replaceWith = reReplaceNoCase( thisUrl, "(?:\w{3,6}:(?:\/\/)?(?:www.)?|^www\.|^)(.+)", "\1" );
+          }
+          thisLink = thisLink & ">" & replaceWith & "</a>";
+          result = result & thisLink;
+        } else {
+          result = result & mid( input, objMatch.pos[ 1 ], objMatch.len[ 1 ] );
+        }
+      }
+    } while ( nextMatch > 0 );
+
+    result = reReplace( result, "([[:alnum:]_\.\-]+@([[:alnum:]_\.\-]+\.)+[[:alpha:]]{2,4})", "<a href=""mailto:\1"">\1</a>", "all" );
 
     if ( paragraph ) {
-      outString = ParagraphFormat( outString );
+      result = paragraphFormat( result );
     }
-    return outString;
+
+    return result;
   }
   </cfscript>
 

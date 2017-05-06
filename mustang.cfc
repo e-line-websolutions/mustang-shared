@@ -1,86 +1,7 @@
 component extends="framework.one" {
-  request.context.startTime = getTickCount( );
-
-  // replaces &amp; with & in the query string:
-  cleanXHTMLQueryString( );
-
-  // CF application setup:
-  request.root = fixPath( getDirectoryFromPath( getBaseTemplatePath( ) ) );
-  request.root = listDeleteAt( request.root, listLen( request.root, '/' ), '/' ) & "/";
-
-  this.mappings[ "/root" ] = request.root;
-  this.sessionManagement = true;
-  this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
-
-  // Private variables:
   variables.downForMaintenance = false; // set this to true during updates
-  variables.cfg = request.context.config = getConfig( );
-  variables.live = variables.cfg.appIsLive;
-  variables.i18n = 0;
-  variables.util = 0;
 
-  if ( structKeyExists( variables.cfg.paths, "basecfc" ) ) {
-    this.mappings[ "/basecfc" ] = variables.cfg.paths.basecfc;
-  }
-
-  // Overwrite these in the app's own Application.cfc
-  param request.version="?";
-  param request.appName="?";
-  param this.routes=[];
-
-  // Reload:
-  if ( structKeyExists( url, "reload" ) && url.reload != variables.cfg.reloadpw ) {
-    structDelete( url, "reload" );
-  }
-
-  request.reset = structKeyExists( url, "reload" );
-
-  // Config based global variables:
-  request.context.debug = variables.cfg.showDebug && ( listFind( variables.cfg.debugIP, cgi.remote_addr ) || !len( trim( variables.cfg.debugIP ) ) );
-  request.webroot = variables.cfg.webroot;
-  request.fileUploads = variables.cfg.paths.fileUploads;
-
-  // Datasource settings:
-  this.datasource = variables.cfg.datasource;
-  this.ormEnabled = true;
-  this.ormSettings = {
-    CFCLocation = request.root & "model",
-    DBCreate = ( variables.live ? ( request.reset ? "update" : "none" ) : ( request.reset ? "dropcreate" : "update" ) ),
-    SQLScript = variables.cfg.nukescript,
-    secondaryCacheEnabled = variables.live ? true : false,
-    cacheProvider = "ehcache"
-  };
-
-  // framework settings:
-  variables.framework = {
-    generateSES = true,
-    SESOmitIndex = true,
-    base = "/root",
-    baseURL = variables.cfg.webroot,
-    error = "app.error",
-    unhandledPaths = "/inc,/tests,/browser,/cfimage,/diagram",
-    diLocations = [ "/mustang/services", "/root/services", "/root/subsystems/api/services" ],
-    diConfig = {
-      transients = [ "scenarios", "vendors" ],
-      constants = {
-        root = request.root,
-        config = cfg
-      }
-    },
-    routesCaseSensitive = false,
-    environments = {
-      live = {
-        cacheFileExists = true,
-        password = variables.cfg.reloadpw,
-        trace = variables.cfg.showDebug
-      },
-      dev = {
-        // reloadApplicationOnEveryRequest = true,
-        trace = variables.cfg.showDebug
-      }
-    },
-    subsystems = { api = { error = "api:main.error" } }
-  };
+  setupMustang( );
 
   // public functions:
 
@@ -115,8 +36,8 @@ component extends="framework.one" {
 
     // globally available utility libraries:
     var bf = getBeanFactory( );
-    request.context.i18n = variables.i18n = bf.getBean( "translationService" );
-    request.context.util = variables.util = bf.getBean( "utilityService" );
+    variables.i18n = bf.getBean( "translationService" );
+    variables.util = bf.getBean( "utilityService" );
 
     util.setCFSetting( "showdebugoutput", request.context.debug );
 
@@ -198,7 +119,7 @@ component extends="framework.one" {
     super.onError( argumentCollection = arguments );
   }
 
-  public string function onMissingView( ) {
+  public string function onMissingView( struct rc ) {
     if ( util.fileExistsUsingCache( request.root & "/views/" & getSection( ) & "/" & getItem( ) & ".cfm" ) ) {
       return view( getSection( ) & "/" & getItem( ) );
     }
@@ -215,6 +136,96 @@ component extends="framework.one" {
   }
 
   // private functions:
+
+  private void function setupMustang( ) {
+    request.context.startTime = getTickCount( );
+
+    cleanXHTMLQueryString( );
+
+    request.root = getRoot();
+
+    // Overwrite these in the app's own Application.cfc
+    param request.version="?";
+    param request.appName="?";
+    param this.routes=[];
+
+    // CF application setup:
+    this.mappings[ "/root" ] = request.root;
+    this.sessionManagement = true;
+    this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
+
+    // Private variables:
+    variables.cfg = request.context.config = getConfig( );
+    variables.live = variables.cfg.appIsLive;
+    variables.i18n = 0;
+    variables.util = 0;
+
+    if ( structKeyExists( variables.cfg.paths, "basecfc" ) ) {
+      this.mappings[ "/basecfc" ] = variables.cfg.paths.basecfc;
+    }
+
+    // Reload:
+    if ( structKeyExists( url, "reload" ) && url.reload != variables.cfg.reloadpw ) {
+      structDelete( url, "reload" );
+    }
+
+    request.reset = structKeyExists( url, "reload" );
+
+    // Config based global variables:
+    request.context.debug = variables.cfg.showDebug && ( listFind( variables.cfg.debugIP, cgi.remote_addr ) || !len( trim( variables.cfg.debugIP ) ) );
+    request.webroot = variables.cfg.webroot;
+
+    if ( len( variables.cfg.paths.fileUploads ) ) {
+      request.fileUploads = variables.cfg.paths.fileUploads;
+    }
+
+    // Datasource settings:
+    if ( len( variables.cfg.datasource ) ) {
+      this.datasource = variables.cfg.datasource;
+      this.ormEnabled = true;
+      this.ormSettings = {
+        CFCLocation = request.root & "model",
+        DBCreate = ( variables.live ? ( request.reset ? "update" : "none" ) : ( request.reset ? "dropcreate" : "update" ) ),
+        SQLScript = variables.cfg.nukescript,
+        secondaryCacheEnabled = variables.live ? true : false,
+        cacheProvider = "ehcache"
+      };
+    }
+
+    // framework settings:
+    variables.framework = {
+      generateSES = true,
+      SESOmitIndex = true,
+      base = "/root",
+      baseURL = variables.cfg.webroot,
+      error = "app.error",
+      unhandledPaths = "/inc,/tests,/browser,/cfimage,/diagram",
+      diLocations = [
+        "/mustang/services",
+        "/root/services",
+        "/root/model/services",
+        "/root/subsystems/api/services"
+      ],
+      diConfig = {
+        constants = {
+          root = request.root,
+          config = cfg
+        }
+      },
+      routesCaseSensitive = false,
+      environments = {
+        live = {
+          cacheFileExists = true,
+          password = variables.cfg.reloadpw,
+          trace = variables.cfg.showDebug
+        },
+        dev = {
+          trace = variables.cfg.showDebug
+        }
+      },
+      subsystems = { api = { error = "api:main.error" } }
+    };
+  }
 
   private void function cleanXHTMLQueryString( ) {
     for ( var kv in url ) {
@@ -245,15 +256,14 @@ component extends="framework.one" {
 
     // not cached:
     var computedSettings = { "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name };
-
     var defaultSettings = { };
 
     if ( fileExists( request.root & "/config/default.json" ) ) {
-      var defaultConfig = deserializeJSON( fileRead( request.root & "/config/default.json" ) );
+      var defaultConfig = deserializeJSON( fileRead( request.root & "/config/default.json", "utf-8" ) );
       defaultSettings = mergeStructs( defaultConfig, computedSettings );
     }
 
-    var siteConfig = deserializeJSON( fileRead( request.root & "/config/" & site & ".json" ) );
+    var siteConfig = deserializeJSON( fileRead( request.root & "/config/" & site & ".json", "utf-8" ) );
     var mergedConfig = mergeStructs( siteConfig, defaultSettings );
 
     cachePut( "config-#this.name#", mergedConfig );
@@ -300,11 +310,9 @@ component extends="framework.one" {
     return resources;
   }
 
-  private string function fixPath( string originalPath ) {
-    var result = replace( originalPath, "\", "/", "all" );
-    if ( right( result, 1 ) == "/" ) {
-      result = removeChars( result, len( result ), 1 );
-    }
-    return result;
+  private string function getRoot( ) {
+    var basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
+    var tmp = replace( basePath, "\", "/", "all" );
+    return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
   }
 }

@@ -9,6 +9,7 @@ component accessors=true {
   property optionService;
   property securityService;
   property logService;
+  property utilityService;
 
   public void function login( required struct rc ) {
     framework.setLayout( "security" );
@@ -29,7 +30,7 @@ component accessors=true {
     if ( structKeyExists( rc, "authhash" ) && len( trim( rc.authhash ) ) ) {
       logService.writeLogLevel( "trying authhash", request.appName );
 
-      var contactID = decrypt( rc.util.base64urlDecode( rc.authhash ), config.encryptKey );
+      var contactID = decrypt( utilityService.base64urlDecode( rc.authhash ), config.encryptKey );
       var user = contactService.get( contactID );
 
       if ( isNull( user ) ) {
@@ -271,7 +272,7 @@ component accessors=true {
           config.ownerEmail,
           user,
           emailText.getTitle( ),
-          rc.util.parseStringVariables(
+          utilityService.parseStringVariables(
             emailText.getBody( ),
             { link = framework.buildURL( action = 'profile.password', queryString = { "authhash" = authhash } ) }
           )

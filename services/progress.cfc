@@ -26,13 +26,11 @@ component accessors=true {
     if ( !variables.enabled ) {
       return;
     }
-    var persisted = getProgress( );
-    variables.current = persisted.current + 1;
+
+    variables.current++;
 
     if ( variables.prevTime > 0 ) {
-      var timers = variables.timers;
-      arrayAppend( timers, getTickCount( ) - variables.prevTime );
-      variables.timers = timers;
+      arrayAppend( variables.timers, getTickCount( ) - variables.prevTime );
     }
 
     variables.prevTime = getTickCount( );

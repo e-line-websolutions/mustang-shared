@@ -1,6 +1,6 @@
 component extends="testbox.system.BaseSpec" {
   function run( ) {
-    describe( "Complex JSON deserialization", function( ) {
+    xdescribe( "Complex JSON deserialization", function( ) {
       it( "Expects deserialize to do as it's told", function( ) {
         var jsonFile = fileRead( expandPath( "./testdata/json-file-001.json" ) );
 

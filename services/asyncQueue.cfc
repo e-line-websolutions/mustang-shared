@@ -45,11 +45,11 @@ component accessors=true {
           while ( structKeyExists( local, "taskItem" ) ) {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
-              logService.writeLogLevel( text = "Executed task part #variables.queueNr#.", file = "asyncQueue", type = "information" );
+              variables.logService.writeLogLevel( text = "Executed task part #variables.queueNr#.", file = "asyncQueue", type = "information" );
             } catch ( any e ) {
-              logService.writeLogLevel( text = "Error executing task part #variables.queueNr#. (#e.message#)", file = "asyncQueue", type = "fatal" );
-              if ( config.showDebug ) {
-                logService.dumpToFile( [
+              variables.logService.writeLogLevel( text = "Error executing task part #variables.queueNr#. (#e.message#)", file = "asyncQueue", type = "fatal" );
+              if ( variables.config.showDebug ) {
+                variables.logService.dumpToFile( [
                   taskItem.taskArguments,
                   e
                 ] );

@@ -2,6 +2,7 @@ component accessors=true {
   property config;
   property ds;
   property utilityService;
+  property logService;
   property string dbvendor;
 
   public component function init( utilityService, config, ds ) {
@@ -42,12 +43,16 @@ component accessors=true {
     * @version  2, December 29, 2015
     */
   public any function execute( required string sql_statement, any queryParams={}, struct queryOptions={}) {
+    var timer = getTickCount( );
+
     if( structKeyExists( server, "railo" ) ||
         structKeyExists( server, "lucee" ) || (
           structKeyExists( server, "coldfusion" ) &&
           int( listFirst( server.coldfusion.productVersion )) >= 11
         )) {
-      return queryExecute( sql_statement, queryParams, queryOptions );
+      var result = queryExecute( sql_statement, queryParams, queryOptions );
+      logService.writeLogLevel( "#getTickCount( ) - timer#ms. #left( sql_statement, 255 )#", "queryService" );
+      return result;
     }
 
     // normalize query params:
@@ -77,7 +82,11 @@ component accessors=true {
     }
 
     // run and return query using query.cfc:
-    return new query( sql = sql_statement, parameters = parameters, argumentCollection = queryOptions ).execute().getResult();
+    var result = new query( sql = sql_statement, parameters = parameters, argumentCollection = queryOptions ).execute().getResult();
+
+    logService.writeLogLevel( "#getTickCount( ) - timer#ms. #left( sql_statement, 255 )#", "queryService" );
+
+    return result;
   }
 
   /** Courtesy of user 'Tomalak' from http://stackoverflow.com/questions/2653804/how-to-sort-an-array-of-structs-in-coldfusion#answer-2653972

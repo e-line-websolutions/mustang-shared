@@ -11,10 +11,14 @@ component accessors=true {
     "small" = [ 64, 64 ]
   };
 
-  public component function init( root, logService ) {
+  public component function init( root, logService, imageSizes ) {
     variables.logService = logService;
     variables.logService.setConfig( { "logLevel" = "information" } );
     this.jl = new javaloader.JavaLoader( [ expandPath( "/mustang/lib/imageScaler/java-image-scaling-0.8.5.jar" ) ] );
+
+    if ( !isNull( imageSizes ) ) {
+      variables.imageSizes = imageSizes;
+    }
 
     return this;
   }
@@ -53,7 +57,10 @@ component accessors=true {
       return;
     }
 
-    var resized = resize( sourceImage, variables.imageSizes[ size ][ 1 ], variables.imageSizes[ size ][ 2 ] );
+    var destinationWidth = variables.imageSizes[ size ][ 1 ];
+    var destinationHeight = arrayIsDefined( variables.imageSizes[ size ], 2 ) ? variables.imageSizes[ size ][ 2 ] : destinationWidth;
+
+    var resized = resize( sourceImage, destinationWidth, destinationHeight );
     var compressedImage = compress( resized, quality );
 
     fileWrite( destinationPath, compressedImage );

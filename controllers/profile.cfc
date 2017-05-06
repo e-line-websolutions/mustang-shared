@@ -2,6 +2,7 @@ component accessors=true {
   property framework;
   property contactService;
   property securityService;
+  property utilityService;
 
   public void function before( required struct rc ) {
     rc.subnav = "profile";
@@ -50,7 +51,7 @@ component accessors=true {
   }
 
   public void function newpassword( required struct rc ) {
-    param rc.newPassword=rc.util.generatePassword( 8 );
+    param rc.newPassword=utilityService.generatePassword( 8 );
 
     if( len( trim( rc.newPassword )) lt 8 ) {
       lock scope="session" timeout="5" {
