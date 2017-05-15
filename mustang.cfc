@@ -155,7 +155,7 @@ component extends="framework.one" {
     this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
 
     // Private variables:
-    variables.cfg = request.context.config = getConfig( );
+    variables.cfg = request.context.config = readConfig( );
     variables.live = variables.cfg.appIsLive;
     variables.i18n = 0;
     variables.util = 0;
@@ -240,7 +240,7 @@ component extends="framework.one" {
     return variables.live ? "live" : "dev";
   }
 
-  private struct function getConfig( string site = cgi.server_name ) {
+  private struct function readConfig( string site = cgi.server_name ) {
     // cached:
     if ( !structKeyExists( url, "reload" ) ) {
       var config = cacheGet( "config-#this.name#" );
@@ -263,12 +263,14 @@ component extends="framework.one" {
       defaultSettings = mergeStructs( defaultConfig, computedSettings );
     }
 
-    var siteConfig = deserializeJSON( fileRead( request.root & "/config/" & site & ".json", "utf-8" ) );
-    var mergedConfig = mergeStructs( siteConfig, defaultSettings );
+    if ( fileExists( request.root & "/config/" & site & ".json" ) ) {
+      var siteConfig = deserializeJSON( fileRead( request.root & "/config/" & site & ".json", "utf-8" ) );
+      var defaultSettings = mergeStructs( siteConfig, defaultSettings );
+    }
 
-    cachePut( "config-#this.name#", mergedConfig );
+    cachePut( "config-#this.name#", defaultSettings );
 
-    return mergedConfig;
+    return defaultSettings;
   }
 
   private struct function mergeStructs( required struct from, struct to = { } ) {
