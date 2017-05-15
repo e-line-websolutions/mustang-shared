@@ -61,7 +61,7 @@ component accessors=true {
     var destinationHeight = arrayIsDefined( variables.imageSizes[ size ], 2 ) ? variables.imageSizes[ size ][ 2 ] : destinationWidth;
 
     var resized = resize( sourceImage, destinationWidth, destinationHeight );
-    var compressedImage = compress( resized, quality );
+    var compressedImage = compressImage( resized, quality );
 
     fileWrite( destinationPath, compressedImage );
 
@@ -99,7 +99,7 @@ component accessors=true {
     return resampleOp.init( dimensionConstrain.createMaxDimension( d.width, d.height ) ).filter( bufferedImage, nil( ) );
   }
 
-  private binary function compress( required alteredImage, numeric quality = 1 ) {
+  private binary function compressImage( required alteredImage, numeric quality = 1 ) {
     var byteArrayOutputStream = createObject( "java", "java.io.ByteArrayOutputStream" ).init( );
     var imageOutputStream = createObject( "java", "javax.imageio.stream.MemoryCacheImageOutputStream" ).init( byteArrayOutputStream );
 
