@@ -12,6 +12,7 @@ component extends="framework.one" {
     if ( structKeyExists( url, "nuke" ) ) {
       // rebuild ORM:
       ORMReload( );
+
       logService.writeLogLevel( "ORM reloaded", request.appName );
 
       // empty caches:
@@ -142,9 +143,8 @@ component extends="framework.one" {
 
     cleanXHTMLQueryString( );
 
-    request.root = getRoot();
-
     // Overwrite these in the app's own Application.cfc
+    param request.root=getRoot();
     param request.version="?";
     param request.appName="?";
     param this.routes=[];
@@ -312,8 +312,7 @@ component extends="framework.one" {
     return resources;
   }
 
-  private string function getRoot( ) {
-    var basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
+  private string function getRoot( string basePath = getDirectoryFromPath( getBaseTemplatePath( ) ) ) {
     var tmp = replace( basePath, "\", "/", "all" );
     return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
   }

@@ -5,6 +5,7 @@ component extends=framework.one {
   param request.domainName=cgi.server_name;
 
   variables.root = this.mappings[ "/root" ] = getRoot( );
+
   variables.framework = {
     routesCaseSensitive = false,
     generateSES = true,
@@ -15,6 +16,7 @@ component extends=framework.one {
         root = variables.root,
         ds = "e-line_cm",
         config = {
+          mediaRoot = fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
           cacheFileExists = true,
           defaultLanguage = "nl_NL",
           useOrm = false,
@@ -83,25 +85,6 @@ component extends=framework.one {
 
   private void function setupApplication( ) {
     structDelete( application, "cache" );
-  }
-
-  private void function setupEnvironment( required string env ) {
-    switch ( env ) {
-      case "dev" :
-        addToConstants( { config = { mediaRoot = fixPath( "G:\Dropbox\Projects\ProjectsTemporaryFiles\webmanager\files" ) } } );
-        break;
-      case "live" :
-        addToConstants( { config = { mediaRoot = fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ) } } );
-        break;
-      default:
-        throw( "Invalid environment" );
-    }
-  }
-
-  private string function getEnvironment( ) {
-    return findNoCase( "tent.eu", CGI.SERVER_NAME )
-      ? "live"
-      : "dev";
   }
 
   private string function onMissingView( rc ) {

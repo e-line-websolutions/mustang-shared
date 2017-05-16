@@ -1,6 +1,9 @@
 component accessors=true {
+  property fileService;
+  property imageScalerService;
   property queryService;
   property utilityService;
+
   property datasource;
   property root;
   property config;
@@ -370,6 +373,10 @@ component accessors=true {
   }
 
   public void function relocateOnce( required string domainname ) {
+    if ( domainname == "" ) {
+      return;
+    }
+
     var relocateTo = (
         cgi.server_port_secure == 1
           ? 'https'
@@ -391,5 +398,20 @@ component accessors=true {
     if( cgi.server_name != domainname ) {
       location( relocateTo, false, 301 );
     }
+  }
+
+  public void function serveMedia( required struct requestContext ) {
+    param requestContext.file="";
+    param requestContext.s="m";
+
+    if ( !utilityService.fileExistsUsingCache( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" ) ) {
+      imageScalerService.setDestinationDir( "#root#/www/inc/img/resized" );
+      imageScalerService.resizeFromPath( config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#", requestContext.file, requestContext.s );
+      utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
+    }
+
+    utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
+    utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#" );
+    fileService.writeToBrowser( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" );
   }
 }

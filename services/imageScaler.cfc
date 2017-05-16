@@ -38,8 +38,7 @@ component accessors=true {
   }
 
   public void function resizeFromPath( any sourcePath, string imageName, required string size, numeric quality = 1 ) {
-    var sourceImage = imageNew( sourcePath );
-    resizeFromImage( sourceImage, imageName, size, quality );
+    resizeFromImage( imageNew( sourcePath ), imageName, size, quality );
   }
 
   public void function resizeFromBaos( any bytes, string imageName, required string size, numeric quality = 1 ) {
