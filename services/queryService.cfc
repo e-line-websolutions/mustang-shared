@@ -51,7 +51,8 @@ component accessors=true {
           int( listFirst( server.coldfusion.productVersion )) >= 11
         )) {
       var result = queryExecute( sql_statement, queryParams, queryOptions );
-      logService.writeLogLevel( "#getTickCount( ) - timer#ms. #left( sql_statement, 255 )#", "queryService" );
+      var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
+      logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
       return result;
     }
 
@@ -84,7 +85,9 @@ component accessors=true {
     // run and return query using query.cfc:
     var result = new query( sql = sql_statement, parameters = parameters, argumentCollection = queryOptions ).execute().getResult();
 
-    logService.writeLogLevel( "#getTickCount( ) - timer#ms. #left( sql_statement, 255 )#", "queryService" );
+    var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
+
+    logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
 
     return result;
   }

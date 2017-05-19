@@ -4,7 +4,6 @@ component extends="testbox.system.BaseSpec" {
   function run( ) {
     describe( "Webmanager Unit Tests", function( ) {
       it( "Expects webmanager to initialize", function( ) {
-writeDump(webmanagerService);
       } );
     } );
   }

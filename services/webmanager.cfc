@@ -16,6 +16,8 @@ component accessors=true {
   public component function init( ds, websiteId, config ) {
     structAppend( variables, arguments, true );
 
+    param config.showDebug=false;
+
     variables.supportedLocales = {
       "nl" = "nl_NL",
       "uk" = "en_US",
@@ -54,16 +56,17 @@ component accessors=true {
   public void function appendPageDataToRequestContext( required struct requestContext ) {
     var seoPathArray = seoPathAsArray( );
     var pageData = {
-      "basePath" = getBasePath( seoPathArray ),
-      "currentBaseMenuItem" = getCurrentBaseMenuItem( seoPathArray ),
-      "currentMenuItem" = getCurrentMenuItem( seoPathArray ),
-      "pageTitle" = getPageTitle( seoPathArray ),
       "pageTemplate" = "",
       "pageDetails" = { },
       "articles" = [ ],
       "navigation" = [ ],
       "navPath" = ""
     };
+
+    pageData[ "basePath" ] = getBasePath( seoPathArray );
+    pageData[ "currentBaseMenuItem" ] = getCurrentBaseMenuItem( seoPathArray );
+    pageData[ "currentMenuItem" ] = getCurrentMenuItem( seoPathArray );
+    pageData[ "pageTitle" ] = getPageTitle( seoPathArray );
 
     var pathLength = arrayLen( seoPathArray );
 
@@ -150,10 +153,9 @@ component accessors=true {
     var sql_where = " WHERE nav_level_1.assetmeta_x_nBwsId = :websiteId AND
                             nav_level_1.assetmeta_x_nTypeId = 2 AND
                             nav_level_1.assetmeta_x_nBmId = 14 AND
-                            dbo.variableFormat( nav_level_1.assetcontent_sTitleText ) IN ( :nav_level_1_name, :_nav_level_1_name ) ";
+                            dbo.variableFormatMstng( nav_level_1.assetcontent_sTitleText ) IN ( :nav_level_1_name, '_' + :nav_level_1_name ) ";
     var queryParams = {
       "nav_level_1_name" = replace( pathArray[ 1 ], "-", "_", "all" ),
-      "_nav_level_1_name" = "_" & replace( pathArray[ 1 ], "-", "_", "all" ),
       "websiteId" = variables.websiteId
     };
 
@@ -167,13 +169,17 @@ component accessors=true {
       sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId AND
                          nav_level_#i#.assetmeta_x_nTypeId = 2 AND
                          nav_level_#i#.assetmeta_x_nBmId = 14 AND
-                         dbo.variableFormat( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, :_nav_level_#i#_name ) ";
+                         dbo.variableFormatMstng( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
       queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
-      queryParams[ "_nav_level_#i#_name" ] = "_" & replace( pathArray[ i ], "-", "_", "all" );
     }
 
     var sql_select = " SELECT nav_level_#pathLength#.assetmeta_nID ";
     var sql = sql_select & sql_from & sql_where;
+
+if ( config.showDebug ) {
+  writeOutput( '<!-- #sql# -->' );
+}
+
     var pathQuery = queryService.execute( sql, queryParams, queryOptions );
 
     if ( pathQuery.recordCount == 1 ) {
@@ -373,7 +379,7 @@ component accessors=true {
   }
 
   public void function relocateOnce( required string domainname ) {
-    if ( domainname == "" ) {
+    if ( domainname == "" || listFindNoCase( "dev,home,local", listLast( cgi.server_name, "." ) ) ) {
       return;
     }
 

@@ -400,6 +400,9 @@
       <cfreturn />
     </cfif>
     <cfset arguments.operation = "HTTPRequest" />
+
+    <cfset logService.dumpToFile( arguments ) />
+
     <cfschedule attributeCollection="#arguments#" />
   </cffunction>
 
