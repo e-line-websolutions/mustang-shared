@@ -175,11 +175,6 @@ component accessors=true {
 
     var sql_select = " SELECT nav_level_#pathLength#.assetmeta_nID ";
     var sql = sql_select & sql_from & sql_where;
-
-if ( config.showDebug ) {
-  writeOutput( '<!-- #sql# -->' );
-}
-
     var pathQuery = queryService.execute( sql, queryParams, queryOptions );
 
     if ( pathQuery.recordCount == 1 ) {
