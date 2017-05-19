@@ -72,7 +72,7 @@ component extends=framework.one {
         request.action
           = rc.action
           = request.context.action
-          = "main.#item#";
+          = "main.#replace( item, '-', '_', 'all' )#";
 
         controller( "main.setupLevel#pathLength#" );
       }
