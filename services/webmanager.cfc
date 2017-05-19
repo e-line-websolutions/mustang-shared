@@ -4,16 +4,19 @@ component accessors=true {
   property queryService;
   property utilityService;
 
-  property datasource;
-  property root;
   property config;
+  property datasource;
+  property fw;
+  property root;
   property websiteId;
 
   property string allLanguages;
   property struct supportedLocales;
   property string safeDelim;
 
-  public component function init( ds, websiteId, config ) {
+  public component function init( ds, websiteId, config, fw ) {
+    fw.frameworkTrace( "<b>webmanager</b>: webmanagerService initialized." );
+
     structAppend( variables, arguments, true );
 
     param config.showDebug=false;
@@ -38,6 +41,7 @@ component accessors=true {
   }
 
   public array function seoPathAsArray( ) {
+    fw.frameworkTrace( "seoPathAsArray() called." );
     var seoPath = utilityService.fixPathInfo( );
     var tmp = listToArray( seoPath, "/" );
     var seoPathArray = [ ];
@@ -54,6 +58,7 @@ component accessors=true {
   }
 
   public void function appendPageDataToRequestContext( required struct requestContext ) {
+    fw.frameworkTrace( "appendPageDataToRequestContext() called." );
     var seoPathArray = seoPathAsArray( );
     var pageData = {
       "pageTemplate" = "",
@@ -92,6 +97,7 @@ component accessors=true {
   }
 
   public string function getCurrentLanguage( required array seoPathArray ) {
+    fw.frameworkTrace( "getCurrentLanguage() called." );
     var currentLanguage = variables.defaultLanguage;
 
     if ( !arrayIsEmpty( seoPathArray ) && listFindNoCase( variables.allLanguages, seoPathArray[ 1 ] ) ) {
@@ -102,6 +108,7 @@ component accessors=true {
   }
 
   public string function getBasePath( required array seoPathArray ) {
+    fw.frameworkTrace( "getBasePath() called." );
     if ( seoPathArray[ 1 ] != variables.defaultLanguage ) {
       return "/#seoPathArray[ 1 ]#";
     }
@@ -110,6 +117,7 @@ component accessors=true {
   }
 
   public string function getNavPath( required array seoPathArray, numeric level ) {
+    fw.frameworkTrace( "getNavPath() called." );
     var result = "";
     for ( var i = 1; i <= level; i++ ) {
       if ( !arrayIsDefined( seoPathArray, i ) || seoPathArray[ i ] == variables.defaultLanguage ) {
@@ -121,6 +129,7 @@ component accessors=true {
   }
 
   public string function getCurrentBaseMenuItem( required array seoPathArray ) {
+    fw.frameworkTrace( "getCurrentBaseMenuItem() called." );
     if ( arrayLen( seoPathArray ) > 1 ) {
       return seoPathArray[ 2 ];
     }
@@ -129,10 +138,12 @@ component accessors=true {
   }
 
   public string function getCurrentMenuItem( required array seoPathArray ) {
+    fw.frameworkTrace( "getCurrentMenuItem() called." );
     return seoPathArray[ arrayLen( seoPathArray ) ];
   }
 
   public string function getPageTitle( required array seoPathArray, string titleDelimiter = " - " ) {
+    fw.frameworkTrace( "getPageTitle() called." );
     if ( arrayIsEmpty( seoPathArray ) ) {
       return "";
     }
@@ -151,6 +162,7 @@ component accessors=true {
   }
 
   public numeric function getMenuIdFromPath( required any path ) {
+    fw.frameworkTrace( "getMenuIdFromPath() called." );
     var pathArray = isArray( path ) ? path : listToArray( path, "/" );
     var pathLength = arrayLen( pathArray );
 
@@ -194,6 +206,7 @@ component accessors=true {
   }
 
   public struct function getPageDetails( pageId ) {
+    fw.frameworkTrace( "getPageDetails() called." );
     var sql = "
       SELECT    assetmeta_nID               AS pageId,
                 assetcontent_sTitleText     AS name,
@@ -229,6 +242,7 @@ component accessors=true {
   }
 
   public array function getMenuItems( required numeric parentId ) {
+    fw.frameworkTrace( "getMenuItems() called." );
     var sql = "
       SELECT    assetcontent_sTitleText
 
@@ -258,6 +272,7 @@ component accessors=true {
   }
 
   public array function getArticles( required numeric pageId ) {
+    fw.frameworkTrace( "getArticles() called." );
     var sql = "
       SELECT    vw_selectAsset.assetmeta_nid                AS [articleId],
                 vw_selectAsset.assetmeta_dcreationdatetime  AS [creationDate],
@@ -295,6 +310,7 @@ component accessors=true {
   }
 
   public any function getArticle( required numeric articleId ) {
+    fw.frameworkTrace( "getArticle() called." );
     var sql = "
       SELECT    assetmeta_nid                AS [articleId],
                 assetmeta_dcreationdatetime  AS [creationDate],
@@ -333,6 +349,7 @@ component accessors=true {
   }
 
   public array function getArticleImages( required numeric articleId ) {
+    fw.frameworkTrace( "getArticleImages() called." );
     var sql = "
       SELECT    vw_selectAsset.assetcontent_sFileExtension AS src,
                 vw_selectAsset.assetcontent_sTitleText AS alt,
@@ -360,6 +377,7 @@ component accessors=true {
   }
 
   public string function getTemplate( required struct requestContext ) {
+    fw.frameworkTrace( "getTemplate() called." );
     var defaultTemplate = "main.default";
 
     if ( !structKeyExists( requestContext, "pageDetails" ) ||
@@ -375,14 +393,17 @@ component accessors=true {
   }
 
   public string function asLocale( required string webmanagerLanguage ) {
+    fw.frameworkTrace( "asLocale() called." );
     return variables.supportedLocales[ webmanagerLanguage ];
   }
 
   public boolean function actionHasView( required string action ) {
+    fw.frameworkTrace( "actionHasView() called." );
     return utilityService.fileExistsUsingCache( root & "/views/" & replace( action, '.', '/', 'all' ) & ".cfm" );
   }
 
   public void function relocateOnce( required string domainname ) {
+    fw.frameworkTrace( "relocateOnce() called." );
     if ( domainname == "" || listFindNoCase( "dev,home,local", listLast( cgi.server_name, "." ) ) ) {
       return;
     }
@@ -411,6 +432,7 @@ component accessors=true {
   }
 
   public void function serveMedia( required struct requestContext ) {
+    fw.frameworkTrace( "serveMedia() called." );
     param requestContext.file="";
     param requestContext.s="m";
 

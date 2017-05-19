@@ -1,24 +1,29 @@
 component accessors=true {
-  property root;
   property config;
-  property utilityService;
+  property fw;
+  property root;
+
   property logService;
+  property utilityService;
 
   property struct languageStruct;
+  property struct translations;
 
   // CONSTRUCTOR
 
-  public any function init( root, config ) {
+  public any function init( root, config, fw, logService ) {
     structAppend( variables, arguments );
     populateLanguageStruct( );
     param config.defaultLanguage="en_US";
-    setLocaleId( config.defaultLanguage );
+    changeLanguage( config.defaultLanguage );
     return this;
   }
 
   // PUBLIC
 
   public string function translate( label, localeID = getLocaleId( ), alternative, stringVariables = { }, capFirst = true ) {
+    fw.frameworkTrace( "<b>i18n</b>: translate() called." );
+
     if ( isNull( alternative ) ) {
       arguments.alternative = label;
     }
@@ -83,17 +88,24 @@ component accessors=true {
       newLanguage = config.defaultLanguage;
     }
 
-    if ( newLanguage == getCurrentLanguage( ) ) {
+    fw.frameworkTrace( "<b>i18n</b>: changeLanguage( #newLanguage# ) called." );
+
+    var currentLanguage = getCurrentLanguage( );
+
+    if ( newLanguage == currentLanguage ) {
       return;
     }
 
-    logService.writeLogLevel( "Language changed from #getLocaleId()# to #newLanguage#." );
-
     session.currentLanguage = newLanguage;
+
     setLocaleId( newLanguage );
+
+    logService.writeLogLevel( "Changed language from #currentLanguage# to #newLanguage#." );
   }
 
   public string function getCurrentLanguage( ) {
+    fw.frameworkTrace( "<b>i18n</b>: getCurrentLanguage() called." );
+
     param session.currentLanguage=config.defaultLanguage;
     return session.currentLanguage;
   }
@@ -133,11 +145,13 @@ component accessors=true {
   // PRIVATE
 
   private void function populateLanguageStruct( ) {
+    fw.frameworkTrace( "<b>i18n</b>: populateLanguageStruct() called." );
+
     variables.languageStruct = { };
 
-    var translations = directoryList( root & "/i18n/", false, "path", "*.json" );
+    var translationFiles = directoryList( root & "/i18n/", false, "path", "*.json" );
 
-    for ( var jsonFile in translations ) {
+    for ( var jsonFile in translationFiles ) {
       var jsonFileContents = fileRead( jsonFile, "utf-8" );
       var locale = listFirst( listLast( jsonFile, "/\" ), "." );
       variables.languageStruct[ locale ] = deserializeJson( jsonFileContents );
@@ -145,24 +159,24 @@ component accessors=true {
   }
 
   private string function cacheRead( required string translation, string localeID = getLocaleId( ), boolean reload = false ) {
-    var translated = "";
+    fw.frameworkTrace( "<b>i18n</b>: cacheRead() called." );
 
-    // SEARCH CACHE FOR LABEL:
     if ( reload ) {
-      structDelete( application, "translations" );
+      variables.translations = { };
     }
 
     try {
-      translated = application.translations[ localeID ][ translation ];
+      return variables.translations[ localeID ][ translation ];
     } catch ( any e ) {
       var currentLanguage = getCurrentLanguage( );
       if ( structKeyExists( variables.languageStruct, currentLanguage ) &&
            structKeyExists( variables.languageStruct[ currentLanguage ], translation ) ) {
-        translated = variables.languageStruct[ currentLanguage ][ translation ];
-        application[ "translations" ][ localeID ][ translation ] = translated;
+        var translated = variables.languageStruct[ currentLanguage ][ translation ];
+        variables.translations[ localeID ][ translation ] = translated;
+        return translated;
       }
     }
 
-    return translated;
+    return "";
   }
 }

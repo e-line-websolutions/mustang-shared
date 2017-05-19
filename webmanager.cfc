@@ -1,7 +1,9 @@
 component extends=framework.one {
+  request.counter = 0;
+
   this.sessionManagement = true;
 
-  param request.appName="Nameless-Webmanager-Site-#createUuid()#";
+  param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
   param request.domainName=cgi.server_name;
 
   variables.root = this.mappings[ "/root" ] = getRoot( );
@@ -26,22 +28,21 @@ component extends=framework.one {
       }
     },
     base = "/root",
-    routes = [
-      { "/media/:file" = "/media/load/file/:file" },
-      { "*" = "/main/default" }
-    ]
+    routes = [ { "/media/:file" = "/media/load/file/:file" }, { "*" = "/main/default" } ]
   };
 
   private void function setupRequest( ) {
-    request.reset = isFrameworkReloadRequest();
+    writeLog( text="setupRequest() called (#++request.counter#)", file="jfr" );
+    frameworkTrace( "<b>webmanager</b>: setupRequest() called." );
+    request.reset = isFrameworkReloadRequest( );
 
     if ( request.reset ) {
       createObject( "java", "coldfusion.server.ServiceFactory" ).getDataSourceService( ).purgeQueryCache( );
-
       var allCacheIds = cacheGetAllIds( );
       if ( !arrayIsEmpty( allCacheIds ) ) {
         cacheRemove( arrayToList( allCacheIds ) );
       }
+      frameworkTrace( "<b>webmanager</b>: cache reset" );
     }
 
     var bf = getBeanFactory( );
@@ -84,6 +85,7 @@ component extends=framework.one {
   }
 
   private void function setupApplication( ) {
+    frameworkTrace( "<b>webmanager</b>: setupApplication() called." );
     structDelete( application, "cache" );
   }
 
@@ -96,7 +98,6 @@ component extends=framework.one {
   }
 
   private void function mergeStructs( required struct from, struct to = { } ) {
-    // also append nested struct keys:
     for ( var key in from ) {
       if ( isStruct( from[ key ] ) ) {
         if ( !structKeyExists( to, key ) ) {
@@ -108,8 +109,6 @@ component extends=framework.one {
         to[ key ] = from[ key ];
       }
     }
-
-    // copy the other keys:
     structAppend( from, to, false );
   }
 

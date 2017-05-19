@@ -83,12 +83,14 @@ component accessors=true {
     }
 
     // run and return query using query.cfc:
-    var result = new query( sql = sql_statement, parameters = parameters, argumentCollection = queryOptions ).execute().getResult();
+    var args = duplicate( queryOptions );
+        args[ "sql" ] = sql_statement;
+        args[ "name" ] = hash( sql_statement );// needed for cache
+        args[ "parameters" ] = parameters;
 
+    var result = new query( argumentCollection = args ).execute().getResult();
     var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-
     logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
-
     return result;
   }
 
