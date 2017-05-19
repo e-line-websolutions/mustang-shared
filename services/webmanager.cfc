@@ -60,7 +60,7 @@ component accessors=true {
       "pageDetails" = { },
       "articles" = [ ],
       "navigation" = [ ],
-      "navPath" = ""
+      "navPath" = [ ]
     };
 
     pageData[ "basePath" ] = getBasePath( seoPathArray );
@@ -81,14 +81,12 @@ component accessors=true {
 
       if ( currentMenuId > 0 ) {
         pageData[ "navigation" ][ i ] = getMenuItems( currentMenuId );
-
-        if ( seoPathArray[ i ] != "nl" && i > 1 && pathLength > 1 && i <= ( min( 2, pathLength ) ) ) {
-          pageData.navPath &= "/" & seoPathArray[ i ];
-        }
+        pageData[ "navPath" ][ i ] = getNavPath( seoPathArray, i );
       }
     }
 
     pageData[ "pageTemplate" ] = getTemplate( pageData );
+    pageData[ "currentLevel" ] = arrayLen( pageData.navPath ) - 1;
 
     structAppend( requestContext, pageData );
   }
@@ -109,6 +107,17 @@ component accessors=true {
     }
 
     return "";
+  }
+
+  public string function getNavPath( required array seoPathArray, numeric level ) {
+    var result = "";
+    for ( var i = 1; i <= level; i++ ) {
+      if ( !arrayIsDefined( seoPathArray, i ) || seoPathArray[ i ] == variables.defaultLanguage ) {
+        continue;
+      }
+      result &= "/#seoPathArray[ i ]#";
+    }
+    return result;
   }
 
   public string function getCurrentBaseMenuItem( required array seoPathArray ) {
@@ -169,7 +178,7 @@ component accessors=true {
       sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId AND
                          nav_level_#i#.assetmeta_x_nTypeId = 2 AND
                          nav_level_#i#.assetmeta_x_nBmId = 14 AND
-                         dbo.variableFormatMstng( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
+                         dbo.variableFormat( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
       queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
     }
 
