@@ -22,7 +22,9 @@ component accessors=true {
   // PUBLIC
 
   public string function translate( label, localeID = getLocaleId( ), alternative, stringVariables = { }, capFirst = true ) {
-    fw.frameworkTrace( "<b>i18n</b>: translate() called." );
+    if ( !isNull( fw ) ) {
+      fw.frameworkTrace( "<b>i18n</b>: translate() called." );
+    }
 
     if ( isNull( alternative ) ) {
       arguments.alternative = label;
@@ -88,7 +90,9 @@ component accessors=true {
       newLanguage = config.defaultLanguage;
     }
 
-    fw.frameworkTrace( "<b>i18n</b>: changeLanguage( #newLanguage# ) called." );
+    if ( !isNull( fw ) ) {
+      fw.frameworkTrace( "<b>i18n</b>: changeLanguage( #newLanguage# ) called." );
+    }
 
     var currentLanguage = getCurrentLanguage( );
 
@@ -104,7 +108,9 @@ component accessors=true {
   }
 
   public string function getCurrentLanguage( ) {
-    fw.frameworkTrace( "<b>i18n</b>: getCurrentLanguage() called." );
+    if ( !isNull( fw ) ) {
+      fw.frameworkTrace( "<b>i18n</b>: getCurrentLanguage() called." );
+    }
 
     param session.currentLanguage=config.defaultLanguage;
     return session.currentLanguage;
@@ -145,7 +151,9 @@ component accessors=true {
   // PRIVATE
 
   private void function populateLanguageStruct( ) {
-    fw.frameworkTrace( "<b>i18n</b>: populateLanguageStruct() called." );
+    if ( !isNull( fw ) ) {
+      fw.frameworkTrace( "<b>i18n</b>: populateLanguageStruct() called." );
+    }
 
     variables.languageStruct = { };
 
@@ -159,7 +167,9 @@ component accessors=true {
   }
 
   private string function cacheRead( required string translation, string localeID = getLocaleId( ), boolean reload = false ) {
-    fw.frameworkTrace( "<b>i18n</b>: cacheRead() called." );
+    if ( !isNull( fw ) ) {
+      fw.frameworkTrace( "<b>i18n</b>: cacheRead() called." );
+    }
 
     if ( reload ) {
       variables.translations = { };

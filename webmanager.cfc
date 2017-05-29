@@ -1,6 +1,4 @@
 component extends=framework.one {
-  request.counter = 0;
-
   this.sessionManagement = true;
 
   param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
@@ -32,7 +30,6 @@ component extends=framework.one {
   };
 
   private void function setupRequest( ) {
-    writeLog( text="setupRequest() called (#++request.counter#)", file="jfr" );
     frameworkTrace( "<b>webmanager</b>: setupRequest() called." );
     request.reset = isFrameworkReloadRequest( );
 
