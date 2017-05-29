@@ -4,6 +4,7 @@ component accessors=true {
 
   property config;
   property logService;
+  property taskQueue;
 
   // constructor
 
@@ -28,7 +29,7 @@ component accessors=true {
 
   public void function addTask( required any taskMethod, any taskArguments = structNew() ) {
     lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
-      addNewTaskItem( taskMethod, taskArguments );
+      addNewTaskItem( taskMethod, taskArguments, variables.asyncTaskThreadName );
 
       if ( variables.isThreadRunning ) {
         return;
@@ -77,9 +78,20 @@ component accessors=true {
     }
   }
 
+  public void function abortQueue( ) {
+    lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
+      for ( var queuedTasks in variables.taskQueue ) {
+        try {
+          thread action="terminate" name=queuedTasks.threadName;
+        } catch ( any e ) { }
+      }
+      variables.taskQueue = [ ];
+    }
+  }
+
   // private methods
 
-  private void function addNewTaskItem( required any taskMethod, required any taskArguments ) {
+  private void function addNewTaskItem( required any taskMethod, required any taskArguments, required string threadName ) {
     if ( isArray( taskArguments ) ) {
       taskArguments = convertArgumentsArrayToCollection( taskArguments );
     }
@@ -88,7 +100,8 @@ component accessors=true {
       variables.taskQueue,
       {
         taskMethod = taskMethod,
-        taskArguments = taskArguments
+        taskArguments = taskArguments,
+        threadName = threadName
       }
     );
   }
@@ -112,7 +125,7 @@ component accessors=true {
   }
 
   private string function getNewAsyncThreadName( ) {
-    var index =++ variables.asyncTaskThreadIndex;
+    var index = ++variables.asyncTaskThreadIndex;
 
     return "thread-#variables.taskQueueID#-#index#";
   }
