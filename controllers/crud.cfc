@@ -2,6 +2,8 @@ component accessors=true {
   property framework;
   property securityService;
   property jsonJavaService;
+  property utilityService;
+  property root;
 
   public any function init( fw ) {
     param variables.listitems="";
@@ -26,7 +28,8 @@ component accessors=true {
     if ( framework.getItem( ) == "edit" && !securityService.can( "change", framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
-        "text" = "privileges-error-1"
+        "text" = "privileges-error-1",
+        "stringVariables" = { "section" = framework.getSection( ) }
       };
       framework.redirect( ":", "alert" );
     }
@@ -34,7 +37,8 @@ component accessors=true {
     if ( !framework.getSection( ) == "main" && !securityService.can( "view", framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
-        "text" = "privileges-error-2"
+        "text" = "privileges-error-2",
+        "stringVariables" = { "section" = framework.getSection( ) }
       };
       framework.redirect( ":", "alert" );
     }
@@ -63,16 +67,20 @@ component accessors=true {
     // exit controller on non crud items
     switch ( framework.getSection( ) ) {
       case "main":
-        var dashboard = lCase( replace( rc.auth.role.name, ' ', '-', 'all' ) );
-        framework.setView( '.dashboard-' & dashboard );
+        var dashboard = lCase( reReplace( rc.auth.role.name, '\W+', '-', 'all' ) );
+
+        if ( utilityService.fileExistsUsingCache( root & "/views/main/dashboard-#dashboard#.cfm" ) ) {
+          framework.setView( '.dashboard-#dashboard#' );
+        } else {
+          framework.setView( '.dashboard-default' );
+        }
+
         return;
-        break;
 
       case "profile":
         rc.data = entityLoadByPK( "contact", rc.auth.userid );
         framework.setView( 'profile.default' );
         return;
-        break;
     }
 
     param rc.lineView=":elements/line";

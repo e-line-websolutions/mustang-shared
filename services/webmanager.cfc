@@ -117,8 +117,8 @@ component accessors=true {
   public string function getNavPath( required array seoPathArray, numeric level ) {
     fw.frameworkTrace( "<b>webmanager</b>: getNavPath() called." );
     var result = "";
-    for ( var i = 1; i <= level; i++ ) {
-      if ( !arrayIsDefined( seoPathArray, i ) || seoPathArray[ i ] == variables.defaultLanguage ) {
+    for ( var i = 2; i <= level; i++ ) {
+      if ( !arrayIsDefined( seoPathArray, i ) ) {
         continue;
       }
       result &= "/#seoPathArray[ i ]#";
@@ -443,5 +443,56 @@ component accessors=true {
     utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
     utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#" );
     fileService.writeToBrowser( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" );
+  }
+
+  public void function clearCache( ) {
+    createObject( "java", "coldfusion.server.ServiceFactory" ).getDataSourceService( ).purgeQueryCache( );
+    var allCacheIds = cacheGetAllIds( );
+    if ( !arrayIsEmpty( allCacheIds ) ) {
+      cacheRemove( arrayToList( allCacheIds ) );
+    }
+  }
+
+  public string function getActionFromPath( array seoPathArray ) {
+    if ( isNull( seoPathArray ) ) {
+      seoPathArray = seoPathAsArray( );
+    }
+
+    if ( !arrayLen( seoPathArray ) ) {
+      return "main.home";
+    }
+
+    var firstItemIndex = 1;
+    var firstItem = seoPathArray[ 1 ];
+
+    if ( isALanguage( firstItem ) ) {
+      firstItemIndex = 2;
+    }
+
+    if ( !arrayIsDefined( seoPathArray, firstItemIndex ) ) {
+      return "main.home";
+    }
+
+    return "main." & asFw1Item( seoPathArray[ firstItemIndex ] );
+  }
+
+  public string function getLanguageFromPath( array seoPathArray ) {
+    if ( isNull( seoPathArray ) ) {
+      seoPathArray = seoPathAsArray( );
+    }
+
+    if ( arrayLen( seoPathArray ) && isALanguage( seoPathArray[ 1 ] ) ) {
+      return asLocale( seoPathArray[ 1 ] );
+    }
+
+    return "";
+  }
+
+  public boolean function isALanguage( required string potentialLanguage ) {
+    return listFindNoCase( getAllLanguages( ), potentialLanguage );
+  }
+
+  public string function asFw1Item( required string unformattedItem ) {
+    return replace( reReplace( listFirst( unformattedItem ), "^[-_]", "", "one" ), '-', '_', 'all' );
   }
 }

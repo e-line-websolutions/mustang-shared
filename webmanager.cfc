@@ -33,50 +33,25 @@ component extends=framework.one {
     frameworkTrace( "<b>webmanager</b>: setupRequest() called." );
     request.reset = isFrameworkReloadRequest( );
 
+    var bf = getBeanFactory( );
+
+    variables.wm = bf.getBean( "webmanagerService" );
+    variables.util = bf.getBean( "utilityService" );
+    variables.i18n = bf.getBean( "translationService" );
+
+    util.limiter( );
+    wm.relocateOnce( request.domainName );
+
     if ( request.reset ) {
-      createObject( "java", "coldfusion.server.ServiceFactory" ).getDataSourceService( ).purgeQueryCache( );
-      var allCacheIds = cacheGetAllIds( );
-      if ( !arrayIsEmpty( allCacheIds ) ) {
-        cacheRemove( arrayToList( allCacheIds ) );
-      }
+      wm.clearCache();
       frameworkTrace( "<b>webmanager</b>: cache reset" );
     }
 
-    var bf = getBeanFactory( );
-
-    variables.util = bf.getBean( "utilityService" );
-    util.limiter( );
-
-    variables.wm = bf.getBean( "webmanagerService" );
-    wm.relocateOnce( request.domainName );
-
-    variables.i18n = bf.getBean( "translationService" );
-
     if ( getSection( ) == "main" ) {
-      request.action = "main.home";
-
-      var language = "";
-      var pathInfo = variables.util.fixPathInfo( );
-      var pathLength = listLen( pathInfo, "/" );
-
-      if ( pathLength ) {
-        var item = reReplace( listFirst( listFirst( pathInfo, "/" ) ), "^[-_]", "", "one" );
-
-        if ( listFindNoCase( variables.wm.getAllLanguages( ), item ) ) {
-          language = variables.wm.asLocale( item );
-          item = "home";
-        }
-
-        request.action
-          = rc.action
-          = request.context.action
-          = "main.#replace( item, '-', '_', 'all' )#";
-
-        controller( "main.setupLevel#pathLength#" );
-      }
-
-      variables.i18n.changeLanguage( language );
-
+      var seoPathArray = wm.seoPathAsArray( );
+      i18n.changeLanguage( wm.getLanguageFromPath( seoPathArray ) );
+      controller( "main.setupLevel#arrayLen( seoPathArray )#" );
+      request.action = request.context.action = wm.getActionFromPath( seoPathArray );
       setView( request.action );
     }
   }
