@@ -12,6 +12,8 @@ component accessors=true {
 
   property string allLanguages;
 
+  // CONSTRUCTOR
+
   public component function init( ds, websiteId, config, fw ) {
     fw.frameworkTrace( "<b>webmanager</b>: webmanagerService initialized." );
 
@@ -38,21 +40,11 @@ component accessors=true {
     return this;
   }
 
-  public array function seoPathAsArray( ) {
-    fw.frameworkTrace( "<b>webmanager</b>: seoPathAsArray() called." );
-    var seoPath = utilityService.fixPathInfo( );
-    var tmp = listToArray( seoPath, "/" );
-    var seoPathArray = [ ];
+  // PUBLIC
 
-    for ( var item in tmp ) {
-      arrayAppend( seoPathArray, reReplace( item, "^[-_]", "", "one" ) );
-    }
-
-    if ( arrayIsEmpty( seoPathArray ) || !listFindNoCase( variables.allLanguages, seoPathArray[ 1 ] ) ) {
-      arrayPrepend( seoPathArray, variables.defaultLanguage );
-    }
-
-    return seoPathArray;
+  public boolean function actionHasView( required string action ) {
+    fw.frameworkTrace( "<b>webmanager</b>: actionHasView() called." );
+    return utilityService.fileExistsUsingCache( root & "/views/" & replace( action, '.', '/', 'all' ) & ".cfm" );
   }
 
   public void function appendPageDataToRequestContext( required struct requestContext ) {
@@ -94,18 +86,153 @@ component accessors=true {
     structAppend( requestContext, pageData );
   }
 
-  public string function getCurrentLanguage( required array seoPathArray ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getCurrentLanguage() called." );
-    var currentLanguage = variables.defaultLanguage;
-
-    if ( !arrayIsEmpty( seoPathArray ) && listFindNoCase( variables.allLanguages, seoPathArray[ 1 ] ) ) {
-      currentLanguage = seoPathArray[ 1 ];
+  public void function clearCache( ) {
+    createObject( "java", "coldfusion.server.ServiceFactory" ).getDataSourceService( ).purgeQueryCache( );
+    var allCacheIds = cacheGetAllIds( );
+    if ( !arrayIsEmpty( allCacheIds ) ) {
+      cacheRemove( arrayToList( allCacheIds ) );
     }
-
-    return currentLanguage;
   }
 
-  public string function getBasePath( required array seoPathArray ) {
+  public string function getActionFromPath( array seoPathArray ) {
+    if ( isNull( seoPathArray ) ) {
+      seoPathArray = seoPathAsArray( );
+    }
+
+    if ( !arrayLen( seoPathArray ) ) {
+      return "main.home";
+    }
+
+    var firstItemIndex = 1;
+    var firstItem = seoPathArray[ 1 ];
+
+    if ( isALanguage( firstItem ) ) {
+      firstItemIndex = 2;
+    }
+
+    if ( !arrayIsDefined( seoPathArray, firstItemIndex ) ) {
+      return "main.home";
+    }
+
+    return "main." & asFw1Item( seoPathArray[ firstItemIndex ] );
+  }
+
+  public any function getArticle( required numeric articleId ) {
+    fw.frameworkTrace( "<b>webmanager</b>: getArticle() called." );
+    var sql = "
+      SELECT    assetmeta_nid                AS [articleId],
+                assetmeta_dcreationdatetime  AS [creationDate],
+                assetcontent_stitletext      AS [title],
+                assetcontent_sintrotext      AS [teaser],
+                assetcontent_sbodytext       AS [body]
+
+      FROM      vw_selectAsset
+
+      WHERE     assetmeta_x_nBwsId = :websiteId
+        AND     assetmeta_x_nTypeId = 3
+        AND     assetmeta_x_nBmId = 14
+        AND     assetmeta_x_nStatusId = 100
+        AND     assetmeta_nid = :articleId
+
+      ORDER BY  assetmeta_nSortKey,
+                assetcontent_sTitleText
+    ";
+
+    var queryParams = {
+      "pageId" = pageId,
+      "websiteId" = variables.websiteId
+    };
+
+    var queryResult = queryService.execute( sql, queryParams, queryOptions );
+
+    if ( queryResult.recordCount == 0 ) {
+      return;
+    }
+
+    var article = queryService.toArray( queryResult )[ 1 ];
+
+    article[ "images" ] = getArticleImages( article.articleId );
+
+    return article;
+  }
+
+  public string function getLanguageFromPath( array seoPathArray ) {
+    if ( isNull( seoPathArray ) ) {
+      seoPathArray = seoPathAsArray( );
+    }
+
+    if ( arrayLen( seoPathArray ) && isALanguage( seoPathArray[ 1 ] ) ) {
+      return asLocale( seoPathArray[ 1 ] );
+    }
+
+    return "";
+  }
+
+  public void function relocateOnce( required string domainname ) {
+    fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
+    if ( domainname == "" || listFindNoCase( "dev,home,local", listLast( cgi.server_name, "." ) ) ) {
+      return;
+    }
+
+    var relocateTo = (
+        cgi.server_port_secure == 1
+          ? 'https'
+          : 'http'
+      ) &
+      '://' & domainname &
+      cgi.path_info & (
+        cgi.script_name == "/index.cfm"
+          ? len( cgi.path_info )
+              ? ''
+              : '/'
+          : cgi.script_name
+      ) & (
+        len( trim( cgi.query_string )) > 0
+          ? '?' & cgi.query_string
+          : ''
+      );
+
+    if( cgi.server_name != domainname ) {
+      location( relocateTo, false, 301 );
+    }
+  }
+
+  public array function seoPathAsArray( ) {
+    fw.frameworkTrace( "<b>webmanager</b>: seoPathAsArray() called." );
+    var seoPath = utilityService.fixPathInfo( );
+    var tmp = listToArray( seoPath, "/" );
+    var seoPathArray = [ ];
+
+    for ( var item in tmp ) {
+      arrayAppend( seoPathArray, reReplace( item, "^[-_]", "", "one" ) );
+    }
+
+    if ( arrayIsEmpty( seoPathArray ) || !listFindNoCase( variables.allLanguages, seoPathArray[ 1 ] ) ) {
+      arrayPrepend( seoPathArray, variables.defaultLanguage );
+    }
+
+    return seoPathArray;
+  }
+
+  public void function serveMedia( required struct requestContext ) {
+    fw.frameworkTrace( "<b>webmanager</b>: serveMedia() called." );
+    param requestContext.file="";
+    param requestContext.s="m";
+
+    if ( !utilityService.fileExistsUsingCache( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" ) ) {
+      imageScalerService.setDestinationDir( "#root#/www/inc/img/resized" );
+      imageScalerService.resizeFromPath( config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#", requestContext.file, requestContext.s );
+      utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
+    }
+
+    utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
+    utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#" );
+    fileService.writeToBrowser( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" );
+  }
+
+  // PRIVATE
+
+  private string function getBasePath( required array seoPathArray ) {
     fw.frameworkTrace( "<b>webmanager</b>: getBasePath() called." );
     if ( seoPathArray[ 1 ] != variables.defaultLanguage ) {
       return "/#seoPathArray[ 1 ]#";
@@ -114,7 +241,7 @@ component accessors=true {
     return "";
   }
 
-  public string function getNavPath( required array seoPathArray, numeric level ) {
+  private string function getNavPath( required array seoPathArray, numeric level ) {
     fw.frameworkTrace( "<b>webmanager</b>: getNavPath() called." );
     var result = "";
     for ( var i = 2; i <= level; i++ ) {
@@ -126,7 +253,7 @@ component accessors=true {
     return result;
   }
 
-  public string function getCurrentBaseMenuItem( required array seoPathArray ) {
+  private string function getCurrentBaseMenuItem( required array seoPathArray ) {
     fw.frameworkTrace( "<b>webmanager</b>: getCurrentBaseMenuItem() called." );
     if ( arrayLen( seoPathArray ) > 1 ) {
       return seoPathArray[ 2 ];
@@ -135,12 +262,12 @@ component accessors=true {
     return "";
   }
 
-  public string function getCurrentMenuItem( required array seoPathArray ) {
+  private string function getCurrentMenuItem( required array seoPathArray ) {
     fw.frameworkTrace( "<b>webmanager</b>: getCurrentMenuItem() called." );
     return seoPathArray[ arrayLen( seoPathArray ) ];
   }
 
-  public string function getPageTitle( required array seoPathArray, string titleDelimiter = " - " ) {
+  private string function getPageTitle( required array seoPathArray, string titleDelimiter = " - " ) {
     fw.frameworkTrace( "<b>webmanager</b>: getPageTitle() called." );
     if ( arrayIsEmpty( seoPathArray ) ) {
       return "";
@@ -159,7 +286,7 @@ component accessors=true {
     return asTitle;
   }
 
-  public numeric function getMenuIdFromPath( required any path ) {
+  private numeric function getMenuIdFromPath( required any path ) {
     fw.frameworkTrace( "<b>webmanager</b>: getMenuIdFromPath() called." );
     var pathArray = isArray( path ) ? path : listToArray( path, "/" );
     var pathLength = arrayLen( pathArray );
@@ -203,7 +330,7 @@ component accessors=true {
     return - 1;
   }
 
-  public struct function getPageDetails( pageId ) {
+  private struct function getPageDetails( pageId ) {
     fw.frameworkTrace( "<b>webmanager</b>: getPageDetails() called." );
     var sql = "
       SELECT    assetmeta_nID               AS pageId,
@@ -239,7 +366,7 @@ component accessors=true {
     return queryService.toArray( queryResult )[ 1 ];
   }
 
-  public array function getMenuItems( required numeric parentId ) {
+  private array function getMenuItems( required numeric parentId ) {
     fw.frameworkTrace( "<b>webmanager</b>: getMenuItems() called." );
     var sql = "
       SELECT    assetcontent_sTitleText
@@ -269,7 +396,7 @@ component accessors=true {
     return listToArray( valueList( navigationQuery.assetcontent_sTitleText, variables.safeDelim ), variables.safeDelim );
   }
 
-  public array function getArticles( required numeric pageId ) {
+  private array function getArticles( required numeric pageId ) {
     fw.frameworkTrace( "<b>webmanager</b>: getArticles() called." );
     var sql = "
       SELECT    vw_selectAsset.assetmeta_nid                AS [articleId],
@@ -307,46 +434,7 @@ component accessors=true {
     return articles;
   }
 
-  public any function getArticle( required numeric articleId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getArticle() called." );
-    var sql = "
-      SELECT    assetmeta_nid                AS [articleId],
-                assetmeta_dcreationdatetime  AS [creationDate],
-                assetcontent_stitletext      AS [title],
-                assetcontent_sintrotext      AS [teaser],
-                assetcontent_sbodytext       AS [body]
-
-      FROM      vw_selectAsset
-
-      WHERE     assetmeta_x_nBwsId = :websiteId
-        AND     assetmeta_x_nTypeId = 3
-        AND     assetmeta_x_nBmId = 14
-        AND     assetmeta_x_nStatusId = 100
-        AND     assetmeta_nid = :articleId
-
-      ORDER BY  assetmeta_nSortKey,
-                assetcontent_sTitleText
-    ";
-
-    var queryParams = {
-      "pageId" = pageId,
-      "websiteId" = variables.websiteId
-    };
-
-    var queryResult = queryService.execute( sql, queryParams, queryOptions );
-
-    if ( queryResult.recordCount == 0 ) {
-      return;
-    }
-
-    var article = queryService.toArray( queryResult )[ 1 ];
-
-    article[ "images" ] = getArticleImages( article.articleId );
-
-    return article;
-  }
-
-  public array function getArticleImages( required numeric articleId ) {
+  private array function getArticleImages( required numeric articleId ) {
     fw.frameworkTrace( "<b>webmanager</b>: getArticleImages() called." );
     var sql = "
       SELECT    vw_selectAsset.assetcontent_sFileExtension AS src,
@@ -374,7 +462,7 @@ component accessors=true {
     return queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
   }
 
-  public string function getTemplate( required struct requestContext ) {
+  private string function getTemplate( required struct requestContext ) {
     fw.frameworkTrace( "<b>webmanager</b>: getTemplate() called." );
     var defaultTemplate = "main.default";
 
@@ -390,109 +478,16 @@ component accessors=true {
     return config.templates[ requestContext.pageDetails.template ];
   }
 
-  public string function asLocale( required string webmanagerLanguage ) {
+  private boolean function isALanguage( required string potentialLanguage ) {
+    return listFindNoCase( getAllLanguages( ), potentialLanguage );
+  }
+
+  private string function asLocale( required string webmanagerLanguage ) {
     fw.frameworkTrace( "<b>webmanager</b>: asLocale() called." );
     return variables.supportedLocales[ webmanagerLanguage ];
   }
 
-  public boolean function actionHasView( required string action ) {
-    fw.frameworkTrace( "<b>webmanager</b>: actionHasView() called." );
-    return utilityService.fileExistsUsingCache( root & "/views/" & replace( action, '.', '/', 'all' ) & ".cfm" );
-  }
-
-  public void function relocateOnce( required string domainname ) {
-    fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
-    if ( domainname == "" || listFindNoCase( "dev,home,local", listLast( cgi.server_name, "." ) ) ) {
-      return;
-    }
-
-    var relocateTo = (
-        cgi.server_port_secure == 1
-          ? 'https'
-          : 'http'
-      ) &
-      '://' & domainname &
-      cgi.path_info & (
-        cgi.script_name == "/index.cfm"
-          ? len( cgi.path_info )
-              ? ''
-              : '/'
-          : cgi.script_name
-      ) & (
-        len( trim( cgi.query_string )) > 0
-          ? '?' & cgi.query_string
-          : ''
-      );
-
-    if( cgi.server_name != domainname ) {
-      location( relocateTo, false, 301 );
-    }
-  }
-
-  public void function serveMedia( required struct requestContext ) {
-    fw.frameworkTrace( "<b>webmanager</b>: serveMedia() called." );
-    param requestContext.file="";
-    param requestContext.s="m";
-
-    if ( !utilityService.fileExistsUsingCache( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" ) ) {
-      imageScalerService.setDestinationDir( "#root#/www/inc/img/resized" );
-      imageScalerService.resizeFromPath( config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#", requestContext.file, requestContext.s );
-      utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
-    }
-
-    utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
-    utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#" );
-    fileService.writeToBrowser( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" );
-  }
-
-  public void function clearCache( ) {
-    createObject( "java", "coldfusion.server.ServiceFactory" ).getDataSourceService( ).purgeQueryCache( );
-    var allCacheIds = cacheGetAllIds( );
-    if ( !arrayIsEmpty( allCacheIds ) ) {
-      cacheRemove( arrayToList( allCacheIds ) );
-    }
-  }
-
-  public string function getActionFromPath( array seoPathArray ) {
-    if ( isNull( seoPathArray ) ) {
-      seoPathArray = seoPathAsArray( );
-    }
-
-    if ( !arrayLen( seoPathArray ) ) {
-      return "main.home";
-    }
-
-    var firstItemIndex = 1;
-    var firstItem = seoPathArray[ 1 ];
-
-    if ( isALanguage( firstItem ) ) {
-      firstItemIndex = 2;
-    }
-
-    if ( !arrayIsDefined( seoPathArray, firstItemIndex ) ) {
-      return "main.home";
-    }
-
-    return "main." & asFw1Item( seoPathArray[ firstItemIndex ] );
-  }
-
-  public string function getLanguageFromPath( array seoPathArray ) {
-    if ( isNull( seoPathArray ) ) {
-      seoPathArray = seoPathAsArray( );
-    }
-
-    if ( arrayLen( seoPathArray ) && isALanguage( seoPathArray[ 1 ] ) ) {
-      return asLocale( seoPathArray[ 1 ] );
-    }
-
-    return "";
-  }
-
-  public boolean function isALanguage( required string potentialLanguage ) {
-    return listFindNoCase( getAllLanguages( ), potentialLanguage );
-  }
-
-  public string function asFw1Item( required string unformattedItem ) {
+  private string function asFw1Item( required string unformattedItem ) {
     return replace( reReplace( listFirst( unformattedItem ), "^[-_]", "", "one" ), '-', '_', 'all' );
   }
 }
