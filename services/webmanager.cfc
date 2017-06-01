@@ -3,12 +3,14 @@ component accessors=true {
   property imageScalerService;
   property queryService;
   property utilityService;
+  property dataService;
 
   property config;
   property datasource;
   property fw;
   property root;
   property websiteId;
+  property navigationType;
 
   property string allLanguages;
 
@@ -31,7 +33,6 @@ component accessors=true {
     variables.safeDelim = chr( 0182 );
     variables.defaultLanguage = lCase( listLast( config.defaultLanguage, "_" ) );
     variables.datasource = ds;
-    variables.websiteId = websiteId;
     variables.queryOptions = {
       "datasource" = variables.datasource,
       "cachedWithin" = createTimespan( 0, 0, 0, 30 )
@@ -54,7 +55,6 @@ component accessors=true {
       "pageTemplate" = "",
       "pageDetails" = { },
       "articles" = [ ],
-      "navigation" = [ ],
       "navPath" = [ ]
     };
 
@@ -62,6 +62,15 @@ component accessors=true {
     pageData[ "currentBaseMenuItem" ] = getCurrentBaseMenuItem( seoPathArray );
     pageData[ "currentMenuItem" ] = getCurrentMenuItem( seoPathArray );
     pageData[ "pageTitle" ] = getPageTitle( seoPathArray );
+
+    switch ( variables.navigationType ) {
+      case "full":
+        pageData[ "fullNavigation" ] = getFullNavigation( websiteId );
+        break;
+      case "per-level":
+        pageData[ "navigation" ] = [ ];
+        break;
+    }
 
     var pathLength = arrayLen( seoPathArray );
 
@@ -75,7 +84,9 @@ component accessors=true {
       }
 
       if ( currentMenuId > 0 ) {
-        pageData[ "navigation" ][ i ] = getMenuItems( currentMenuId );
+        if ( structKeyExists( pageData, "navigation" ) ) {
+          pageData[ "navigation" ][ i ] = getMenuItems( currentMenuId );
+        }
         pageData[ "navPath" ][ i ] = getNavPath( seoPathArray, i );
       }
     }
@@ -315,7 +326,7 @@ component accessors=true {
       sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId AND
                          nav_level_#i#.assetmeta_x_nTypeId = 2 AND
                          nav_level_#i#.assetmeta_x_nBmId = 14 AND
-                         dbo.variableFormat( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
+                         dbo.variableFormatMstng( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
       queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
     }
 
@@ -460,6 +471,23 @@ component accessors=true {
     };
 
     return queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+  }
+
+  private array function getFullNavigation( ) {
+    var sql = "
+      SELECT    *
+      FROM      dbo.vw_menuItems e
+      WHERE     e.websiteId = :websiteId
+      ORDER BY  parentSortKey, parentId, sortKey, menuId
+    ";
+
+    var queryParams = {
+      "websiteId" = websiteId
+    };
+
+    var fullNavigationQuery = queryService.execute( sql, queryParams, queryOptions );
+
+    return dataService.queryToTree( fullNavigationQuery );
   }
 
   private string function getTemplate( required struct requestContext ) {

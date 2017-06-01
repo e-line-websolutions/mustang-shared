@@ -15,6 +15,7 @@ component extends=framework.one {
       constants = {
         root = variables.root,
         ds = "e-line_cm",
+        navigationType = "per-level",
         config = {
           mediaRoot = fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
           cacheFileExists = true,
