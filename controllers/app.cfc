@@ -42,7 +42,8 @@ component accessors=true {
       to      = config.debugEmail,
       from    = config.debugEmail,
       subject = mailSubject,
-      body    = errorMessage
+      body    = errorMessage,
+      type    = "HTML"
     ).send();
   }
 
