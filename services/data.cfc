@@ -474,6 +474,27 @@ component accessors=true {
     return result;
   }
 
+  public array function queryToTree( testData ) {
+    var parents = { "0" = { "children" = [ ] } };
+
+    for ( var row in testData ) {
+      parents[ row.menuId ] = {
+        "menuId" = row.menuId,
+        "name" = row.name,
+        "formatted" = utilityService.variableFormat( row.name ),
+        "children" = [ ]
+      };
+    }
+
+    for ( var row in testData ) {
+      var parent = parents[ row.parentId ];
+      parent.children.append( parents[ row.menuId ] );
+    }
+
+    return parents[ "0" ].children;
+  }
+
+
   // private functions
 
   private string function __formatAsGUID( required string text ) {

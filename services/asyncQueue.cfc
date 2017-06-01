@@ -4,6 +4,7 @@ component accessors=true {
 
   property config;
   property logService;
+  property threadfixService;
   property taskQueue;
 
   // constructor
@@ -36,6 +37,8 @@ component accessors=true {
       }
 
       variables.isThreadRunning = true;
+
+      threadfixService.cacheScriptObjects( );
 
       thread action="run" name=variables.asyncTaskThreadName priority="low" {
         do {
