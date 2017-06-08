@@ -70,6 +70,38 @@ component extends=framework.one {
     return "Missing view for: #rc.action#";
   }
 
+  private struct function readConfig( string site = cgi.server_name ) {
+    // cached:
+    if ( !structKeyExists( url, "reload" ) ) {
+      var config = cacheGet( "config-#this.name#" );
+
+      // found cached settings, only use it in live apps:
+      if ( !isNull( config ) &&
+          structKeyExists( config, "appIsLive" ) &&
+          isBoolean( config.appIsLive ) &&
+          config.appIsLive ) {
+        return config;
+      }
+    }
+
+    // not cached:
+    var defaultSettings = { "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name };
+
+    if ( fileExists( root & "/config/default.json" ) ) {
+      var defaultConfig = deserializeJSON( fileRead( root & "/config/default.json", "utf-8" ) );
+      mergeStructs( defaultConfig, defaultSettings );
+    }
+
+    if ( fileExists( root & "/config/" & site & ".json" ) ) {
+      var siteConfig = deserializeJSON( fileRead( root & "/config/" & site & ".json", "utf-8" ) );
+      mergeStructs( siteConfig, defaultSettings );
+    }
+
+    cachePut( "config-#this.name#", defaultSettings );
+
+    return defaultSettings;
+  }
+
   private void function mergeStructs( required struct from, struct to = { } ) {
     for ( var key in from ) {
       if ( isStruct( from[ key ] ) ) {
@@ -87,6 +119,14 @@ component extends=framework.one {
 
   private void function addToConstants( required struct websiteSpecificConstants ) {
     mergeStructs( websiteSpecificConstants, variables.framework.diConfig.constants );
+  }
+
+  private void function addMapping( required string name, required string absolutePath ) {
+    if ( left( name, 1 ) != "/" ) {
+      name = "/#name#";
+    }
+
+    this.mappings[ name ] = absolutePath;
   }
 
   private string function fixPath( string originalPath ) {

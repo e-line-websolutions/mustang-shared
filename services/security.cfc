@@ -7,7 +7,7 @@ component accessors=true {
   property any bcrypt;
 
   public component function init( root, config ) {
-    var bCryptPath = "#root#/lib/java";
+    // var bCryptPath = "#root#/lib/java";
 
     if ( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ) ) ) {
       bCryptPath = config.paths.bcrypt;
@@ -71,7 +71,7 @@ component accessors=true {
     structAppend( session.auth, tempAuth, true );
   }
 
-  public void function refreshSession( root.model.contact user ) {
+  public void function refreshSession( contact user ) {
     if ( isNull( user ) ) {
       var currentAuth = getAuth( );
 

@@ -158,6 +158,29 @@ component accessors=true {
     return false;
   }
 
+  /**
+    By Tomalak
+    See: https://stackoverflow.com/a/2653972/2378532
+   */
+  public array function arrayOfStructsSort( required array base, string pathToSubElement = "", string sortType = "text", string sortOrder = "ASC" ) {
+    var baseLength = arrayLen( base );
+    var tmpStruct = { };
+
+    for ( var i = 1; i <= baseLength; i++ ) {
+      tmpStruct[ i ] = base[ i ];
+    }
+
+    var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
+    var keysLength = arrayLen( keys );
+    var returnVal = [ ];
+
+    for ( var i = 1; i <= keysLength; i++ ) {
+      returnVal[ i ] = tmpStruct[ keys[ i ] ];
+    }
+
+    return returnVal;
+  }
+
   public string function dateDeFuckulator( string potentialDate ) {
     potentialDate = reReplace( potentialDate, '\W', '/', 'all' );
     potentialDate = reReplace( potentialDate, '(\d+)(?:[a-zA-Z]+)', '\1', 'all' );
@@ -298,7 +321,7 @@ component accessors=true {
 
   // conversion / mapping functions
 
-  public array function xmlToArrayOfStructs( required any xmlSource, required struct mapBy = { id = "id", name = "name" } ) {
+  public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = "id", name = "name" } ) {
     var result = [ ];
 
     if ( !isArray( xmlSource ) ) {
@@ -345,7 +368,7 @@ component accessors=true {
         var values = listToArray( filter[ key ], "|" );
 
         if( arrayLen( values ) == 1 ) {
-          arrayAppend( filters, '#key#="#values[ 1 ]#"' );
+          arrayAppend( filters, '#key#="#xmlFormat( values[ 1 ] )#"' );
         } else {
           var multipleValues = __toXpathStringOr( values );
           arrayAppend( filters, '#key#[#multipleValues#]' );
@@ -545,7 +568,7 @@ component accessors=true {
     var result = [];
 
     for( var item in source ) {
-      arrayAppend( result, ". = '" & trim( item ) & "'" );
+      arrayAppend( result, ". = '" & xmlFormat( trim( item ) ) & "'" );
     }
 
     return arrayToList( result, " or " );
