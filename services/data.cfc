@@ -1,6 +1,7 @@
 component accessors=true {
   property jsonService;
   property utilityService;
+  property queryService;
 
   // sanitation functions:
 
@@ -497,10 +498,12 @@ component accessors=true {
     return result;
   }
 
-  public array function queryToTree( testData ) {
+  public array function queryToTree( required query inputQuery ) {
+    var asArrayOfStructs = queryToArrayOfStructs( inputQuery );
+
     var parents = { "0" = { "children" = [ ] } };
 
-    for ( var row in testData ) {
+    for ( var row in asArrayOfStructs ) {
       parents[ row.menuId ] = {
         "menuId" = row.menuId,
         "name" = row.name,
@@ -509,7 +512,7 @@ component accessors=true {
       };
     }
 
-    for ( var row in testData ) {
+    for ( var row in asArrayOfStructs ) {
       var parent = parents[ row.parentId ];
       parent.children.append( parents[ row.menuId ] );
     }
@@ -517,6 +520,24 @@ component accessors=true {
     return parents[ "0" ].children;
   }
 
+  /** Converts query to an array full of structs
+    *
+    * @inputQuery    A ColdFusion query
+    */
+  public array function queryToArrayOfStructs( required query inputQuery ) {
+    var result = [ ];
+    var columns = inputQuery.getMeta( ).getcolumnlabels( );
+
+    for( var i = 1; i <= inputQuery.recordCount; i++ ) {
+      var row = { };
+      for( var col in columns ) {
+        row[ col ] = inputQuery[ col ][ i ];
+      }
+      arrayAppend( result, row );
+    }
+
+    return result;
+  }
 
   // private functions
 

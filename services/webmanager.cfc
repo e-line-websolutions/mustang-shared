@@ -475,15 +475,35 @@ component accessors=true {
 
   private array function getFullNavigation( ) {
     var sql = "
-      SELECT    *
-      FROM      dbo.vw_menuItems e
-      WHERE     e.websiteId = :websiteId
+      SELECT    tbl_assetMeta.assetmeta_x_nBwsID                      AS websiteId,
+                mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId,
+                tbl_assetMeta.assetmeta_nID                           AS menuId,
+                tbl_assetContent.assetcontent_sTitleText              AS name,
+                parentMenu.assetmeta_nSortKey                         AS parentSortKey,
+                tbl_assetMeta.assetmeta_nSortKey                      AS sortKey
+
+      FROM      mid_assetmetaAssetcontent
+                INNER JOIN tbl_assetContent ON mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetContentID = tbl_assetContent.assetcontent_nID
+                INNER JOIN tbl_assetMeta ON mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetMetaID = tbl_assetMeta.assetmeta_nID
+                INNER JOIN mid_assetmetaAssetmeta ON tbl_assetMeta.assetmeta_nID = mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID
+                INNER JOIN tbl_assetMeta AS parentMenu ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = parentMenu.assetmeta_nID
+
+      WHERE     tbl_assetMeta.assetmeta_x_nBwsID = :websiteId
+        AND     tbl_assetMeta.assetmeta_x_nStatusID = 100
+        AND     tbl_assetMeta.assetmeta_x_nTypeID = 2
+        AND     tbl_assetMeta.assetmeta_x_nBmID = 14
+        AND     LEFT( tbl_assetContent.assetcontent_sTitleText, 1 ) <> '_'
+
       ORDER BY  parentSortKey, parentId, sortKey, menuId
     ";
 
     var queryParams = {
       "websiteId" = websiteId
     };
+
+    var localQueryOptions = duplicate( queryOptions );
+
+    localQueryOptions[ "cachedWithin" ] = createTimespan( 0, 0, 15, 0 );
 
     var fullNavigationQuery = queryService.execute( sql, queryParams, queryOptions );
 

@@ -2,6 +2,7 @@ component accessors=true {
   property config;
   property ds;
   property utilityService;
+  property dataService;
   property logService;
   property string dbvendor;
 
@@ -13,23 +14,8 @@ component accessors=true {
     return this;
   }
 
-  /** Converts query to an array full of structs
-    *
-    * @query    A ColdFusion query
-    */
-  public array function toArray( required query query ) {
-    var result = [];
-    var meta = listToArray( query.columnList );
-
-    for( var i=1; i<=query.recordCount; i++ ) {
-      var row = {};
-      for( var col in meta ) {
-        row[col] = query[col][i];
-      }
-      arrayAppend( result, row );
-    }
-
-    return result;
+  public array function toArray( required query inputQuery ) {
+    return dataService.queryToArrayOfStructs( inputQuery );
   }
 
   /** Backports CF11's queryExecute() to CF9 & CF10
