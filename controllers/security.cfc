@@ -130,14 +130,7 @@ component accessors=true {
 
   public void function doLogout( required struct rc ) {
     // reset session
-    securityService.createSession( );
-
-    if ( isDefined( "rc.auth.isLoggedIn" ) && isBoolean( rc.auth.isLoggedIn ) && rc.auth.isLoggedIn && !structKeyExists( rc, "alert" ) ) {
-      rc.alert = {
-        "class" = "success",
-        "text" = "logout-success"
-      };
-    }
+    securityService.invalidateSession( );
 
     var logMessage = "user logged out.";
 
@@ -146,39 +139,40 @@ component accessors=true {
 
       if ( !isNull( user ) ) {
         logMessage = user.getUsername( ) & " logged out.";
+
+        var updateUserLog = {
+          "contactID" = user.getID( ),
+          "add_logEntry" = {
+            "relatedEntity" = user,
+            "logaction" = optionService.getOptionByName( "logaction", "security" ),
+            "note" = logMessage,
+            "by" = user,
+            "dd" = now( ),
+            "ip" = cgi.remote_addr
+          }
+        };
+
+        var originalLogSetting = config.log;
+        request.context.config.log = false;
+
+        user.save( updateUserLog );
+
+        request.context.config.log = originalLogSetting;
       }
-
-      var updateUserLog = {
-        contactID = user.getID( ),
-        add_logEntry = {
-          relatedEntity = user,
-          logaction = optionService.getOptionByName( "logaction", "security" ),
-          note = logMessage,
-          by = user,
-          dd = now( ),
-          ip = cgi.remote_addr
-        }
-      };
-
-      var originalLogSetting = config.log;
-      request.context.config.log = false;
-
-      user.save( updateUserLog );
-
-      request.context.config.log = originalLogSetting;
     }
 
-    logService.writeLogLevel( text = logMessage, type = "information", file = request.appName );
+    logService.writeLogLevel( logMessage );
 
     if ( framework.getSubsystem( ) == "api" || listFirst( cgi.PATH_INFO, "/" ) == "api" ) {
-      var isLucee = listFindNoCase( "lucee,railo", server.ColdFusion.ProductName );
-      var pageContext = getPageContext( );
-      var response = isLucee ? pageContext.getResponse( ) : pageContext.getFusionContext( ).getResponse( );
-
-      response.setHeader( "WWW-Authenticate", 'Basic realm="#request.appName#-API"' );
-
-      framework.renderData( "rawjson", '{"status":"error","detail":"Unauthorized"}', 401 );
+      framework.redirect( ":api" );
       framework.abortController( );
+    }
+
+    if ( isDefined( "rc.auth.isLoggedIn" ) && isBoolean( rc.auth.isLoggedIn ) && rc.auth.isLoggedIn && !structKeyExists( rc, "alert" ) ) {
+      rc.alert = {
+        "class" = "success",
+        "text" = "logout-success"
+      };
     }
 
     framework.redirect( ":security.login", "alert" );

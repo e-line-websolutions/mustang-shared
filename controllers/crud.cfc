@@ -1,9 +1,11 @@
 component accessors=true {
-  property framework;
-  property securityService;
-  property jsonJavaService;
-  property utilityService;
   property root;
+  property framework;
+
+  property crudService;
+  property jsonJavaService;
+  property securityService;
+  property utilityService;
 
   public any function init( fw ) {
     param variables.listitems="";
@@ -20,7 +22,7 @@ component accessors=true {
     return this;
   }
 
-  public void function before( rc ) {
+  public void function before( required struct rc ) {
     if ( !rc.auth.isLoggedIn ) {
       return;
     }
@@ -48,7 +50,7 @@ component accessors=true {
     variables.entity = framework.getSection( );
   }
 
-  public void function default( rc ) {
+  public void function default( required struct rc ) {
     if ( !rc.auth.isLoggedIn ) {
       return;
     }
@@ -323,15 +325,11 @@ component accessors=true {
             "SELECT COUNT( e ) AS total FROM #lCase( variables.entity )# AS e WHERE e.deleted != :deleted",
             { "deleted" = true },
             { ignorecase = true }
-          )[
-            1
-          ];
+          )[ 1 ];
           rc.deleteddata = ORMExecuteQuery(
             "SELECT COUNT( mainEntity.id ) AS total FROM #lCase( variables.entity )# AS mainEntity WHERE mainEntity.deleted = :deleted",
             { "deleted" = true }
-          )[
-            1
-          ];
+          )[ 1 ];
 
           if ( rc.showdeleted ) {
             rc.recordCounter = rc.deleteddata;
@@ -408,7 +406,7 @@ component accessors=true {
     }
   }
 
-  public void function new( rc ) {
+  public void function new( required struct rc ) {
     if ( !securityService.can( "change", framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
@@ -420,12 +418,12 @@ component accessors=true {
     edit( rc = rc );
   }
 
-  public void function view( rc ) {
+  public void function view( required struct rc ) {
     rc.editable = false;
     edit( rc = rc );
   }
 
-  public void function edit( rc ) {
+  public void function edit( required struct rc ) {
     param rc.modal=false;
     param rc.editable=true;
     param rc.inline=false;
@@ -524,7 +522,7 @@ component accessors=true {
     }
   }
 
-  public void function delete( rc ) {
+  public void function delete( required struct rc ) {
     if ( !securityService.can( "delete", framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
@@ -533,40 +531,18 @@ component accessors=true {
       framework.redirect( ".default", "alert" );
     }
 
-    transaction {
-      var entityToDelete = entityLoadByPK( variables.entity, rc[ "#variables.entity#id" ] );
-
-    if ( !isNull( entityToDelete ) ) {
-      entityToDelete.save( { "deleted" = true } );
-
-      if ( entityToDelete.propertyExists( "log" ) ) {
-        var logentry = entityNew( "logentry", { relatedEntity = entityToDelete } );
-          rc.log = logentry.enterIntoLog( "removed" );
-      }
-    }
-    }
+    crudService.deleteEntity( variables.entity );
 
     framework.redirect( ".default" );
   }
 
-  public void function restore( rc ) {
-    transaction {
-      var entityToRestore = entityLoadByPK( variables.entity, rc[ "#variables.entity#id" ] );
-
-    if ( !isNull( entityToRestore ) ) {
-      entityToRestore.save( { "deleted" = false } );
-
-      if ( entityToRestore.propertyExists( "log" ) ) {
-        var logentry = entityNew( "logentry", { relatedEntity = entityToRestore } );
-          rc.log = logentry.enterIntoLog( "restored" );
-      }
-    }
-    }
+  public void function restore( required struct rc ) {
+    crudService.restoreEntity( variables.entity );
 
     framework.redirect( ".view", "#variables.entity#id" );
   }
 
-  public void function save( rc ) {
+  public void function save( required struct rc ) {
     if ( structCount( form ) == 0 ) {
       rc.alert = {
         "class" = "danger",
@@ -583,59 +559,7 @@ component accessors=true {
       framework.redirect( ".default", "alert" );
     }
 
-    // Load existing, or create a new entity
-    if ( structKeyExists( rc, "#variables.entity#id" ) ) {
-      rc.savedEntity = entityLoadByPK( variables.entity, rc[ "#variables.entity#id" ] );
-    } else {
-      rc.savedEntity = entityNew( variables.entity );
-      entitySave( rc.savedEntity );
-    }
-
-    var formData = { };
-    structAppend( formData, url, true );
-    structAppend( formData, form, true );
-
-    var entityProperties = rc.savedEntity.getInheritedProperties( );
-    var inlineEditProperties = structFindKey( entityProperties, "inlineedit", "all" );
-
-    for ( var property in inlineEditProperties ) {
-      var property = property.owner;
-      var fieldPrefix = property.name;
-      var prefixedFields = reMatchNoCase( "#fieldPrefix#_[^,]+", form.FIELDNAMES );
-      var inlineData = { };
-
-      if ( !arrayIsEmpty( prefixedFields ) ) {
-        var subclass = fieldPrefix;
-
-        if( structKeyExists( form, "_#fieldPrefix#_subclass" ) ) {
-          subclass = form[ "_#fieldPrefix#_subclass" ];
-          inlineData[ "__subclass" ] = subclass;
-        }
-
-        var pkField = "#subclass#id";
-
-        if ( structKeyExists( form, pkField ) ) {
-          structDelete( formData, pkField );
-          inlineData[ pkField ] = form[ pkField ];
-        }
-
-        for ( var field in prefixedFields ) {
-          structDelete( formData, field );
-
-          if ( structKeyExists( form, field ) && len( form[ field ] ) ) {
-            inlineData[ listRest( field, "_" ) ] = form[ field ];
-          }
-        }
-
-        if ( !structIsEmpty( inlineData ) ) {
-          formData[ fieldPrefix ] = inlineData;
-        }
-      }
-    }
-
-    transaction {
-      rc.savedEntity = rc.savedEntity.save( formData );
-    }
+    rc.savedEntity = crudService.saveEntity( variables.entity );
 
     if ( !( structKeyExists( rc, "dontredirect" ) && rc.dontredirect ) ) {
       if ( structKeyExists( rc, "returnto" ) ) {

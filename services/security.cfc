@@ -1,5 +1,6 @@
 component accessors=true {
   property config;
+
   property dataService;
   property logService;
   property utilityService;
@@ -7,13 +8,9 @@ component accessors=true {
   property any bcrypt;
 
   public component function init( root, config ) {
-    // var bCryptPath = "#root#/lib/java";
-
     if ( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ) ) ) {
-      bCryptPath = config.paths.bcrypt;
+      variables.bcrypt = getBCrypt( config.paths.bcrypt );
     }
-
-    variables.bcrypt = getBCrypt( bCryptPath );
 
     return this;
   }
@@ -54,6 +51,7 @@ component accessors=true {
     };
 
     structClear( session );
+
     structAppend( session, tmpSession );
   }
 
@@ -263,5 +261,33 @@ component accessors=true {
       "userid" = '',
       "canAccessAdmin" = false
     };
+  }
+
+  /*
+   * From https://github.com/misterdai/cfbackport/blob/master/cf10.cfm
+   * Altered a bit to follow project coding style
+   **/
+  public void function invalidateSession( ) {
+    if ( !isNull( sessionInvalidate ) ) {
+      sessionInvalidate( );
+      return;
+    }
+
+    if ( structKeyExists( session, "cfid" ) && structKeyExists( session, "cftoken" ) ) {
+      var sessionId = session.cfid & '_' & session.cftoken;
+    }
+
+    // Fire onSessionEnd
+    var appEvents = application.getEventInvoker( );
+    appEvents.onSessionEnd( [ application, session ] );
+
+    // Make sure that session is empty
+    structClear( session );
+
+    // Clean up the session
+    if ( !isNull( sessionId ) ) {
+      var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
+      sessionTracker.cleanUp( application.applicationName, sessionId );
+    }
   }
 }

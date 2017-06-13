@@ -163,7 +163,7 @@ component accessors=true {
     By Tomalak
     See: https://stackoverflow.com/a/2653972/2378532
    */
-  public array function arrayOfStructsSort( required array base, string pathToSubElement = "", string sortType = "text", string sortOrder = "ASC" ) {
+  public array function arrayOfStructsSort( required array base, string pathToSubElement = "", string sortType = "textnocase", string sortOrder = "ASC" ) {
     var baseLength = arrayLen( base );
     var tmpStruct = { };
 
@@ -387,7 +387,10 @@ component accessors=true {
     var xmlns = len( trim( namespace ) ) ? ' xmlns="#namespace#"' : ""; // only on first element
 
     for ( var key in source ) {
-      var value = source[ key ];
+      var value = structKeyExists( source, key )
+        ? source[ key ]
+        : "";
+
 
       if ( isSimpleValue( value ) ) {
         result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
@@ -514,7 +517,7 @@ component accessors=true {
 
     for ( var row in asArrayOfStructs ) {
       var parent = parents[ row.parentId ];
-      parent.children.append( parents[ row.menuId ] );
+      arrayAppend( parent.children, parents[ row.menuId ] );
     }
 
     return parents[ "0" ].children;
@@ -526,11 +529,13 @@ component accessors=true {
     */
   public array function queryToArrayOfStructs( required query inputQuery ) {
     var result = [ ];
-    var columns = inputQuery.getMeta( ).getcolumnlabels( );
+    var cols = inputQuery.getMeta( ).getColumnLabels( );
+    var noOfCols = arrayLen( cols );
 
     for( var i = 1; i <= inputQuery.recordCount; i++ ) {
       var row = { };
-      for( var col in columns ) {
+      for( var j = 1; j <= noOfCols; j++ ) {
+        var col = cols[ j ];
         row[ col ] = inputQuery[ col ][ i ];
       }
       arrayAppend( result, row );

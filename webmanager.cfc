@@ -1,11 +1,10 @@
 component extends=framework.one {
-  this.sessionManagement = true;
-
   param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
   param request.domainName=cgi.server_name;
 
-  variables.root = this.mappings[ "/root" ] = getRoot( );
+  this.sessionManagement = true;
 
+  variables.root = this.mappings[ "/root" ] = getRoot( );
   variables.framework = {
     routesCaseSensitive = false,
     generateSES = true,
@@ -27,7 +26,11 @@ component extends=framework.one {
       }
     },
     base = "/root",
-    routes = [ { "/media/:file" = "/media/load/file/:file" }, { "*" = "/main/default" } ]
+    routes = [
+      { "/media/:file" = "/media/load/file/:file" },
+      { "/forms/:action" = "/forms/:action" },
+      { "*" = "/main/default" }
+    ]
   };
 
   private void function setupRequest( ) {
@@ -68,6 +71,10 @@ component extends=framework.one {
     }
 
     return "Missing view for: #rc.action#";
+  }
+
+  function onError() {
+    writeDump( arguments );abort;
   }
 
   private struct function readConfig( string site = cgi.server_name ) {
