@@ -1,6 +1,4 @@
 component extends="framework.one" {
-  variables.downForMaintenance = false; // set this to true during updates
-
   setupMustang( );
 
   // public functions:
@@ -40,23 +38,13 @@ component extends="framework.one" {
     variables.i18n = bf.getBean( "translationService" );
     variables.util = bf.getBean( "utilityService" );
 
+    request.context.util = util;
+    request.context.i18n = i18n;
+
     util.setCFSetting( "showdebugoutput", request.context.debug );
 
     // rate limiter:
     util.limiter( );
-
-    // down for maintenance message to non dev users:
-    if ( variables.downForMaintenance && !listFind( variables.cfg.debugIP, cgi.remote_addr ) ) {
-      writeOutput(
-        'Geachte gebruiker,
-        <br /><br />
-        Momenteel is deze applicatie niet beschikbaar in verband met onderhoud.<br />
-        Onze excuses voor het ongemak.
-        <!-- IP adres: #cgi.remote_addr# -->
-      '
-      );
-      abort;
-    }
 
     // security:
     controller( ":security.authorize" );

@@ -55,7 +55,8 @@ component accessors=true {
       "pageTemplate" = "",
       "pageDetails" = { },
       "articles" = [ ],
-      "navPath" = [ ]
+      "navPath" = [ ],
+      "stylesheets" = [ ]
     };
 
     pageData[ "basePath" ] = getBasePath( seoPathArray );

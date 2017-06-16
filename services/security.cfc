@@ -69,7 +69,7 @@ component accessors=true {
     structAppend( session.auth, tempAuth, true );
   }
 
-  public void function refreshSession( contact user ) {
+  public void function refreshSession( component user ) {
     if ( isNull( user ) ) {
       var currentAuth = getAuth( );
 
@@ -268,7 +268,7 @@ component accessors=true {
    * Altered a bit to follow project coding style
    **/
   public void function invalidateSession( ) {
-    if ( !isNull( sessionInvalidate ) ) {
+    if ( val( server.coldfusion.productversion ) >= 10 ) {
       sessionInvalidate( );
       return;
     }

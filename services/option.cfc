@@ -7,25 +7,25 @@ component accessors=true {
 
   // constructor
 
-  public component function init() {
-    variables.allOptions = {};
-    reloadOptions();
+  public component function init( ) {
+    variables.allOptions = { };
+    reloadOptions( );
     return this;
   }
 
 
   // public functions
 
-  public void function reloadOptions() {
+  public void function reloadOptions( ) {
     var allOptions = variables.allOptions;
-    var result = {};
+    var result = { };
 
-    for( var option in __getOptionsFromDB()) {
+    for( var option in __getOptionsFromDB( ) ) {
       var key = option.get( 'key' );
       var value = option.get( 'value' );
 
-      if( !structKeyExists( result, key )) {
-        result[ key ] = [];
+      if( !structKeyExists( result, key ) ) {
+        result[ key ] = [ ];
       }
 
       arrayAppend( result[ key ], value );
@@ -34,31 +34,25 @@ component accessors=true {
     variables.allOptions = result;
   }
 
-  public any function getOptionByName( required string entityName,
-                                       required string optionName,
-                                               boolean createIfMissing=false ) {
-    if( !len( trim( entityName ))) {
+  public any function getOptionByName( required string entityName, required string optionName, boolean createIfMissing = false ) {
+    if( !len( trim( entityName ) ) ) {
       throw( "Missing entity name", "optionService.getOptionByName" );
     }
 
-    if( !len( trim( optionName ))) {
+    if( !len( trim( optionName ) ) ) {
       throw( "Missing option name for #entityName#", "optionService.getOptionByName" );
     }
 
     var allOptions = variables.allOptions;
 
-    if( structKeyExists( allOptions, entityName )) {
-      var params = {
-        "optionname" = trim( lCase( optionName ))
-      };
+    if( structKeyExists( allOptions, entityName ) ) {
+      var params = { "optionname" = trim( lCase( optionName ) ) };
 
       var hql = "SELECT t FROM #entityName# t WHERE LOWER( t.name ) = :optionname";
-      var options = {
-            "ignorecase" = true
-          };
+      var options = { "ignorecase" = true };
       var searchOptions = ORMExecuteQuery( hql, params, true, options );
 
-      if( !isNull( searchOptions )) {
+      if( !isNull( searchOptions ) ) {
         return searchOptions;
       }
     }
@@ -67,38 +61,28 @@ component accessors=true {
       return __createNewOption( entityName, optionName );
     }
 
-    return dataService.nil();
+    return dataService.nil( );
   }
 
 
   // private functions
 
-  private component function __createNewOption( required string entityName,
-                                                required string optionName ) {
+  private component function __createNewOption( required string entityName, required string optionName ) {
     optionName = trim( optionName );
 
-    transaction {
-      try {
-        var newOption = entityNew( entityName );
-        entitySave( newOption );
-        newOption.save({ name = optionName });
-      } catch ( any e ) {
-        transactionRollback();
-        rethrow;
-      }
-    }
+    var newOption = entityNew( entityName );
+    newOption.save( { "name" = optionName } );
 
     __addOptionToCache( entityName, optionName );
 
     return newOption;
   }
 
-  private void function __addOptionToCache( required string entityName,
-                                            required string optionName ) {
+  private void function __addOptionToCache( required string entityName, required string optionName ) {
     var allOptions = variables.allOptions;
 
-    if( !structKeyExists( allOptions, entityName )) {
-      allOptions[ entityName ] = [];
+    if( !structKeyExists( allOptions, entityName ) ) {
+      allOptions[ entityName ] = [ ];
     }
 
     arrayAppend( allOptions[ entityName ], optionName );
@@ -106,7 +90,7 @@ component accessors=true {
     variables.allOptions = allOptions;
   }
 
-  private array function __getOptionsFromDB() {
+  private array function __getOptionsFromDB( ) {
     return ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
   }
 }
