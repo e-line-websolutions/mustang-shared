@@ -96,6 +96,8 @@ component accessors=true {
 
     var currentLanguage = getCurrentLanguage( );
 
+    setLocale( newLanguage );
+
     if ( newLanguage == currentLanguage ) {
       return;
     }
@@ -118,6 +120,7 @@ component accessors=true {
 
   public void function setLocaleId( required string locale ) {
     param config.useOrm=true;
+
     if ( config.useOrm ) {
       var defaultLanguageCode = listGetAt( locale, 1, "_" );
       var defaultCountryCode = listGetAt( locale, 2, "_" );
@@ -125,12 +128,14 @@ component accessors=true {
       var country = entityLoad( "country", { "iso2" = defaultCountryCode }, true );
 
       if ( !isNull( language ) && !isNull( country ) ) {
-        var localeObj = entityLoad( "locale",
-                                 {
-                                   country = country,
-                                   language = language
-                                 },
-                                 true );
+        var localeObj = entityLoad(
+          "locale",
+          {
+            country = country,
+            language = language
+          },
+          true
+        );
       }
 
       if ( !isNull( localeObj ) ) {

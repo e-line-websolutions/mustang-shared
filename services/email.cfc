@@ -7,7 +7,8 @@ component accessors=true {
     required  any     to,
     required  string  subject,
     required  string  body,
-              string  type = "html"
+              string  type = "html",
+              string  bcc
   ) {
     try {
       var toEmail = isSimpleValue( to ) ? to : to.getEmail( );
@@ -28,6 +29,10 @@ component accessors=true {
       message.setTo( sendTo );
       message.setSubject( subject );
       message.setBody( body );
+
+      if ( !isNull( bcc ) ) {
+        message.setBcc( bcc );
+      }
 
       message.send( );
 

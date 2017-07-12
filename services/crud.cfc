@@ -1,5 +1,6 @@
 component accessors=true {
   property logService;
+  property dataService;
 
   // PUBLIC
 

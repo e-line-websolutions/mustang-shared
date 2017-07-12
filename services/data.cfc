@@ -1,7 +1,8 @@
 component accessors=true {
   property jsonService;
+  property jsonJavaService;
   property utilityService;
-  property queryService;
+  property logService;
 
   // sanitation functions:
 
@@ -202,11 +203,17 @@ component accessors=true {
   // convenience functions
 
   public any function processEntity( any data,
-                                 numeric level=0,
-                                 numeric maxLevel=1,
-                                 boolean basicsOnly=false ) {
+                                 numeric level = 0,
+                                 numeric maxLevel = 1,
+                                 boolean basicsOnly = false ) {
     if( level == 0 ) {
-      utilityService.setCFSetting( "requesttimeout", 10 );
+      variables.utilityService.setCFSetting( "requesttimeout", 10 );
+    }
+
+    var useJsonService = variables.jsonService;
+
+    if ( !isNull( variables.jsonJavaService ) && isObject( variables.jsonJavaService ) ) {
+      useJsonService = variables.jsonJavaService;
     }
 
     level = max( 0, level );
@@ -248,8 +255,7 @@ component accessors=true {
         if( level == 0 ) {
           throw( "Doesn't work on non-basecfc objects" );
         }
-
-        return; // Doesn't work on non-basecfc objects
+        return;
       }
 
       var allowedFieldTypes = "id,column,many-to-one,one-to-many,many-to-many"; // level 0 only
@@ -262,39 +268,59 @@ component accessors=true {
         allowedFieldTypes = "id,column";
       }
 
-      var result = {};
-      var objProps = data.getInstanceVariables().properties;
+      var result = { };
+      var allFields = data.getInstanceVariables().properties;
 
-      for( var key in objProps ) {
-        var prop = {
+      for( var key in allFields ) {
+        var fieldProperties = {
           "inapi" = true,
           "fieldtype" = "column",
           "dataType" = ""
         };
 
-        structAppend( prop, objProps[ key ], true );
+        structAppend( fieldProperties, allFields[ key ], true );
 
-        if( prop.inapi &&
-            structKeyExists( data, "get#prop.name#" ) &&
-            listFindNoCase( allowedFieldTypes, prop.fieldtype )) {
-          var value = evaluate( "data.get#prop.name#()" );
-
-          if( isNull( value )) {
-            continue;
-          }
-
-          if( prop.dataType == "json" && isSimpleValue( value ) && left( trim( value ), 1 ) == "{" ) {
-            structAppend( result, jsonService.deserialize( value ));
-            continue;
-          }
-
-          if( compareNoCase( prop.fieldtype, "one-to-many" ) == 0 ||
-              compareNoCase( prop.fieldtype, "many-to-many" ) == 0 ) {
-            basicsOnly = true; // next level only allow to-one
-          }
-
-          result[ prop.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
+        if ( listFindNoCase( "numeric,string,boolean", fieldProperties.fieldtype ) ) {
+          fieldProperties.fieldtype = "column";
         }
+
+        if ( !fieldProperties.inapi ) {
+          continue;
+        }
+
+        if ( !listFindNoCase( allowedFieldTypes, fieldProperties.fieldtype ) ) {
+          continue;
+        }
+
+        if ( !structKeyExists( data, "get#fieldProperties.name#" ) ) {
+          continue;
+        }
+
+        var value = variables.utilityService.cfinvoke( data, "get#fieldProperties.name#" );
+
+        if( isNull( value )) {
+          continue;
+        }
+
+        if( fieldProperties.dataType == "json" ) {
+          try {
+            structAppend( result, useJsonService.deserialize( value ));
+          } catch ( any e ) {
+            variables.logService.dumpToFile( { "dataService.processEntity()" = {
+              "Exception" = e,
+              "Data" = value,
+              "Property" = fieldProperties
+            } } );
+          }
+          continue;
+        }
+
+
+        if( fieldProperties.fieldtype contains "to-many" ) {
+          basicsOnly = true; // next level only allow to-one
+        }
+
+        result[ fieldProperties.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
       }
 
     } else if( isStruct( data )) {
@@ -503,20 +529,24 @@ component accessors=true {
 
   public array function queryToTree( required query inputQuery ) {
     var asArrayOfStructs = queryToArrayOfStructs( inputQuery );
-
     var parents = { "0" = { "children" = [ ] } };
 
     for ( var row in asArrayOfStructs ) {
       parents[ row.menuId ] = {
         "menuId" = row.menuId,
         "name" = row.name,
-        "formatted" = utilityService.variableFormat( row.name ),
+        "formatted" = variables.utilityService.variableFormat( row.name ),
         "children" = [ ]
       };
     }
 
     for ( var row in asArrayOfStructs ) {
+      if ( !structKeyExists( parents, row.parentId ) ) {
+        continue;
+      }
+
       var parent = parents[ row.parentId ];
+
       arrayAppend( parent.children, parents[ row.menuId ] );
     }
 
