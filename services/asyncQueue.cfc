@@ -11,13 +11,12 @@ component accessors=true {
 
   public component function init( ) {
     variables.taskQueue = [ ];
-    variables.taskQueueID = lcase( createUUID( ) );
-    variables.asyncTaskThreadIndex = 1;
-    variables.asyncTaskThreadName = getNewAsyncThreadName( );
+    variables.taskQueueID = lCase( createUUID( ) );
+    variables.threadIndex = 1;
+    variables.threadName = getNewAsyncThreadName( );
     variables.isThreadRunning = false;
-    variables.asyncTaskLockName = getAsyncTaskLockName( );
-    variables.asyncTaskLockTimeout = 30;
-    variables.queueNr = 1;
+    variables.lockName = getAsyncTaskLockName( );
+    variables.lockTimeout = 30;
 
     return this;
   }
@@ -28,9 +27,11 @@ component accessors=true {
     return init( );
   }
 
-  public void function addTask( required any taskMethod, any taskArguments = structNew() ) {
-    lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
-      addNewTaskItem( taskMethod, taskArguments, variables.asyncTaskThreadName );
+  public void function addTask( required any taskMethod, any taskArguments = { } ) {
+    variables.logService.writeLogLevel( "Executing task (t. #variables.threadIndex#).", "asyncQueue" );
+
+    lock name=variables.lockName timeout=variables.lockTimeout {
+      addNewTaskItem( taskMethod, taskArguments, variables.threadName );
 
       if ( variables.isThreadRunning ) {
         return;
@@ -40,40 +41,35 @@ component accessors=true {
 
       threadfixService.cacheScriptObjects( );
 
-      thread action="run" name=variables.asyncTaskThreadName priority="low" {
+      thread action="run" name=variables.threadName priority="high" {
         do {
-          lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
+          lock name=variables.lockName timeout=variables.lockTimeout {
             var taskItem = getNextTaskItem( );
           }
 
           while ( structKeyExists( local, "taskItem" ) ) {
             try {
+              variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) started.", "asyncQueue" );
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
-              variables.logService.writeLogLevel( text = "Executed task part #variables.queueNr#.", file = "asyncQueue", type = "information" );
+              variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) done.", "asyncQueue" );
             } catch ( any e ) {
-              variables.logService.writeLogLevel( text = "Error executing task part #variables.queueNr#. (#e.message#)", file = "asyncQueue", type = "fatal" );
-              if ( variables.config.showDebug ) {
-                variables.logService.dumpToFile( [
-                  taskItem.taskArguments,
-                  e
-                ] );
-              }
+              variables.logService.writeLogLevel( "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)", "asyncQueue", "error" );
+              variables.logService.dumpToFile( e );
+              rethrow;
             }
 
-            variables.queueNr++;
-
-            lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
+            lock name=variables.lockName timeout=variables.lockTimeout {
               taskItem = getNextTaskItem( );
             }
           }
 
-          lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
+          lock name=variables.lockName timeout=variables.lockTimeout {
             var isQueueEmpty = !arrayLen( variables.taskQueue );
             var isQueueFull = !isQueueEmpty;
 
             if ( isQueueEmpty ) {
               variables.isThreadRunning = false;
-              variables.asyncTaskThreadName = getNewAsyncThreadName( );
+              variables.threadName = getNewAsyncThreadName( );
             }
           }
         } while ( isQueueFull );
@@ -82,11 +78,13 @@ component accessors=true {
   }
 
   public void function abortQueue( ) {
-    lock name=variables.asyncTaskLockName timeout=variables.asyncTaskLockTimeout {
+    lock name=variables.lockName timeout=variables.lockTimeout {
       for ( var queuedTasks in variables.taskQueue ) {
         try {
           thread action="terminate" name=queuedTasks.threadName;
-        } catch ( any e ) { }
+        } catch ( any e ) {
+          variables.logService.dumpToFile( e );
+        }
       }
       variables.taskQueue = [ ];
     }
@@ -102,9 +100,9 @@ component accessors=true {
     arrayAppend(
       variables.taskQueue,
       {
-        taskMethod = taskMethod,
-        taskArguments = taskArguments,
-        threadName = threadName
+        "taskMethod" = taskMethod,
+        "taskArguments" = taskArguments,
+        "threadName" = threadName
       }
     );
   }
@@ -128,7 +126,7 @@ component accessors=true {
   }
 
   private string function getNewAsyncThreadName( ) {
-    var index = ++variables.asyncTaskThreadIndex;
+    var index = ++variables.threadIndex;
 
     return "thread-#variables.taskQueueID#-#index#";
   }
@@ -138,6 +136,8 @@ component accessors=true {
       var taskItem = variables.taskQueue[ 1 ];
 
       arrayDeleteAt( variables.taskQueue, 1 );
+
+      variables.logService.writeLogLevel( "Selected task: #taskItem.taskMethod# for thread #taskItem.threadName#", "asyncQueue" );
 
       return taskItem;
     }

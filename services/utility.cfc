@@ -385,6 +385,28 @@
 
     return result;
   }
+
+  public void function invalidateCfSession( ) {
+    if ( val( server.coldfusion.productversion ) >= 10 ) {
+      sessionInvalidate( );
+      return;
+    }
+
+    var sessionId = session.cfid & '_' & session.cftoken;
+
+    // Fire onSessionEnd
+    var appEvents = application.getEventInvoker( );
+    var args = [ application, session ];
+
+    appEvents.onSessionEnd( args );
+
+    // Make sure that session is empty
+    structClear( session );
+
+    // Clean up the session
+    var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
+    sessionTracker.cleanUp( application.applicationName, sessionId );
+  }
   </cfscript>
 
   <cffunction name="cfcontent" output="false" access="public">
@@ -400,9 +422,6 @@
       <cfreturn />
     </cfif>
     <cfset arguments.operation = "HTTPRequest" />
-
-    <cfset logService.dumpToFile( arguments ) />
-
     <cfschedule attributeCollection="#arguments#" />
   </cffunction>
 
