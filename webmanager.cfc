@@ -29,6 +29,7 @@ component extends=framework.one {
     routes = [
       { "/media/:file" = "/media/load/file/:file" },
       { "/forms/:action" = "/forms/:action" },
+      { "/api/:action" = "/api/:action" },
       { "*" = "/main/default" }
     ]
   };

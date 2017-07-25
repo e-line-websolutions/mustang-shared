@@ -129,6 +129,36 @@ component accessors=true {
     return "main." & asFw1Item( seoPathArray[ firstItemIndex ] );
   }
 
+  public array function getMenuItems( required numeric parentId ) {
+    fw.frameworkTrace( "<b>webmanager</b>: getMenuItems() called." );
+    var sql = "
+      SELECT    assetcontent_sTitleText
+
+      FROM      mid_assetmetaAssetmeta
+                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
+
+      WHERE     assetmeta_x_nBwsId = :websiteId
+        AND     assetmeta_x_nTypeId = 2
+        AND     assetmeta_x_nBmId = 14
+        AND     assetmeta_x_nStatusId = 100
+        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :parentId
+        AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
+        AND     LEFT( assetcontent_sTitleText, 1 ) <> '_'
+
+      ORDER BY  assetmeta_nSortKey,
+                assetcontent_sTitleText
+    ";
+
+    var queryParams = {
+      "parentId" = parentId,
+      "websiteId" = variables.websiteId
+    };
+
+    var navigationQuery = queryService.execute( sql, queryParams, queryOptions );
+
+    return listToArray( valueList( navigationQuery.assetcontent_sTitleText, variables.safeDelim ), variables.safeDelim );
+  }
+
   public any function getArticle( required numeric articleId ) {
     fw.frameworkTrace( "<b>webmanager</b>: getArticle() called." );
     var sql = "
@@ -376,36 +406,6 @@ component accessors=true {
     }
 
     return queryService.toArray( queryResult )[ 1 ];
-  }
-
-  private array function getMenuItems( required numeric parentId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getMenuItems() called." );
-    var sql = "
-      SELECT    assetcontent_sTitleText
-
-      FROM      mid_assetmetaAssetmeta
-                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
-
-      WHERE     assetmeta_x_nBwsId = :websiteId
-        AND     assetmeta_x_nTypeId = 2
-        AND     assetmeta_x_nBmId = 14
-        AND     assetmeta_x_nStatusId = 100
-        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :parentId
-        AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
-        AND     LEFT( assetcontent_sTitleText, 1 ) <> '_'
-
-      ORDER BY  assetmeta_nSortKey,
-                assetcontent_sTitleText
-    ";
-
-    var queryParams = {
-      "parentId" = parentId,
-      "websiteId" = variables.websiteId
-    };
-
-    var navigationQuery = queryService.execute( sql, queryParams, queryOptions );
-
-    return listToArray( valueList( navigationQuery.assetcontent_sTitleText, variables.safeDelim ), variables.safeDelim );
   }
 
   private array function getArticles( required numeric pageId ) {
