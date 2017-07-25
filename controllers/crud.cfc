@@ -1,5 +1,6 @@
 component accessors=true {
   property root;
+  property config;
   property framework;
 
   property crudService;
@@ -447,10 +448,7 @@ component accessors=true {
     var object = entityNew( rc.entity );
 
     // is this a loggable object?
-    rc.canBeLogged = ( rc.config.log && isInstanceOf( object, "root.model.logged" ) );
-    if ( rc.entity == "logentry" ) {
-      rc.canBeLogged = false;
-    }
+    rc.canBeLogged = ( config.log && isInstanceOf( object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
 
     // load form properties
     rc.properties = object.getInheritedProperties( );
@@ -531,12 +529,16 @@ component accessors=true {
       framework.redirect( ".default", "alert" );
     }
 
+    url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
+
     crudService.deleteEntity( variables.entity );
 
     framework.redirect( ".default" );
   }
 
   public void function restore( required struct rc ) {
+    url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
+
     crudService.restoreEntity( variables.entity );
 
     framework.redirect( ".view", "#variables.entity#id" );
