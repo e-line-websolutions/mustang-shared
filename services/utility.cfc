@@ -8,14 +8,15 @@
   }
 
   public string function parseStringVariables( required string stringToParse, struct stringVariables = { } ) {
-    if ( not isDefined( "stringVariables" ) or not structCount( stringVariables ) ) {
+    if ( isNull( stringVariables ) or structIsEmpty( stringVariables ) ) {
       return stringToParse;
     }
 
     for ( var key in stringVariables ) {
-      if ( not isNull( stringVariables[ key ] ) ) {
-        stringToParse = replaceNoCase( stringToParse, '###key###', stringVariables[ key ], 'all' );
+      if ( isNull( stringVariables[ key ] ) || !isSimpleValue( stringVariables[ key ] ) ) {
+        continue;
       }
+      stringToParse = replaceNoCase( stringToParse, '###key###', stringVariables[ key ], 'all' );
     }
 
     return stringToParse;
