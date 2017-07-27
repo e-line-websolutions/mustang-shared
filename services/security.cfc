@@ -8,9 +8,13 @@ component accessors=true {
   property any bcrypt;
 
   public component function init( root, config ) {
+    var bCryptPath = replace( getDirectoryFromPath( getCurrentTemplatePath( ) ), "\", "/", "all" ) & "../lib/bcrypt";
+
     if ( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ) ) ) {
-      variables.bcrypt = getBCrypt( config.paths.bcrypt );
+      bCryptPath = config.paths.bcrypt;
     }
+
+    variables.bcrypt = getBCrypt( bCryptPath );
 
     return this;
   }
