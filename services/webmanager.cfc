@@ -334,10 +334,10 @@ component accessors=true {
 
   private numeric function getArticleIdFromPath( required any path ) {
     fw.frameworkTrace( "<b>webmanager</b>: getArticleIdFromPath() called." );
-    return getMenuIdFromPath( path, true );
+    return getMenuIdFromPath( path );
   }
 
-  private numeric function getMenuIdFromPath( required any path, boolean includeArticle = false ) {
+  private numeric function getMenuIdFromPath( required any path ) {
     fw.frameworkTrace( "<b>webmanager</b>: getMenuIdFromPath() called." );
     var pathArray = isArray( path ) ? path : listToArray( path, "/" );
     var pathLength = arrayLen( pathArray );
@@ -346,11 +346,9 @@ component accessors=true {
       return - 1;
     }
 
-    var assetIsArticle = ( includeArticle && pathLength == 1 );
-
     var sql_from = " FROM vw_selectAsset AS nav_level_1 ";
     var sql_where = " WHERE nav_level_1.assetmeta_x_nBwsId = :websiteId AND
-                            nav_level_1.assetmeta_x_nTypeId = #assetIsArticle ? 3 : 2# AND
+                            nav_level_1.assetmeta_x_nTypeId IN ( 2, 3 ) AND
                             nav_level_1.assetmeta_x_nBmId = 14 AND
                             dbo.variableFormatMstng( nav_level_1.assetcontent_sTitleText ) IN ( :nav_level_1_name, '_' + :nav_level_1_name ) ";
     var queryParams = {
@@ -359,7 +357,6 @@ component accessors=true {
     };
 
     for ( var i = 2; i <= pathLength; i++ ) {
-      assetIsArticle = ( includeArticle && pathLength == i );
       sql_from &= "
         INNER JOIN mid_assetmetaAssetmeta AS link_#i-1#_#i#
           ON nav_level_#i-1#.assetmeta_nId = link_#i-1#_#i#.assetmetaAssetmeta_x_nParentID
@@ -367,7 +364,7 @@ component accessors=true {
           ON link_#i-1#_#i#.assetmetaAssetmeta_x_nChildId = nav_level_#i#.assetmeta_nID
       ";
       sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId AND
-                         nav_level_#i#.assetmeta_x_nTypeId = #assetIsArticle ? 3 : 2# AND
+                         nav_level_#i#.assetmeta_x_nTypeId IN ( 2, 3 ) AND
                          nav_level_#i#.assetmeta_x_nBmId = 14 AND
                          dbo.variableFormatMstng( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
       queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
@@ -402,7 +399,7 @@ component accessors=true {
         AND     assetmeta_x_nBwsId = :websiteId
         AND     assetmeta_x_nBmId = 14
         AND     assetmeta_x_nStatusId = 100
-        AND     assetmeta_x_nTypeId = 2
+        AND     assetmeta_x_nTypeId IN ( 2, 3 )
         AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
     ";
 
@@ -436,7 +433,10 @@ component accessors=true {
         AND     vw_selectAsset.assetmeta_x_nTypeId = 3
         AND     vw_selectAsset.assetmeta_x_nBmId = 14
         AND     vw_selectAsset.assetmeta_x_nStatusId = 100
-        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :pageId
+        AND     (
+                  mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :pageId OR
+                  vw_selectAsset.assetmeta_nid = :pageId
+                )
 
       ORDER BY  vw_selectAsset.assetmeta_nSortKey,
                 vw_selectAsset.assetcontent_sTitleText
