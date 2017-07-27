@@ -3,8 +3,22 @@
   <cfproperty name="logService" />
 
   <cfscript>
-  public any function init( ) {
-    return this;
+    public any function init( ) {
+      return this;
+    }
+
+    public boolean function isCaptchaValid( required string response ) {
+    if( !len(trim( arguments.response ))){
+      return false;
+      abort;
+    }
+
+    var httpService = new http(method = "POST", url = "https://www.google.com/recaptcha/api/siteverify");
+    httpService.addParam(name = "secret", type = "formfield", value = config.captchaSecret );
+    httpService.addParam(name = "response", type = "formfield", value = arguments.response );
+    httpService.addParam(name = "remoteip", type = "formfield", value = cgi.remote_addr );
+    var result = httpService.send().getPrefix();
+    return deserializeJSON( result.filecontent ).success;
   }
 
   public string function parseStringVariables( required string stringToParse, struct stringVariables = { } ) {

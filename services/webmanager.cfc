@@ -198,6 +198,48 @@ component accessors=true {
     return article;
   }
 
+  public array function getArticles( required numeric pageId ) {
+    fw.frameworkTrace( "<b>webmanager</b>: getArticles() called." );
+    var sql = "
+      SELECT    vw_selectAsset.assetmeta_nid                AS [articleId],
+                vw_selectAsset.assetmeta_dcreationdatetime  AS [creationDate],
+                vw_selectAsset.assetcontent_stitletext      AS [title],
+                vw_selectAsset.assetcontent_sintrotext      AS [teaser],
+                vw_selectAsset.assetcontent_sbodytext       AS [body]
+
+      FROM      mid_assetmetaAssetmeta
+                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
+
+      WHERE     vw_selectAsset.assetmeta_x_nBwsId = :websiteId
+        AND     vw_selectAsset.assetmeta_x_nTypeId = 3
+        AND     vw_selectAsset.assetmeta_x_nBmId = 14
+        AND     vw_selectAsset.assetmeta_x_nStatusId = 100
+        AND     (
+                  mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :pageId OR
+                  vw_selectAsset.assetmeta_nid = :pageId
+                )
+
+      ORDER BY  vw_selectAsset.assetmeta_nSortKey,
+                vw_selectAsset.assetcontent_sTitleText
+    ";
+
+    var queryParams = {
+      "pageId" = pageId,
+      "websiteId" = variables.websiteId
+    };
+
+    var articles = queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+
+    var row = 0;
+    for ( var article in articles ) {
+      row++;
+      articles[ row ][ "images" ] = getArticleImages( article.articleId );
+    }
+
+    return articles;
+  }
+
+
   public any function getArticleFromPath( required string pathToArticle ) {
     return getArticle( getArticleIdFromPath( pathToArticle ) );
   }
@@ -415,47 +457,6 @@ component accessors=true {
     }
 
     return queryService.toArray( queryResult )[ 1 ];
-  }
-
-  private array function getArticles( required numeric pageId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getArticles() called." );
-    var sql = "
-      SELECT    vw_selectAsset.assetmeta_nid                AS [articleId],
-                vw_selectAsset.assetmeta_dcreationdatetime  AS [creationDate],
-                vw_selectAsset.assetcontent_stitletext      AS [title],
-                vw_selectAsset.assetcontent_sintrotext      AS [teaser],
-                vw_selectAsset.assetcontent_sbodytext       AS [body]
-
-      FROM      mid_assetmetaAssetmeta
-                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
-
-      WHERE     vw_selectAsset.assetmeta_x_nBwsId = :websiteId
-        AND     vw_selectAsset.assetmeta_x_nTypeId = 3
-        AND     vw_selectAsset.assetmeta_x_nBmId = 14
-        AND     vw_selectAsset.assetmeta_x_nStatusId = 100
-        AND     (
-                  mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :pageId OR
-                  vw_selectAsset.assetmeta_nid = :pageId
-                )
-
-      ORDER BY  vw_selectAsset.assetmeta_nSortKey,
-                vw_selectAsset.assetcontent_sTitleText
-    ";
-
-    var queryParams = {
-      "pageId" = pageId,
-      "websiteId" = variables.websiteId
-    };
-
-    var articles = queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
-
-    var row = 0;
-    for ( var article in articles ) {
-      row++;
-      articles[ row ][ "images" ] = getArticleImages( article.articleId );
-    }
-
-    return articles;
   }
 
   private array function getArticleImages( required numeric articleId ) {
