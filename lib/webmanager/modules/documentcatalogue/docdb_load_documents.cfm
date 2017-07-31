@@ -7,7 +7,7 @@
 
   param input.documentId=0;
   param input.groupId=0;
-  param input.whereConfig='';
+  param input.whereConfig=[];
   param input.queryname='qry_select_document';
   param input.search='';
   param input.qOwnQry='';
@@ -187,20 +187,17 @@
   <cfelse>
     <cfset docdb.qry_select_product_nID_NOTIN = queryNew( "Product_nID" )>
   </cfif>
-<cfelseif len( trim( input.whereConfig ) )>
+<cfelseif arrayLen( input.whereConfig )>
   <cfscript>
     docdb.whereclause = [ ];
-    docdb.loopEnd = listLen( input.whereConfig );
 
-    for( docdb.i = 1; docdb.i < docdb.loopEnd; docdb.i++ ) {
-      request.sCurrentListItem = listGetAt( input.whereConfig, docdb.i );
-
-      if( listLen( request.sCurrentListItem, "_" ) == 3 ) {
+    for( local.sCurrentListItem in input.whereConfig ) {
+      if( listLen( local.sCurrentListItem, "_" ) == 3 ) {
         docdb.whereclause[ arrayLen( docdb.whereclause ) + 1 ] = {
-          field = listGetAt( request.sCurrentListItem, 1, '_' ),
-          value = replace( listGetAt( request.sCurrentListItem, 2, '_' ), '''', '', 'all' ),
-          originalvalue = listGetAt( request.sCurrentListItem, 2, '_' ),
-          modifier = listGetAt( request.sCurrentListItem, 3, '_' ),
+          field = listGetAt( local.sCurrentListItem, 1, '_' ),
+          modifier = listGetAt( local.sCurrentListItem, 2, '_' ),
+          value = replace( listGetAt( local.sCurrentListItem, 3, '_' ), '''', '', 'all' ),
+          originalvalue = listGetAt( local.sCurrentListItem, 3, '_' ),
           type = 0
         };
       }
@@ -227,7 +224,7 @@
     FROM      tbl_product
 
               <cfloop from="1" to="#arrayLen( docdb.whereclause )#" index="docdb.i">
-                <cfif docdb.whereclause[ docdb.i ].modifier eq 1>
+                <cfif docdb.whereclause[ docdb.i ].modifier eq 'neq'>
                   INNER JOIN tbl_savedData tbl_savedData#docdb.i# ON tbl_product.product_nID = tbl_savedData#docdb.i#.savedData_x_nProductID
                 </cfif>
               </cfloop>
@@ -235,7 +232,7 @@
     WHERE     tbl_product.product_nBwsID = <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#input.nBwsID#" />
 
               <cfloop from="1" to="#arrayLen( docdb.whereclause )#" index="docdb.i">
-                <cfif docdb.whereclause[ docdb.i ].modifier eq 1>
+                <cfif docdb.whereclause[ docdb.i ].modifier eq 'neq'>
                   <cfset docdb.bDontDisplay = false />
                   AND tbl_savedData#docdb.i#.savedData_x_nEigenschapID  = <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#docdb.whereclause[ docdb.i ].field#" />
                   <!--- AND tbl_savedData#docdb.i#.savedData_x_nValueID       = <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#docdb.whereclause[docdb.i].value#" /> --->
@@ -284,7 +281,7 @@
     FROM      tbl_product
 
               <cfloop from="1" to="#arrayLen( docdb.whereclause )#" index="docdb.i">
-                <cfif docdb.whereclause[ docdb.i ].modifier neq 1>
+                <cfif docdb.whereclause[ docdb.i ].modifier neq 'neq'>
                   INNER JOIN tbl_savedData tbl_savedData#docdb.i# ON tbl_product.product_nID = tbl_savedData#docdb.i#.savedData_x_nProductID
                 </cfif>
               </cfloop>
@@ -292,7 +289,7 @@
     WHERE     tbl_product.product_nBwsID = <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#input.nBwsID#" />
 
               <cfloop from="1" to="#arrayLen( docdb.whereclause )#" index="docdb.i">
-                <cfif docdb.whereclause[ docdb.i ].modifier neq 1>
+                <cfif docdb.whereclause[ docdb.i ].modifier neq 'neq'>
                   <cfset request.bSearchNarrowed = true />
                   AND tbl_savedData#docdb.i#.savedData_x_nEigenschapID = <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#docdb.whereclause[ docdb.i ].field#" />
 
@@ -320,14 +317,17 @@
                   </cfif>
 
                   <cfswitch expression="#docdb.whereclause[ docdb.i ].modifier#">
-                    <cfcase value="0">   =  </cfcase>
-                    <cfcase value="2">  <=  </cfcase>
-                    <cfcase value="3">  >=  </cfcase>
-                    <cfcase value="4">  <   </cfcase>
-                    <cfcase value="5">  >   </cfcase>
+                    <cfcase value="eq">   =  </cfcase>
+                    <cfcase value="lte">  <=  </cfcase>
+                    <cfcase value="gte">  >=  </cfcase>
+                    <cfcase value="lt">  <   </cfcase>
+                    <cfcase value="gt">  >   </cfcase>
+                    <cfcase value="in">  IN   </cfcase>
                   </cfswitch>
 
-                  <cfif listFind( "1,2,3,7", docdb.whereclause[ docdb.i ].type )>
+                  <cfif docdb.whereclause[ docdb.i ].modifier eq "in">
+                    ( <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#docdb.whereclause[ docdb.i ].value#" list="true" /> )
+                  <cfelseif listFind( "1,2,3,7", docdb.whereclause[ docdb.i ].type )>
                     <cfqueryparam CFSQLType="CF_SQL_INTEGER" value="#docdb.whereclause[ docdb.i ].value#" />
                   <cfelseif listFind( "14", docdb.whereclause[ docdb.i ].type )>
                     <cfqueryparam CFSQLType="CF_SQL_TIMESTAMP" value="#docdb.whereclause[ docdb.i ].originalvalue#" />
@@ -361,7 +361,7 @@
             </cfif>
 
             <!--- [mjh] based on the queries above select these productid's --->
-            <cfif len( trim( input.whereConfig ) ) or
+            <cfif arrayLen( input.whereConfig ) or
                 len( trim( input.sFreetextSearch ) )>
               <cfif isQuery( docdb.qry_select_product_nID_IN ) and docdb.qry_select_product_nID_IN.recordcount gt 0>
                 <cfset docdb.bDontDisplay = false>
@@ -428,7 +428,7 @@
             <!--- AND listContains( arrayToList( docdb.whereclause.sModifier ), 0 ) --->
             <cfif docdb.bDontDisplay OR
                   (
-                    len( trim( input.whereConfig ) ) AND
+                    arrayLen( input.whereConfig ) AND
                     isQuery( docdb.qry_select_product_nID_IN ) AND
                     request.bSearchNarrowed AND
                     docdb.qry_select_product_nID_IN.recordcount lte 0
