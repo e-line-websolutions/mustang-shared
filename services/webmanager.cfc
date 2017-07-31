@@ -307,6 +307,10 @@ component accessors=true {
     param requestContext.file="";
     param requestContext.s="m";
 
+    if( !fileExists( config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#" )){
+      throw( "File does not exist", "webmanagerService.serveMedia.fileNotFoundError" );
+    }
+
     if ( !utilityService.fileExistsUsingCache( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" ) ) {
       imageScalerService.setDestinationDir( "#root#/www/inc/img/resized" );
       imageScalerService.resizeFromPath( config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#", requestContext.file, requestContext.s );
