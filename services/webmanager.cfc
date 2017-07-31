@@ -1,4 +1,6 @@
 component accessors=true {
+  property beanFactory;
+
   property fileService;
   property imageScalerService;
   property queryService;
@@ -54,6 +56,7 @@ component accessors=true {
     var pageData = {
       "pageTemplate" = "",
       "pageDetails" = { },
+      "modules" = { },
       "articles" = [ ],
       "navPath" = [ ],
       "stylesheets" = [ ]
@@ -82,6 +85,7 @@ component accessors=true {
       if ( i == pathLength ) {
         pageData.articles = getArticles( currentMenuId );
         pageData.pageDetails = getPageDetails( currentMenuId );
+        pageData.modules = getActiveModules( currentMenuId );
       }
 
       if ( currentMenuId > 0 ) {
@@ -239,6 +243,42 @@ component accessors=true {
     return articles;
   }
 
+  public struct function getActiveModules( required numeric pageId ) {
+    fw.frameworkTrace( "<b>webmanager</b>: getActiveModules() called." );
+
+    var sql = "
+      SELECT    vw_selectAsset.assetmeta_x_nBmID AS moduleId,
+                vw_selectAsset.assetcontent_sTitleText AS moduleConfigA,
+                vw_selectAsset.assetcontent_sIntroText AS moduleConfigB,
+                vw_selectAsset.assetcontent_sBodyText AS moduleConfigC,
+                lst_bm.bm_sDirName AS moduleDir
+
+      FROM      vw_selectAsset
+                INNER JOIN mid_assetmetaAssetmeta ON vw_selectAsset.assetmeta_nID = mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID
+                INNER JOIN lst_bm ON vw_selectAsset.assetmeta_x_nBmID = lst_bm.bm_nID
+
+      WHERE     vw_selectAsset.assetmeta_x_nTypeID = 10
+        AND     lst_bm.bm_bActive = 1
+        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = :pageId
+        AND     vw_selectAsset.assetmeta_x_nBwsID = :websiteId
+    ";
+
+    var queryParams = {
+      "pageId" = pageId,
+      "websiteId" = variables.websiteId
+    };
+
+    var activeModules = queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+    var moduleContent = { };
+
+    for ( var activeModule in activeModules ) {
+      var moduleConfig = [ activeModule.moduleConfigA, activeModule.moduleConfigB, activeModule.moduleConfigC ];
+      var moduleSpecificService = beanFactory.getBean( "#activeModule.moduleDir#Service" );
+      moduleContent[ activeModule.moduleDir ] = moduleSpecificService.getModuleContent( moduleConfig );
+    }
+
+    return moduleContent;
+  }
 
   public any function getArticleFromPath( required string pathToArticle ) {
     return getArticle( getArticleIdFromPath( pathToArticle ) );
