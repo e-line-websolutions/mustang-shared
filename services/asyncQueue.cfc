@@ -4,8 +4,8 @@ component accessors=true {
 
   property config;
   property logService;
-  property threadfixService;
   property taskQueue;
+  property beanFactory;
 
   // constructor
 
@@ -40,6 +40,7 @@ component accessors=true {
       variables.isThreadRunning = true;
 
       if ( !structKeyExists( server, "lucee" ) ) {
+        var threadfixService = beanFactory.getBean( "threadfixService" );
         threadfixService.cacheScriptObjects( );
       }
 
