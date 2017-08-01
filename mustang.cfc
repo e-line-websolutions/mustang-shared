@@ -213,6 +213,10 @@ component extends="framework.one" {
       },
       subsystems = { api = { error = "api:main.error" } }
     };
+
+    if ( !structKeyExists( server, "lucee" ) ) {
+      arrayAppend( variables.framework.diLocations, "/mustang/compatibility/acf" );
+    }
   }
 
   private void function cleanXHTMLQueryString( ) {
