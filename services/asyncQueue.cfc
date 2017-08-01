@@ -40,7 +40,7 @@ component accessors=true {
       variables.isThreadRunning = true;
 
       if ( !structKeyExists( server, "lucee" ) ) {
-        var threadfixService = beanFactory.getBean( "threadfixService" );
+        var threadfixService = beanFactory.getBean( "threadfix" );
         threadfixService.cacheScriptObjects( );
       }
 
