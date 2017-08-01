@@ -39,7 +39,9 @@ component accessors=true {
 
       variables.isThreadRunning = true;
 
-      threadfixService.cacheScriptObjects( );
+      if ( !structKeyExists( server, "lucee" ) ) {
+        threadfixService.cacheScriptObjects( );
+      }
 
       thread action="run" name=variables.threadName priority="high" {
         do {
