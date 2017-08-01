@@ -137,6 +137,10 @@ component extends="framework.one" {
     param request.appName="?";
     param this.routes=[];
 
+    if ( isNull( request.appSimpleName ) ) {
+      request.appSimpleName = listFirst( request.appName, " ,-" );
+    }
+
     // CF application setup:
     this.mappings[ "/root" ] = request.root;
     this.sessionManagement = true;
@@ -176,7 +180,8 @@ component extends="framework.one" {
         DBCreate = ( variables.live ? ( request.reset ? "update" : "none" ) : ( request.reset ? "dropcreate" : "update" ) ),
         SQLScript = variables.cfg.nukescript,
         secondaryCacheEnabled = variables.live ? true : false,
-        cacheProvider = "ehcache"
+        cacheProvider = "ehcache",
+        cacheConfig = "ehcache-config_ORM_#request.appSimpleName#.xml"
       };
     }
 
