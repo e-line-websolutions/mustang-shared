@@ -4,7 +4,6 @@ component accessors=true {
   property struct allOptions;
   property struct sourceMapping;
 
-
   // constructor
 
   public component function init( ) {
@@ -13,14 +12,14 @@ component accessors=true {
     return this;
   }
 
-
   // public functions
 
   public void function reloadOptions( ) {
     var allOptions = variables.allOptions;
     var result = { };
+    var optionsInDb = __getOptionsFromDB( );
 
-    for( var option in __getOptionsFromDB( ) ) {
+    for( var option in optionsInDb ) {
       var key = option.get( 'key' );
       var value = option.get( 'value' );
 
@@ -64,7 +63,6 @@ component accessors=true {
     return dataService.nil( );
   }
 
-
   // private functions
 
   private component function __createNewOption( required string entityName, required string optionName ) {
@@ -91,6 +89,9 @@ component accessors=true {
   }
 
   private array function __getOptionsFromDB( ) {
-    return ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
+    transaction {
+      var result = ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
+    }
+    return result;
   }
 }
