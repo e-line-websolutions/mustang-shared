@@ -215,7 +215,7 @@ component accessors=true {
       var dbinfo = utilityService.getDbInfo( ds );
 
       variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
-      variables.dialect = dbinfo.DRIVER_NAME;
+      variables.dialect = spanExcluding( dbinfo.DRIVER_NAME, " " );
     }
   }
 }
