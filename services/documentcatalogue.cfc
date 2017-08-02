@@ -8,10 +8,11 @@ component accessors=true {
   public array function getModuleContent( required array moduleConfig ) {
     switch ( moduleConfig[ 1 ] ) {
       case "sOutputFormat=asList" :
-        return getDocuments( argumentCollection = {
+        var args = {
           groupId = moduleConfig[ 2 ],
           whereConfig = moduleConfig[ 3 ]
-        } );
+        };
+        return getDocuments( argumentCollection = args );
 
       default :
         throw(
@@ -45,7 +46,7 @@ component accessors=true {
     return queryService.toArray( qry_select_document );
   }
 
-  public any function getFields( required numeric groupId, string fieldIds default=''){
+  public any function getFields( required numeric groupId, string fieldIds = "" ) {
     fw.frameworkTrace( "<b>documentcatalogue</b>: getFields() called." );
 
     var whereStatement = "";
@@ -90,7 +91,6 @@ component accessors=true {
       ORDER BY  mid_eigenschapGroep.eigenschapGroep_nOrderID,
                 mid_eigenschapValue.eigenschapValue_nOrderID
     ";
-
 
     var queryResult = queryService.execute( sql, queryParams, { "datasource" = ds } );
 
