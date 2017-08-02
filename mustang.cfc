@@ -8,16 +8,15 @@ component extends="framework.one" {
     var logService = bf.getBean( "logService" );
 
     if ( structKeyExists( url, "nuke" ) ) {
-      // rebuild ORM:
-      ORMReload( );
-
-      logService.writeLogLevel( "ORM reloaded", request.appName );
-
       // empty caches:
       structDelete( application, "threads" );
       try { ORMEvictQueries( ); } catch ( any e ) { }
       cacheRemove( arrayToList( cacheGetAllIds( ) ) );
       logService.writeLogLevel( "Caches purged", request.appName );
+
+      // rebuild ORM:
+      ORMReload( );
+      logService.writeLogLevel( "ORM reloaded", request.appName );
     }
 
     logService.writeLogLevel( "Application initialized", request.appName );
@@ -37,6 +36,11 @@ component extends="framework.one" {
     var bf = getBeanFactory( );
     variables.i18n = bf.getBean( "translationService" );
     variables.util = bf.getBean( "utilityService" );
+
+    // ACF / Lucee compatibility services:
+    if ( !structKeyExists( server, "lucee" ) ) {
+      bf.declareBean( "threadfix", "mustang.compatibility.acf.threadfix" );
+    }
 
     request.context.util = util;
     request.context.i18n = i18n;
@@ -218,10 +222,6 @@ component extends="framework.one" {
       },
       subsystems = { api = { error = "api:main.error" } }
     };
-
-    if ( !structKeyExists( server, "lucee" ) ) {
-      arrayAppend( variables.framework.diLocations, "/mustang/compatibility/acf" );
-    }
   }
 
   private void function cleanXHTMLQueryString( ) {

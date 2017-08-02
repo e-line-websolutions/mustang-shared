@@ -571,12 +571,4 @@ component accessors=true {
       }
     }
   }
-
-  // public void function onMissingMethod( required string missingMethodName, struct missingMethodArguments ) {
-  //   var fixedMethodWithDashes = replace( missingMethodName, "-", "_", "all" );
-
-  //   if ( structKeyExists( this, fixedMethodWithDashes ) ) {
-  //     utilityService.cfinvoke( this, fixedMethodWithDashes, missingMethodArguments );
-  //   }
-  // }
 }

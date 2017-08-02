@@ -89,9 +89,7 @@ component accessors=true {
   }
 
   private array function __getOptionsFromDB( ) {
-    transaction {
-      var result = ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
-    }
+    var result = ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
     return result;
   }
 }
