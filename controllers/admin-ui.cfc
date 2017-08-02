@@ -6,15 +6,14 @@ component accessors=true {
   property securityService;
 
   public void function load( rc ) {
-    var localeID = translationService.getLocaleID( );
-    if ( isNull( localeID ) ) {
-      var locale = localeService.get( );
-    }else{
-      var locale = localeService.get( localeID );
+    var locale = variables.localeService.get( variables.translationService.getLocaleID( ) );
+
+    if ( isNull( locale ) ) {
+      throw( "Application data not initialized", "admin-uiController.load.initError" );
     }
 
-    rc.content = contentService.getByFQA( framework.getfullyqualifiedaction( ), locale );
-    rc.displaytitle = translationService.translate( framework.getfullyqualifiedaction( ) );
+    rc.content = variables.contentService.getByFQA( variables.framework.getfullyqualifiedaction( ), locale );
+    rc.displaytitle = variables.translationService.translate( variables.framework.getfullyqualifiedaction( ) );
 
     if ( !structKeyExists( rc, "topnav" ) ) {
       rc.topnav = "";
@@ -22,7 +21,7 @@ component accessors=true {
 
     rc.subnavHideHome = false;
 
-    if ( framework.getSubsystem( ) == framework.getDefaultSubsystem( ) ) {
+    if ( variables.framework.getSubsystem( ) == variables.framework.getDefaultSubsystem( ) ) {
       var reload = true;
 
       lock scope="session" timeout="5" type="readonly" {
@@ -49,7 +48,7 @@ component accessors=true {
 
         if ( len( trim( roleSubnav ) ) ) {
           for ( var navItem in listToArray( roleSubnav ) ) {
-            if ( navItem == "-" || securityService.can( "view", navItem ) ) {
+            if ( navItem == "-" || variables.securityService.can( "view", navItem ) ) {
               rc.subnav = listAppend( rc.subnav, navItem );
             }
           }
@@ -65,7 +64,7 @@ component accessors=true {
 
             if ( structKeyExists( entity, "hide" ) ||
                 listFindNoCase( hiddenMenuitems, entityName ) ||
-                ( rc.auth.isLoggedIn && !securityService.can( "view", entityName ) ) ) {
+                ( rc.auth.isLoggedIn && !variables.securityService.can( "view", entityName ) ) ) {
               continue;
             }
 

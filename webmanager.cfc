@@ -1,40 +1,14 @@
 component extends=framework.one {
-  param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
-  param request.domainName=cgi.server_name;
+  setupWebmanager( );
 
-  this.sessionManagement = true;
+  // public functions
 
-  variables.root = this.mappings[ "/root" ] = getRoot( );
-  variables.framework = {
-    routesCaseSensitive = false,
-    generateSES = true,
-    SESOmitIndex = true,
-    diLocations = [ "/root/model/services", "/mustang/services" ],
-    diConfig = {
-      constants = {
-        root = variables.root,
-        ds = "e-line_cm",
-        navigationType = "per-level",
-        config = {
-          mediaRoot = fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
-          cacheFileExists = true,
-          defaultLanguage = "nl_NL",
-          useOrm = false,
-          logLevel = "error",
-          templates = [ ]
-        }
-      }
-    },
-    base = "/root",
-    routes = [
-      { "/media/:file" = "/media/load/file/:file" },
-      { "/forms/:action" = "/forms/:action" },
-      { "/api/:action" = "/api/:action" },
-      { "*" = "/main/default" }
-    ]
-  };
+  public void function setupApplication( ) {
+    frameworkTrace( "<b>webmanager</b>: setupApplication() called." );
+    structDelete( application, "cache" );
+  }
 
-  private void function setupRequest( ) {
+  public void function setupRequest( ) {
     frameworkTrace( "<b>webmanager</b>: setupRequest() called." );
     request.reset = isFrameworkReloadRequest( );
 
@@ -61,12 +35,11 @@ component extends=framework.one {
     }
   }
 
-  private void function setupApplication( ) {
-    frameworkTrace( "<b>webmanager</b>: setupApplication() called." );
-    structDelete( application, "cache" );
+  public void function onError( any exception, string event ) {
+    writeDump( arguments );abort;
   }
 
-  private string function onMissingView( rc ) {
+  public string function onMissingView( struct rc ) {
     if ( getSection( ) == "main" ) {
       return view( "main/default" );
     }
@@ -74,8 +47,45 @@ component extends=framework.one {
     return "Missing view for: #rc.action#";
   }
 
-  function onError() {
-    writeDump( arguments );abort;
+  // private functions
+
+  private void function setupWebmanager( ) {
+    cleanXHTMLQueryString( );
+
+    param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
+    param request.domainName=cgi.server_name;
+
+    this.sessionManagement = true;
+
+    variables.root = this.mappings[ "/root" ] = getRoot( );
+    variables.framework = {
+      routesCaseSensitive = false,
+      generateSES = true,
+      SESOmitIndex = true,
+      diLocations = [ "/root/model/services", "/mustang/services" ],
+      diConfig = {
+        constants = {
+          root = variables.root,
+          ds = "e-line_cm",
+          navigationType = "per-level",
+          config = {
+            mediaRoot = fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
+            cacheFileExists = true,
+            defaultLanguage = "nl_NL",
+            useOrm = false,
+            logLevel = "error",
+            templates = [ ]
+          }
+        }
+      },
+      base = "/root",
+      routes = [
+        { "/media/:file" = "/media/load/file/:file" },
+        { "/forms/:action" = "/forms/:action" },
+        { "/api/:action" = "/api/:action" },
+        { "*" = "/main/default" }
+      ]
+    };
   }
 
   private struct function readConfig( string site = cgi.server_name ) {
@@ -137,13 +147,21 @@ component extends=framework.one {
     this.mappings[ name ] = absolutePath;
   }
 
-  private string function fixPath( string originalPath ) {
-    return listChangeDelims( originalPath, '/', '\/' );
-  }
-
-  private string function getRoot( ) {
-    var basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
+  private string function getRoot( string basePath = getDirectoryFromPath( getBaseTemplatePath( ) ) ) {
     var tmp = replace( basePath, "\", "/", "all" );
     return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
+  }
+
+  private void function cleanXHTMLQueryString( ) {
+    for ( var kv in url ) {
+      if ( kv contains ";" ) {
+        url[ listRest( kv, ";" ) ] = url[ kv ];
+        structDelete( url, kv );
+      }
+    };
+  }
+
+  private string function fixPath( string originalPath ) {
+    return listChangeDelims( originalPath, '/', '\/' );
   }
 }
