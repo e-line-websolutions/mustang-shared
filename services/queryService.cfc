@@ -4,7 +4,9 @@ component accessors=true {
   property utilityService;
   property dataService;
   property logService;
+
   property string dbvendor;
+  property string dialect;
 
   public component function init( utilityService, config, ds ) {
     if ( isNull( ds ) && !isNull( config.datasource ) ) {
@@ -99,41 +101,43 @@ component accessors=true {
     return returnVal;
   }
 
-  public any function ormNativeQuery( string sql, struct where={}, struct options={}, array entities=[], unique=false ) {
-    var ormSession = ormGetSession();
+  public any function ormNativeQuery( string sql, struct where = { }, struct options = { }, array entities = [ ], unique = false ) {
+    var ormSession = ormGetSession( );
     var sqlQuery = ormSession.createSQLQuery( sql );
-    var paramMetadata = sqlQuery.getParameterMetadata();
+    var paramMetadata = sqlQuery.getParameterMetadata( );
 
     for( var key in where ) {
       var value = where[ key ];
 
-      if( isBoolean( value )) {
-        sqlQuery = sqlQuery.setBoolean( key, value );
-      } else if( isArray( value )) {
+      if( isArray( value ) ) {
         sqlQuery = sqlQuery.setParameterList( key, value );
-      } else if( isDate( value )) {
-        var asJavaDate = createObject( "java", "java.util.Date" ).init( value.getTime() );
+      } else if( isDate( value ) ) {
+        var asJavaDate = createObject( "java", "java.util.Date" ).init( value.getTime( ) );
         sqlQuery = sqlQuery.setDate( key, asJavaDate );
-      } else if( isNull( value )) {
+      } else if( isNull( value ) ) {
         sqlQuery = sqlQuery.setParameter( key, javaCast( "null", 0 ) );
-      } else if( isSimpleValue( value )) {
-        sqlQuery = sqlQuery.setString( key, value );
+      } else if( isSimpleValue( value ) ) {
+        if ( !compareNoCase( "true", value ) || !compareNoCase( "false", value ) ) {
+          sqlQuery = sqlQuery.setBoolean( key, value );
+        } else {
+          sqlQuery = sqlQuery.setString( key, value );
+        }
       }
     }
 
     for( var key in options ) {
       if( key == "maxResults" ) {
-        sqlQuery = sqlQuery.setMaxResults( options[ key ]);
-        sqlQuery = sqlQuery.setFetchSize( options[ key ]);
+        sqlQuery = sqlQuery.setMaxResults( options[ key ] );
+        sqlQuery = sqlQuery.setFetchSize( options[ key ] );
       } else if( key == "offset" ) {
-        sqlQuery = sqlQuery.setFirstResult( options[ key ]);
-      } else if( key == "cacheable" && !arrayIsEmpty( entities )) {
+        sqlQuery = sqlQuery.setFirstResult( options[ key ] );
+      } else if( key == "cacheable" && !arrayIsEmpty( entities ) ) {
         sqlQuery = sqlQuery.setCacheable( true );
       }
     }
 
     for( var entity in entities ) {
-      if( isStruct( entity )) {
+      if( isStruct( entity ) ) {
         var key = structKeyArray( entity )[ 1 ];
         var value = entity[ key ];
         sqlQuery = sqlQuery.addEntity( key, value );
@@ -143,11 +147,11 @@ component accessors=true {
     }
 
     if( unique ) {
-      return sqlQuery.uniqueResult();
+      return sqlQuery.uniqueResult( );
     }
 
     try {
-      return sqlQuery.list();
+      return sqlQuery.list( );
     } catch ( any e ) {
       writeDump( sql );
       writeDump( sqlQuery );
@@ -174,6 +178,22 @@ component accessors=true {
     return SQLSelect & SQLFrom & SQLWhere & SQLOrder;
   }
 
+  public string function escapeField( required string input ) {
+    var result = "";
+    var inputAsArray = listToArray( input, "." );
+    var escapeChars = {
+      "PostgreSQL" = [ '"', '"' ],
+      "SQLServer" = [ '[', ']' ]
+    };
+
+    for ( var field in inputAsArray ) {
+      var escapedWord = "#escapeChars[ variables.dialect ][ 1 ]##field##escapeChars[ variables.dialect ][ 2 ]#";
+      result = listAppend( result, escapedWord, "." );
+    }
+
+    return result;
+  }
+
   private string function setupVendor( utilityService, ds ) {
     variables.dbvendor = "unknown";
 
@@ -195,6 +215,7 @@ component accessors=true {
       var dbinfo = utilityService.getDbInfo( ds );
 
       variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
+      variables.dialect = dbinfo.DRIVER_NAME;
     }
   }
 }
