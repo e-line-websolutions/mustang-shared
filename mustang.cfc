@@ -37,11 +37,6 @@ component extends=framework.one {
     variables.i18n = bf.getBean( "translationService" );
     variables.util = bf.getBean( "utilityService" );
 
-    // ACF / Lucee compatibility services:
-    if ( !structKeyExists( server, "lucee" ) ) {
-      bf.declareBean( "threadfix", "mustang.compatibility.acf.threadfix" );
-    }
-
     request.context.util = util;
     request.context.i18n = i18n;
 
@@ -251,6 +246,12 @@ component extends=framework.one {
       },
       subsystems = { api = { error = "api:main.error" } }
     };
+
+    // ACF / Lucee compatibility services:
+    if ( !structKeyExists( server, "lucee" ) ) {
+      // bf.declareBean( "threadfix", "mustang.compatibility.acf.threadfix" );
+      arrayAppend( variables.framework.diLocations, "/mustang/compatibility/acf" );
+    }
   }
 
   private struct function readConfig( string site = cgi.server_name ) {
@@ -272,12 +273,12 @@ component extends=framework.one {
 
     if ( fileExists( root & "/config/default.json" ) ) {
       var defaultConfig = deserializeJSON( fileRead( root & "/config/default.json", "utf-8" ) );
-      mergeStructs( defaultConfig, defaultSettings );
+      defaultSettings = mergeStructs( defaultConfig, defaultSettings );
     }
 
     if ( fileExists( root & "/config/" & site & ".json" ) ) {
       var siteConfig = deserializeJSON( fileRead( root & "/config/" & site & ".json", "utf-8" ) );
-      mergeStructs( siteConfig, defaultSettings );
+      defaultSettings = mergeStructs( siteConfig, defaultSettings );
     }
 
     cachePut( "config-#this.name#", defaultSettings );
@@ -285,23 +286,22 @@ component extends=framework.one {
     return defaultSettings;
   }
 
-  private void function mergeStructs( required struct from, struct to = { } ) {
-    for ( var key in from ) {
-      if ( isStruct( from[ key ] ) ) {
-        if ( !structKeyExists( to, key ) ) {
-          to[ key ] = from[ key ];
-        } else if ( isStruct( to[ key ] ) ) {
-          mergeStructs( from[ key ], to[ key ] );
-        }
-      } else {
-        to[ key ] = from[ key ];
+  private struct function mergeStructs( required struct from, struct to = { } ) {
+    // also append nested struct keys:
+    for ( var key in to ) {
+      if ( isStruct( to[ key ] ) && structKeyExists( from, key ) ) {
+        structAppend( to[ key ], from[ key ] );
       }
     }
-    structAppend( from, to, false );
+
+    // copy the other keys:
+    structAppend( to, from );
+
+    return to;
   }
 
   private void function addToConstants( required struct websiteSpecificConstants ) {
-    mergeStructs( websiteSpecificConstants, variables.framework.diConfig.constants );
+    variables.framework.diConfig.constants = mergeStructs( websiteSpecificConstants, variables.framework.diConfig.constants );
   }
 
   private void function addMapping( required string name, required string absolutePath ) {
