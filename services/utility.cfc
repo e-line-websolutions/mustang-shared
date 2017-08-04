@@ -152,24 +152,7 @@
   }
 
   public string function variableFormat( inputString ) {
-    var result = "";
-
-    inputString = lCase( trim( inputString ) );
-    var len = len( trim( inputString ) );
-
-    for ( var i = 1; i <= len; i++ ) {
-      var char = mid( inputString, i, 1 );
-
-      if ( !( ( char >= 'a' && char <= 'z' ) || ( char >= 'A' && char <= 'Z' ) || isNumeric( char ) ) ) {
-        if ( char == ' ' || char == '_' || char == '-' ) {
-          result &= '-';
-        }
-      } else {
-        result &= char;
-      }
-    }
-
-    return result;
+    return lCase( reReplace( reReplace( trim( inputString ), '[^\w -]', '' ), '[ -]', '_' ) );
   }
 
   /**
