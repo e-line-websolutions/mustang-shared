@@ -102,6 +102,8 @@ component accessors=true {
         return "application/x-rar-compressed";
       case 'swf' :
         return "application/x-shockwave-flash";
+      case 'svg' :
+        return "image/svg+xml";
     }
 
     return "application/octet-stream";
