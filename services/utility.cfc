@@ -1,6 +1,7 @@
 <cfcomponent output="false" accessors="true">
   <cfproperty name="emailService" />
   <cfproperty name="logService" />
+  <cfproperty name="config" />
 
   <cfscript>
     public any function init( ) {
