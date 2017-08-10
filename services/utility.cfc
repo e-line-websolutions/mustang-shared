@@ -153,7 +153,7 @@
   }
 
   public string function variableFormat( inputString ) {
-    return lCase( reReplace( reReplace( trim( inputString ), '[^\w -]', '' ), '[ -]', '_' ) );
+    return lCase( reReplace( reReplace( trim( inputString ), '[^\w -]', '', 'ALL' ), '[ -]', '_', 'ALL' ) );
   }
 
   /**
