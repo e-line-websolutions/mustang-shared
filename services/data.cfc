@@ -527,9 +527,9 @@ component accessors=true {
     return result;
   }
 
-  public array function queryToTree( required query inputQuery ) {
+  public array function queryToTree( required query inputQuery, numeric parentId=0 ) {
     var asArrayOfStructs = queryToArrayOfStructs( inputQuery );
-    var parents = { "0" = { "children" = [ ] } };
+    var parents = { '#arguments.parentId#' = { "children" = [ ] } };
 
     for ( var row in asArrayOfStructs ) {
       parents[ row.menuId ] = {
@@ -550,7 +550,7 @@ component accessors=true {
       arrayAppend( parent.children, parents[ row.menuId ] );
     }
 
-    return parents[ "0" ].children;
+    return parents[ arguments.parentId ].children;
   }
 
   /** Converts query to an array full of structs

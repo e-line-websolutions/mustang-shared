@@ -133,6 +133,43 @@ component accessors=true {
     return "main." & asFw1Item( seoPathArray[ firstItemIndex ] );
   }
 
+  public array function getNavigation( required numeric parentId ){
+    fw.frameworkTrace( "<b>webmanager</b>: getNavigation() called." );
+    var sql = "
+      SELECT    assetcontent_sTitleText as name,
+                mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId,
+                assetmeta_nID                           AS menuId,
+                assetmeta_nSortKey                      AS sortKey
+
+      FROM      mid_assetmetaAssetmeta
+                INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
+
+      WHERE     assetmeta_x_nBwsId = :websiteId
+        AND     assetmeta_x_nTypeId = 2
+        AND     assetmeta_x_nBmId = 14
+        AND     assetmeta_x_nStatusId = 100
+        AND     mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentId = :parentId
+        AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
+        AND     LEFT( assetcontent_sTitleText, 1 ) <> '_'
+
+      ORDER BY  assetmeta_nSortKey,
+                assetcontent_sTitleText
+    ";
+
+    var queryParams = {
+      "parentId" = arguments.parentId,
+      "websiteId" = variables.websiteId
+    };
+
+    var localQueryOptions = duplicate( queryOptions );
+
+    localQueryOptions[ "cachedWithin" ] = createTimespan( 0, 0, 15, 0 );
+
+    var navigationQuery = queryService.execute( sql, queryParams, queryOptions );
+
+    return dataService.queryToTree( navigationQuery, arguments.parentId );
+  }
+
   public array function getMenuItems( required numeric parentId ) {
     fw.frameworkTrace( "<b>webmanager</b>: getMenuItems() called." );
     var sql = "
