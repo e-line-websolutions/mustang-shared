@@ -105,7 +105,7 @@ component accessors=true {
     var imageOutputStream = createObject( "java", "javax.imageio.stream.MemoryCacheImageOutputStream" ).init( byteArrayOutputStream );
 
     var imageIO = createObject( "java", "javax.imageio.ImageIO" );
-    var imageType = structKeyExists( arguments, 'fileExtension' ) and listFind( "png,gif", arguments.fileExtension ) ? fileExtension : "jpg";
+    var imageType = structKeyExists( arguments, 'fileExtension' ) and listFind( "gif,png", arguments.fileExtension ) ? 'png' : "jpg";
 
     var JPEGWriter = imageIO.getImageWritersByFormatName( imageType ).next( );
         JPEGWriter.setOutput( imageOutputStream );
