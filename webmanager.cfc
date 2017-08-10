@@ -21,7 +21,7 @@ component extends=framework.one {
     util.limiter( );
     wm.relocateOnce( request.domainName );
 
-    if ( request.reset ) {
+    if ( structKeyExists( url, "nuke" ) ) {
       wm.clearCache();
       frameworkTrace( "<b>webmanager</b>: cache reset" );
     }

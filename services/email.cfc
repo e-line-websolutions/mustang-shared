@@ -38,7 +38,7 @@ component accessors=true {
 
       logService.writeLogLevel( text = "email sent: '#subject#' to #sendTo#.", type = "information", file = request.appName );
     } catch ( any e ) {
-      logService.writeLogLevel( text = "Error sending email.", type = "fatal", file = request.appName );
+      logService.writeLogLevel( text = "Error sending email. (#e.message#)", type = "fatal", file = request.appName );
       rethrow;
     }
   }
