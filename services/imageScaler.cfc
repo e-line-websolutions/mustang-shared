@@ -58,9 +58,11 @@ component accessors=true {
 
     var destinationWidth = variables.imageSizes[ size ][ 1 ];
     var destinationHeight = arrayIsDefined( variables.imageSizes[ size ], 2 ) ? variables.imageSizes[ size ][ 2 ] : destinationWidth;
+    var fileExtension = listLast( imageName, '.' );
 
     var resized = resize( sourceImage, destinationWidth, destinationHeight );
-    var compressedImage = compressImage( resized, quality );
+    var compressedImage = compressImage( resized, quality, fileExtension );
+
 
     fileWrite( destinationPath, compressedImage );
 
@@ -98,12 +100,14 @@ component accessors=true {
     return resampleOp.init( dimensionConstrain.createMaxDimension( d.width, d.height ) ).filter( bufferedImage, nil( ) );
   }
 
-  private binary function compressImage( required alteredImage, numeric quality = 1 ) {
+  private binary function compressImage( required alteredImage, numeric quality = 1, string fileExtension ) {
     var byteArrayOutputStream = createObject( "java", "java.io.ByteArrayOutputStream" ).init( );
     var imageOutputStream = createObject( "java", "javax.imageio.stream.MemoryCacheImageOutputStream" ).init( byteArrayOutputStream );
 
     var imageIO = createObject( "java", "javax.imageio.ImageIO" );
-    var JPEGWriter = imageIO.getImageWritersByFormatName( "jpg" ).next( );
+    var imageType = structKeyExists( arguments, 'fileExtension' ) and listFind( "png,gif", arguments.fileExtension ) ? fileExtension : "jpg";
+
+    var JPEGWriter = imageIO.getImageWritersByFormatName( imageType ).next( );
         JPEGWriter.setOutput( imageOutputStream );
 
     var JPEGWriterParam = createObject( "java", "javax.imageio.plugins.jpeg.JPEGImageWriteParam" ).init( nil( ) );
