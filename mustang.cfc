@@ -132,7 +132,7 @@ component extends=framework.one {
 
     if ( isNull( resources ) || request.reset || !variables.cfg.appIsLive ) {
       var listOfResources = "";
-      var modelFiles = directoryList( this.mappings[ "/root" ] & "/model", true, "name", "*.cfc", "name asc" );
+      var modelFiles = directoryList( this.mappings[ "/#request.context.config.root#" ] & "/model", true, "name", "*.cfc", "name asc" );
 
       for ( var fileName in modelFiles ) {
         listOfResources = listAppend( listOfResources, reverse( listRest( reverse( fileName ), "." ) ) );
@@ -160,10 +160,11 @@ component extends=framework.one {
     cleanXHTMLQueryString( );
 
     // Overwrite these in the app's own Application.cfc
-    param request.root=getRoot();
-    param request.version="?";
-    param request.appName="?";
-    param this.routes=[];
+    request.root = getRoot();
+    request.version = "?";
+    request.appName = "?";
+
+    this.routes = [];
 
     if ( isNull( request.appSimpleName ) ) {
       request.appSimpleName = listFirst( request.appName, " ,-" );
@@ -217,7 +218,7 @@ component extends=framework.one {
     variables.framework = {
       generateSES = true,
       SESOmitIndex = true,
-      base = "/root",
+      base = "/#variables.cfg.root#",
       baseURL = variables.cfg.webroot,
       error = "app.error",
       unhandledPaths = "/inc,/tests,/browser,/cfimage,/diagram",
@@ -257,27 +258,27 @@ component extends=framework.one {
   private struct function readConfig( string site = cgi.server_name ) {
     // cached:
     if ( !structKeyExists( url, "reload" ) ) {
-      var config = cacheGet( "config-#this.name#" );
+      var cachedConfig = cacheGet( "config-#this.name#" );
 
       // found cached settings, only use it in live apps:
-      if ( !isNull( config ) &&
-          structKeyExists( config, "appIsLive" ) &&
-          isBoolean( config.appIsLive ) &&
-          config.appIsLive ) {
-        return config;
+      if ( !isNull( cachedConfig ) &&
+          structKeyExists( cachedConfig, "appIsLive" ) &&
+          isBoolean( cachedConfig.appIsLive ) &&
+          cachedConfig.appIsLive ) {
+        return cachedConfig;
       }
     }
 
     // not cached:
     var defaultSettings = { "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name };
 
-    if ( fileExists( root & "/config/default.json" ) ) {
-      var defaultConfig = deserializeJSON( fileRead( root & "/config/default.json", "utf-8" ) );
+    if ( fileExists( variables.root & "/config/default.json" ) ) {
+      var defaultConfig = deserializeJSON( fileRead( variables.root & "/config/default.json", "utf-8" ) );
       defaultSettings = mergeStructs( defaultConfig, defaultSettings );
     }
 
-    if ( fileExists( root & "/config/" & site & ".json" ) ) {
-      var siteConfig = deserializeJSON( fileRead( root & "/config/" & site & ".json", "utf-8" ) );
+    if ( fileExists( variables.root & "/config/" & site & ".json" ) ) {
+      var siteConfig = deserializeJSON( fileRead( variables.root & "/config/" & site & ".json", "utf-8" ) );
       defaultSettings = mergeStructs( siteConfig, defaultSettings );
     }
 
