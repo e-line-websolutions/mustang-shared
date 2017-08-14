@@ -109,9 +109,7 @@ component accessors=true {
 
     var byteArrayOutputStream = createObject( "java", "java.io.ByteArrayOutputStream" ).init( );
     var imageOutputStream = createObject( "java", "javax.imageio.stream.MemoryCacheImageOutputStream" ).init( byteArrayOutputStream );
-
     var imageIO = createObject( "java", "javax.imageio.ImageIO" );
-
     var imageWriter = imageIO.getImageWritersByFormatName( fileExtension ).next( );
         imageWriter.setOutput( imageOutputStream );
 
