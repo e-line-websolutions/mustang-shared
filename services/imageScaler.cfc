@@ -5,6 +5,8 @@ component accessors=true {
   property string destinationDir;
   property string hiresDir;
 
+  this.supportedImageFormats = "jpg,jpeg,gif,png";
+
   variables.imageSizes = {
     "large" = [ 1280, 1280 ],
     "medium" = [ 512, 512 ],
@@ -100,25 +102,30 @@ component accessors=true {
     return resampleOp.init( dimensionConstrain.createMaxDimension( d.width, d.height ) ).filter( bufferedImage, nil( ) );
   }
 
-  private binary function compressImage( required alteredImage, numeric quality = 1, string fileExtension ) {
+  private binary function compressImage( required alteredImage, numeric quality = 1, string fileExtension = "jpg" ) {
+    if ( !listFindNoCase( this.supportedImageFormats, fileExtension ) ) {
+      throw( "Image format not supported.", "imageScalerService.compressImage.fileFormatError", "Supported formats are: #this.supportedImageFormats#" );
+    }
+
     var byteArrayOutputStream = createObject( "java", "java.io.ByteArrayOutputStream" ).init( );
     var imageOutputStream = createObject( "java", "javax.imageio.stream.MemoryCacheImageOutputStream" ).init( byteArrayOutputStream );
-
     var imageIO = createObject( "java", "javax.imageio.ImageIO" );
-    var imageType = structKeyExists( arguments, 'fileExtension' ) and listFind( "gif,png", arguments.fileExtension ) ? 'png' : "jpg";
-
-    var JPEGWriter = imageIO.getImageWritersByFormatName( imageType ).next( );
-        JPEGWriter.setOutput( imageOutputStream );
-
-    var JPEGWriterParam = createObject( "java", "javax.imageio.plugins.jpeg.JPEGImageWriteParam" ).init( nil( ) );
-        JPEGWriterParam.setCompressionMode( JPEGWriterParam.MODE_EXPLICIT );
-        JPEGWriterParam.setCompressionQuality( quality );
+    var imageWriter = imageIO.getImageWritersByFormatName( fileExtension ).next( );
+        imageWriter.setOutput( imageOutputStream );
 
     var IIOImage = createObject( "java", "javax.imageio.IIOImage" );
     var outputImage = IIOImage.init( alteredImage, nil( ), nil( ) );
 
-    JPEGWriter.write( nil( ), outputImage, JPEGWriterParam );
-    JPEGWriter.dispose( );
+    if ( listFindNoCase( "jpg,jpeg", fileExtension ) ) {
+      var imageWriterParam = createObject( "java", "javax.imageio.plugins.jpeg.JPEGImageWriteParam" ).init( nil( ) );
+      imageWriterParam.setCompressionMode( imageWriterParam.MODE_EXPLICIT );
+      imageWriterParam.setCompressionQuality( quality );
+      imageWriter.write( nil( ), outputImage, imageWriterParam );
+    } else {
+      imageWriter.write( nil( ), outputImage, nil( ) );
+    }
+
+    imageWriter.dispose( );
 
     return byteArrayOutputStream.toByteArray( );
   }
