@@ -196,15 +196,6 @@ component accessors=true {
     return false;
   }
 
-  public boolean function captcha( required string response ) {
-    var httpService = new http( method = "POST", url = "https://www.google.com/recaptcha/api/siteverify" );
-    httpService.addParam( name = "secret", type = "formfield", value = config.captchaSecret );
-    httpService.addParam( name = "response", type = "formfield", value = response );
-    httpService.addParam( name = "remoteip", type = "formfield", value = cgi.remote_addr );
-    var result = httpService.send( ).getPrefix( );
-    return deserializeJSON( result.filecontent ).success;
-  }
-
   // private
 
   private void function cachePermissions( required array allPermissions ) {

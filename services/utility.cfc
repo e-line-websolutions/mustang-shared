@@ -4,21 +4,21 @@
   <cfproperty name="config" />
 
   <cfscript>
-    public any function init( ) {
-      return this;
-    }
+  public any function init( ) {
+    return this;
+  }
 
-    public boolean function isCaptchaValid( required string response ) {
-    if( !len(trim( arguments.response ))){
+  public boolean function isCaptchaValid( required string response ) {
+    if ( !len( trim( response ) ) ) {
       return false;
       abort;
     }
 
-    var httpService = new http(method = "POST", url = "https://www.google.com/recaptcha/api/siteverify");
-    httpService.addParam(name = "secret", type = "formfield", value = config.captchaSecret );
-    httpService.addParam(name = "response", type = "formfield", value = arguments.response );
-    httpService.addParam(name = "remoteip", type = "formfield", value = cgi.remote_addr );
-    var result = httpService.send().getPrefix();
+    var httpService = new http( method = "POST", url = "https://www.google.com/recaptcha/api/siteverify" );
+    httpService.addParam( name = "secret", type = "formfield", value = config.captchaSecret );
+    httpService.addParam( name = "response", type = "formfield", value = response );
+    httpService.addParam( name = "remoteip", type = "formfield", value = cgi.remote_addr );
+    var result = httpService.send( ).getPrefix( );
     return deserializeJSON( result.filecontent ).success;
   }
 
@@ -37,17 +37,17 @@
     return stringToParse;
   }
 
-  public string function abbreviate( string input, numeric len) {
-  	var newString = REReplace(arguments.input, "<[^>]*>", " ", "ALL");
-  	var lastSpace = 0;
-  	newString = REReplace(newString, " \s*", " ", "ALL");
-  	if (len(newString) gt len) {
-  		newString = left(newString, len-2);
-  		lastSpace = find(" ", reverse(newString));
-  		lastSpace = len(newString) - lastSpace;
-  		newString = left(newString, lastSpace) & "  &##8230;";
-  	}
-  	return newString;
+  public string function abbreviate( string input, numeric len ) {
+    var newString = REReplace( input, "<[^>]*>", " ", "ALL" );
+    var lastSpace = 0;
+    newString = REReplace( newString, " \s*", " ", "ALL" );
+    if ( len( newString ) gt len ) {
+      newString = left( newString, len - 2 );
+      lastSpace = find( " ", reverse( newString ) );
+      lastSpace = len( newString ) - lastSpace;
+      newString = left( newString, lastSpace ) & "  &##8230;";
+    }
+    return newString;
   }
 
   public void function limiter( numeric duration = 5, numeric maxAttempts = 100, numeric timespan = 10 ) {
@@ -60,10 +60,7 @@
         !structKeyExists( rate, "start" ) ||
         !structKeyExists( rate, "attempts" ) ) {
       // initialize limiter:
-      var rate = {
-        attempts = 0,
-        start = now( )
-      };
+      var rate = { attempts = 0, start = now( ) };
       cachePut( cacheID, rate, cacheTime );
       return;
     }
@@ -109,7 +106,10 @@
         !listFindNoCase( type, "lc" ) &&
         !listFindNoCase( type, "num" ) &&
         !listFindNoCase( type, "oth" ) ) {
-      throw( type = "util.generatePassword", message = "generatePassword(): Type must be one or more of these: uc, lc, num, oth." );
+      throw(
+        type = "util.generatePassword",
+        message = "generatePassword(): Type must be one or more of these: uc, lc, num, oth."
+      );
     }
 
     var result = "";
@@ -125,7 +125,12 @@
       } else if ( randRange( 1, 4 ) == 3 && listFindNoCase( type, 'num' ) ) {
         tryChar = chr( randRange( 48, 57 ) );
       } else if ( randRange( 1, 4 ) == 4 && listFindNoCase( type, 'oth' ) ) {
-        var oth = [ chr( randRange( 33, 47 ) ), chr( randRange( 58, 64 ) ), chr( randRange( 91, 96 ) ), chr( randRange( 123, 126 ) ) ];
+        var oth = [
+          chr( randRange( 33, 47 ) ),
+          chr( randRange( 58, 64 ) ),
+          chr( randRange( 91, 96 ) ),
+          chr( randRange( 123, 126 ) )
+        ];
         tryChar = oth[ randRange( 1, 4 ) ];
       }
 
@@ -319,7 +324,7 @@
     }
   }
 
-  public string function enterFormat( string source="" ) {
+  public string function enterFormat( string source = "" ) {
     return reReplace( source, '\n', '<br />', 'all' );
   }
 
@@ -342,7 +347,12 @@
    * @version 3, august 11, 2004
    * @version 4, may 5, 2017
    */
-  function activateUrl( required string input, string target = "", string paragraph = false, string replaceWith = "Info" ) {
+  function activateUrl(
+    required string input,
+    string target = "",
+    string paragraph = false,
+    string replaceWith = "Info"
+  ) {
     if ( isNull( input ) ) {
       return '';
     }
@@ -352,7 +362,12 @@
     var useReplaceWith = len ( replaceWith ) > 0;
 
     do {
-      var objMatch = reFindNoCase( "(((https?:|ftp:|gopher:)\/\/)|(www\.|ftp\.))[-[:alnum:]\?%,\.\/&##!;@:=\+~_]+[a-za-z0-9\/]", input, nextMatch, true );
+      var objMatch = reFindNoCase(
+        "(((https?:|ftp:|gopher:)\/\/)|(www\.|ftp\.))[-[:alnum:]\?%,\.\/&##!;@:=\+~_]+[a-za-z0-9\/]",
+        input,
+        nextMatch,
+        true
+      );
 
       if ( objMatch.pos[ 1 ] > nextMatch || objMatch.pos[ 1 ] == nextMatch ) {
         result = result & mid( input, nextMatch, objMatch.pos[ 1 ] - nextMatch );
@@ -389,7 +404,12 @@
       }
     } while ( nextMatch > 0 );
 
-    result = reReplace( result, "([[:alnum:]_\.\-]+@([[:alnum:]_\.\-]+\.)+[[:alpha:]]{2,4})", "<a href=""mailto:\1"">\1</a>", "all" );
+    result = reReplace(
+      result,
+      "([[:alnum:]_\.\-]+@([[:alnum:]_\.\-]+\.)+[[:alpha:]]{2,4})",
+      "<a href=""mailto:\1"">\1</a>",
+      "all"
+    );
 
     if ( paragraph ) {
       result = paragraphFormat( result );
@@ -408,7 +428,10 @@
 
     // Fire onSessionEnd
     var appEvents = application.getEventInvoker( );
-    var args = [ application, session ];
+    var args = [
+      application,
+      session
+    ];
 
     appEvents.onSessionEnd( args );
 
@@ -466,7 +489,7 @@
     <cfargument name="args" default="#{}#" />
     <cfinvoke component="#comp#" method="#func#" returnvariable="local.result">
       <cfloop collection="#args#" item="local.key">
-        <cfinvokeargument name="#key#" value="#args[key]#" />
+        <cfinvokeargument name="#key#" value="#args[ key ]#" />
       </cfloop>
     </cfinvoke>
     <cfif not isNull( result )>
