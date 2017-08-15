@@ -157,23 +157,19 @@ component extends=framework.one {
   private void function setupMustang( ) {
     request.context.startTime = getTickCount( );
 
-    cleanXHTMLQueryString( );
-
     // Overwrite these in the app's own Application.cfc
-    request.root = getRoot();
-    request.version = "?";
-    request.appName = "?";
-
-    this.routes = [];
+    param request.version="?";
+    param request.appName="?";
 
     if ( isNull( request.appSimpleName ) ) {
       request.appSimpleName = listFirst( request.appName, " ,-" );
     }
 
     // CF application setup:
-    this.mappings[ "/root" ] = variables.root = request.root;
+    this.mappings[ "/root" ] = variables.root = request.root = getRoot();
     this.sessionManagement = true;
     this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
+    this.routes = [];
 
     // Private variables:
     variables.cfg = request.context.config = readConfig( );
@@ -184,6 +180,8 @@ component extends=framework.one {
     if ( structKeyExists( variables.cfg.paths, "basecfc" ) ) {
       this.mappings[ "/basecfc" ] = variables.cfg.paths.basecfc;
     }
+
+    cleanXHTMLQueryString( );
 
     // Reload:
     if ( structKeyExists( url, "reload" ) && url.reload != variables.cfg.reloadpw ) {
@@ -224,9 +222,9 @@ component extends=framework.one {
       unhandledPaths = "/inc,/tests,/browser,/cfimage,/diagram",
       diLocations = [
         "/mustang/services",
-        "/root/services",
-        "/root/model/services",
-        "/root/subsystems/api/services"
+        "/#variables.cfg.root#/services",
+        "/#variables.cfg.root#/model/services",
+        "/#variables.cfg.root#/subsystems/api/services"
       ],
       diConfig = {
         constants = {
