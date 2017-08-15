@@ -80,6 +80,8 @@ component accessors=true {
       if ( utilityService.isGuid( currentAuth.userId ) ) {
         user = entityLoadByPK( "contact", currentAuth.userId );
       }
+    } else {
+      entityReload( user );
     }
 
     createSession( );
@@ -192,26 +194,17 @@ component accessors=true {
     }
 
     return false;
-
-    // REPLACES THIS:
-
-    // var isDefaultSubsystem = framework.getSubsystem() == framework.getDefaultSubsystem();
-    // var dontSecureDefaultSubsystem = isDefaultSubsystem && !config.secureDefaultSubsystem;
-    // var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem()))
-    //       ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0
-    //       : false;
-    // var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth";
-    // var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) &&
-    //       len( config.dontSecureFQA ) &&
-    //       listFindNoCase( config.dontSecureFQA, rc.action );
-    // var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem;
-    // var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity;
-    // var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css";
-
-    // if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
-    //   return;
-    // }
   }
+
+  public boolean function captcha( required string response ) {
+    var httpService = new http( method = "POST", url = "https://www.google.com/recaptcha/api/siteverify" );
+    httpService.addParam( name = "secret", type = "formfield", value = config.captchaSecret );
+    httpService.addParam( name = "response", type = "formfield", value = response );
+    httpService.addParam( name = "remoteip", type = "formfield", value = cgi.remote_addr );
+    var result = httpService.send( ).getPrefix( );
+    return deserializeJSON( result.filecontent ).success;
+  }
+
   // private
 
   private void function cachePermissions( required array allPermissions ) {
