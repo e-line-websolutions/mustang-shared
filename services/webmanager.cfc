@@ -402,6 +402,11 @@ component accessors=true {
     fileService.writeToBrowser( imageToServe );
   }
 
+  public struct function validate( required component beanToValidate ) {
+    var validator = new hyrule.system.core.Hyrule( );
+    return validator.validate( beanToValidate );
+  }
+
   // PRIVATE
 
   private string function getBasePath( required array seoPathArray ) {
