@@ -395,10 +395,10 @@ component accessors=true {
         var values = listToArray( filter[ key ], "|" );
 
         if( arrayLen( values ) == 1 ) {
-          arrayAppend( filters, '#key#="#xmlFormat( values[ 1 ] )#"' );
+          arrayAppend( filters, 'lower-case(#key#)="#lCase( xmlFormat( values[ 1 ] ) )#"' );
         } else {
           var multipleValues = __toXpathStringOr( values );
-          arrayAppend( filters, '#key#[#multipleValues#]' );
+          arrayAppend( filters, 'lower-case(#key#)[#multipleValues#]' );
         }
       }
       xPathString &= "[" & arrayToList( filters, " and " ) & "]";
@@ -407,25 +407,34 @@ component accessors=true {
     return xmlSearch( data, xPathString );
   }
 
-  public string function xmlFromStruct( struct source, string prefix = "", string namespace = "" ) {
+  public string function xmlFromStruct( struct source, string prefix = "", string namespace ) {
     var result = "";
     var ns = len( trim( prefix ) ) ? "#prefix#:" : "";
-    var xmlns = len( trim( namespace ) ) ? ' xmlns="#namespace#"' : ""; // only on first element
+    var xmlns = !isNull( namespace ) && len( trim( namespace ) )
+      ? ' xmlns="#namespace#"'
+      : "";
 
     for ( var key in source ) {
-      var value = structKeyExists( source, key )
-        ? source[ key ]
-        : "";
+      if ( !structKeyExists( source, key ) ) {
+        result &= "<#ns##key##xmlns# />";
+        continue;
+      }
 
+      var value = source[ key ];
 
-      if ( isSimpleValue( value ) ) {
-        result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
-      } else if ( isStruct( value ) ) {
+      if ( isStruct( value ) ) {
         result &= "<#ns##key##xmlns#>" & xmlFromStruct( value, prefix ) & "</#ns##key#>";
+
       } else if ( isArray( value ) ) {
+        result &= "<#ns##key##xmlns#>";
         for ( var item in value ) {
-          result &= "<#ns##key##xmlns#>" & xmlFromStruct( item, prefix ) & "</#ns##key#>";
+          result &= xmlFromStruct( item, prefix );
         }
+        result &= "</#ns##key#>";
+
+      } else if ( isSimpleValue( value ) ) {
+        result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
+
       }
     }
 
@@ -624,7 +633,7 @@ component accessors=true {
     var result = [];
 
     for( var item in source ) {
-      arrayAppend( result, ". = '" & xmlFormat( trim( item ) ) & "'" );
+      arrayAppend( result, ". = '" & lCase( xmlFormat( trim( item ) ) ) & "'" );
     }
 
     return arrayToList( result, " or " );
