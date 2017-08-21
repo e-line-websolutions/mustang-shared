@@ -395,10 +395,10 @@ component accessors=true {
         var values = listToArray( filter[ key ], "|" );
 
         if( arrayLen( values ) == 1 ) {
-          arrayAppend( filters, 'lower-case(#key#)="#lCase( xmlFormat( values[ 1 ] ) )#"' );
+          arrayAppend( filters, '#key#="#xmlFormat( values[ 1 ] )#"' );
         } else {
           var multipleValues = __toXpathStringOr( values );
-          arrayAppend( filters, 'lower-case(#key#)[#multipleValues#]' );
+          arrayAppend( filters, '#key#[#multipleValues#]' );
         }
       }
       xPathString &= "[" & arrayToList( filters, " and " ) & "]";
@@ -633,7 +633,7 @@ component accessors=true {
     var result = [];
 
     for( var item in source ) {
-      arrayAppend( result, ". = '" & lCase( xmlFormat( trim( item ) ) ) & "'" );
+      arrayAppend( result, ". = '" & xmlFormat( trim( item ) ) ) & "'";
     }
 
     return arrayToList( result, " or " );
