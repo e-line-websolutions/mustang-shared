@@ -407,7 +407,102 @@ component accessors=true {
     return validator.validate( beanToValidate );
   }
 
+  public array function searchArticles( required string searchterm , required string language="nl", required boolean ignoredate=false ){
+    var languageId = getLanguageId( language );
+
+    var sql = " EXEC sp_fullTextSearch
+                @searchterm = :searchterm,
+                @bwsID = :bwsID,
+                @languageID = :languageID,
+                @ignoredate = :ignoredate
+    ";
+
+    var queryParams = {
+      searchterm = {
+        value = searchterm,
+        cfsqltype = "CF_SQL_VARCHAR"
+      },
+      bwsID = {
+        value = variables.websiteId,
+        cfsqltype = "CF_SQL_INTEGER"
+      },
+      languageID = {
+        value = languageID,
+        cfsqltype = "CF_SQL_INTEGER"
+      },
+      ignoredate = {
+        value = ignoredate,
+        cfsqltype = "CF_SQL_BIT"
+      }
+    };
+
+    var searchResult = queryService.execute( sql, queryParams, queryOptions );
+    return queryService.toArray( searchResult );
+  }
+
+  public array function getPathFromId( required numeric articleId ){
+    var path = [];
+
+    var stop = false;
+    while( stop eq false ) {
+      var parent = getParentFromId( articleId );
+      articleId = parent.id;
+      arrayPrepend( path, utilityService.variableFormat( parent.name ) );
+      if( parent.id == 0 ){
+        stop = true;
+      }
+    }
+    return path;
+  }
+
+
   // PRIVATE
+
+  private struct function getParentFromId( childId  ){
+    var sql = " SELECT    TOP 1
+                          vw_selectAsset.assetcontent_sTitleText AS path_sName,
+                          mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS path_x_nParentID,
+                          vw_countArticles.nCountArticles AS path_nArticleCount
+
+                FROM      mid_assetmetaAssetcontent mid_assetmetaAssetcontent_1
+                          INNER JOIN mid_assetmetaAssetcontent ON mid_assetmetaAssetcontent_1.assetmetaAssetcontent_x_nAssetContentID = mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetContentID
+                          INNER JOIN vw_selectAsset
+                          INNER JOIN mid_assetmetaAssetmeta ON vw_selectAsset.assetmeta_nID = mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID
+                          INNER JOIN tbl_assetMeta ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = tbl_assetMeta.assetmeta_nID ON mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetMetaID = vw_selectAsset.assetmeta_nID
+                          LEFT OUTER JOIN vw_countArticles ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = vw_countArticles.nMenuID
+
+                WHERE     mid_assetmetaAssetcontent_1.assetmetaAssetcontent_x_nAssetMetaID  = :childId
+                  AND     tbl_assetMeta.assetmeta_x_nTypeID IN ( :typeList )";
+    var queryParams = {
+      childId = {
+        value = childId,
+        cfsqltype = "cf_sql_integer"
+      },
+      typeList = {
+        value = "2,3,4",
+        cfsqltype = "cf_sql_integer",
+        list = true
+      }
+    };
+    var parent = queryService.execute( sql, queryParams, queryOptions );
+    return {
+      id = parent.path_x_nParentId[1],
+      name = parent.path_sName
+    };
+  }
+
+  private numeric function getLanguageId( required string sLanguage ){
+    var sql = " SELECT    language_nID
+                FROM      lst_language
+                WHERE     language_sAbbreviation = :sLanguage";
+
+    var queryParams = {
+      "sLanguage" = sLanguage
+    };
+
+    var result = queryService.execute( sql, queryParams, queryOptions );
+    return val( result.language_nId[1] );
+  }
 
   private string function getBasePath( required array seoPathArray ) {
     fw.frameworkTrace( "<b>webmanager</b>: getBasePath() called." );
