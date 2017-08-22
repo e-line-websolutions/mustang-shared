@@ -310,7 +310,7 @@ component accessors=true {
               "Exception" = e,
               "Data" = value,
               "Property" = fieldProperties
-            } } );
+            } }, true );
           }
           continue;
         }

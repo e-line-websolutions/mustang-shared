@@ -38,8 +38,8 @@ component accessors=true {
     }
   }
 
-  public void function dumpToFile( any data ) {
-    if ( !config.showDebug ) {
+  public void function dumpToFile( any data, boolean force = false ) {
+    if ( !config.showDebug && !force ) {
       return;
     }
 
