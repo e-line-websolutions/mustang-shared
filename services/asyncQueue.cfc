@@ -57,7 +57,7 @@ component accessors=true {
               variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) done.", "asyncQueue" );
             } catch ( any e ) {
               variables.logService.writeLogLevel( "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)", "asyncQueue", "error" );
-              variables.logService.dumpToFile( e );
+              variables.logService.dumpToFile( e, true );
               rethrow;
             }
 
@@ -86,7 +86,7 @@ component accessors=true {
         try {
           thread action="terminate" name=queuedTasks.threadName;
         } catch ( any e ) {
-          variables.logService.dumpToFile( e );
+          variables.logService.dumpToFile( e, true );
         }
       }
       variables.taskQueue = [ ];
