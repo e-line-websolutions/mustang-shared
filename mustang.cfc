@@ -173,6 +173,28 @@ component extends=framework.one {
 
     // Private variables:
     variables.cfg = request.context.config = readConfig( );
+
+    param variables.cfg.appIsLive=true;
+    param variables.cfg.contentSubsystems="";
+    param variables.cfg.datasource="";
+    param variables.cfg.debugEmail="beta-errors@e-line.nl";
+    param variables.cfg.debugIP="127.0.0.1";
+    param variables.cfg.defaultLanguage="en_US";
+    param variables.cfg.disableSecurity=false;
+    param variables.cfg.dontSecureFQA="";
+    param variables.cfg.encryptKey="Xeexnvtvtz7wbxu4v892gHjs9ecwL778C2h8MhM4DumnhDDYnqEycmc2erytpNXR";
+    param variables.cfg.log=true;
+    param variables.cfg.logNotes=false;
+    param variables.cfg.nukeScript="";
+    param variables.cfg.ownerEmail="administrator@e-line.nl";
+    param variables.cfg.paths={};
+    param variables.cfg.reloadpw="1";
+    param variables.cfg.root="root";
+    param variables.cfg.secureDefaultSubsystem=true;
+    param variables.cfg.securedSubsystems="";
+    param variables.cfg.showDebug=false;
+    param variables.cfg.webroot="";
+
     variables.live = variables.cfg.appIsLive;
     variables.i18n = 0;
     variables.util = 0;
