@@ -637,6 +637,7 @@ component accessors=true {
     var sql = "
       SELECT    vw_selectAsset.assetcontent_sFileExtension AS src,
                 vw_selectAsset.assetcontent_sTitleText AS alt,
+                vw_selectAsset.assetcontent_sName AS byline,
                 vw_selectAsset.assetcontent_sIntroText AS other
 
       FROM      vw_selectAsset
@@ -647,7 +648,6 @@ component accessors=true {
         AND     vw_selectAsset.assetmeta_x_nTypeID = 1
         AND     vw_selectAsset.assetmeta_x_nBmID IS NULL
         AND     vw_selectAsset.assetmeta_x_nStatusID = 100
-        AND     GETDATE( ) BETWEEN vw_selectAsset.assetmeta_dOnlineDateTime AND vw_selectAsset.assetmeta_dOfflineDateTime
 
       ORDER BY  vw_selectAsset.assetmeta_nSortKey
     ";

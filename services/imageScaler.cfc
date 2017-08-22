@@ -1,5 +1,6 @@
 component accessors=true {
   property logService;
+  property utilityService;
   property struct imageSizes;
   property string sourceDir;
   property string destinationDir;
@@ -26,13 +27,17 @@ component accessors=true {
   }
 
   public void function resizeFromSourceDir( required string imageName, required string size, numeric quality = 1 ) {
+    if ( skipResize( size, imageName ) ) {
+      return;
+    }
+
     var sourcePath = "#variables.sourceDir#/#imageName#";
 
-    if ( !isNull( variables.hiresDir ) && fileExists( "#variables.hiresDir#/2000_#imageName#" ) ) {
+    if ( !isNull( variables.hiresDir ) && utilityService.fileExistsUsingCache( "#variables.hiresDir#/2000_#imageName#" ) ) {
       sourcePath = "#variables.hiresDir#/2000_#imageName#";
     }
 
-    if ( !fileExists( sourcePath ) ) {
+    if ( !utilityService.fileExistsUsingCache( sourcePath ) ) {
       return;
     }
 
@@ -40,24 +45,30 @@ component accessors=true {
   }
 
   public void function resizeFromPath( any sourcePath, string imageName, required string size, numeric quality = 1 ) {
+    if ( skipResize( size, imageName ) ) {
+      return;
+    }
+
     resizeFromImage( imageNew( sourcePath ), imageName, size, quality );
   }
 
   public void function resizeFromBaos( any bytes, string imageName, required string size, numeric quality = 1 ) {
+    if ( skipResize( size, imageName ) ) {
+      return;
+    }
+
     var sourceImage = imageNew( baosToImage( bytes ) );
     resizeFromImage( sourceImage, imageName, size, quality );
   }
 
   public void function resizeFromImage( any sourceImage, string imageName, required string size, numeric quality = 1 ) {
-    setupSize( size );
-
-    var destinationPath = "#variables.destinationDir#/#size#-#imageName#";
-
-    if ( fileExists( destinationPath ) && !structKeyExists( url, "reload" ) ) {
-      logService.writeLogLevel( "SKIPPED: #variables.destinationDir#/#size#-#imageName# already exists.", "imageScaler" );
+    if ( skipResize( size, imageName ) ) {
       return;
     }
 
+    setupSize( size );
+
+    var destinationPath = "#variables.destinationDir#/#size#-#imageName#";
     var destinationWidth = variables.imageSizes[ size ][ 1 ];
     var destinationHeight = arrayIsDefined( variables.imageSizes[ size ], 2 ) ? variables.imageSizes[ size ][ 2 ] : destinationWidth;
     var fileExtension = listLast( imageName, '.' );
@@ -69,6 +80,15 @@ component accessors=true {
     fileWrite( destinationPath, compressedImage );
 
     logService.writeLogLevel( "SAVED: #variables.destinationDir#/#size#-#imageName#", "imageScaler" );
+  }
+
+  private boolean function skipResize( size, imageName ) {
+    if ( utilityService.fileExistsUsingCache( "#variables.destinationDir#/#size#-#imageName#" ) && !structKeyExists( url, "nuke" ) ) {
+      logService.writeLogLevel( "SKIPPED: #variables.destinationDir#/#size#-#imageName# already exists.", "imageScaler" );
+      return true;
+    }
+
+    return false;
   }
 
   private any function baosToImage( required any bytes ) {
