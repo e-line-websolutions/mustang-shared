@@ -37,7 +37,7 @@ component accessors=true {
     variables.datasource = ds;
     variables.queryOptions = {
       "datasource" = variables.datasource,
-      "cachedWithin" = createTimespan( 0, 0, 0, 30 )
+      "cachedWithin" = createTimespan( 0, 0, 5, 0 )
     };
 
     return this;
@@ -46,12 +46,12 @@ component accessors=true {
   // PUBLIC
 
   public boolean function actionHasView( required string action ) {
-    fw.frameworkTrace( "<b>webmanager</b>: actionHasView() called." );
-    return utilityService.fileExistsUsingCache( root & "/views/" & replace( action, '.', '/', 'all' ) & ".cfm" );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: actionHasView() called." );
+    return variables.utilityService.fileExistsUsingCache( variables.root & "/views/" & replace( action, '.', '/', 'all' ) & ".cfm" );
   }
 
   public void function appendPageDataToRequestContext( required struct requestContext ) {
-    fw.frameworkTrace( "<b>webmanager</b>: appendPageDataToRequestContext() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: appendPageDataToRequestContext() called." );
     var seoPathArray = seoPathAsArray( );
     var pageData = {
       "pageTemplate" = "",
@@ -69,7 +69,7 @@ component accessors=true {
 
     switch ( variables.navigationType ) {
       case "full":
-        pageData[ "fullNavigation" ] = getFullNavigation( websiteId );
+        pageData[ "fullNavigation" ] = getFullNavigation( variables.websiteId );
         break;
       case "per-level":
         pageData[ "navigation" ] = [ ];
@@ -79,7 +79,7 @@ component accessors=true {
     var pathLength = arrayLen( seoPathArray );
 
     for ( var i = 1; i <= pathLength; i++ ) {
-      var seoPathArrayAtCurrentLevel = utilityService.arrayTrim( seoPathArray, i );
+      var seoPathArrayAtCurrentLevel = variables.utilityService.arrayTrim( seoPathArray, i );
       var currentMenuId = getMenuIdFromPath( seoPathArrayAtCurrentLevel );
 
       if ( i == pathLength ) {
@@ -133,10 +133,12 @@ component accessors=true {
     return "main." & asFw1Item( seoPathArray[ firstItemIndex ] );
   }
 
-  public array function getNavigation( required numeric parentId ){
-    fw.frameworkTrace( "<b>webmanager</b>: getNavigation() called." );
+  public array function getNavigation( required numeric parentId ) {
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getNavigation() called." );
     var sql = "
       SELECT    assetcontent_sTitleText as name,
+                dbo.variableFormatMstng( assetcontent_sTitleText ) AS formatted,
+
                 mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId,
                 assetmeta_nID                           AS menuId,
                 assetmeta_nSortKey                      AS sortKey
@@ -161,17 +163,11 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var localQueryOptions = duplicate( queryOptions );
-
-    localQueryOptions[ "cachedWithin" ] = createTimespan( 0, 0, 15, 0 );
-
-    var navigationQuery = queryService.execute( sql, queryParams, queryOptions );
-
-    return dataService.queryToTree( navigationQuery, arguments.parentId );
+    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, queryOptions ), arguments.parentId );
   }
 
   public array function getMenuItems( required numeric parentId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getMenuItems() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getMenuItems() called." );
     var sql = "
       SELECT    assetcontent_sTitleText
 
@@ -195,13 +191,13 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var navigationQuery = queryService.execute( sql, queryParams, queryOptions );
+    var navigationQuery = variables.queryService.execute( sql, queryParams, queryOptions );
 
     return listToArray( valueList( navigationQuery.assetcontent_sTitleText, variables.safeDelim ), variables.safeDelim );
   }
 
   public any function getArticle( required numeric articleId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getArticle() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getArticle() called." );
     var sql = "
       SELECT    assetmeta_nid                AS [articleId],
                 assetmeta_dcreationdatetime  AS [creationDate],
@@ -226,13 +222,13 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var queryResult = queryService.execute( sql, queryParams, queryOptions );
+    var queryResult = variables.queryService.execute( sql, queryParams, queryOptions );
 
     if ( queryResult.recordCount == 0 ) {
       return;
     }
 
-    var article = queryService.toArray( queryResult )[ 1 ];
+    var article = variables.queryService.toArray( queryResult )[ 1 ];
 
     article[ "images" ] = getArticleImages( article.articleId );
 
@@ -240,7 +236,7 @@ component accessors=true {
   }
 
   public array function getArticles( required numeric pageId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getArticles() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getArticles() called." );
     var sql = "
       SELECT    vw_selectAsset.assetmeta_nid                AS [articleId],
                 vw_selectAsset.assetmeta_dcreationdatetime  AS [creationDate],
@@ -269,7 +265,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var articles = queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+    var articles = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, queryOptions ) );
 
     var row = 0;
     for ( var article in articles ) {
@@ -281,7 +277,7 @@ component accessors=true {
   }
 
   public struct function getActiveModules( required numeric pageId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getActiveModules() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getActiveModules() called." );
 
     var sql = "
       SELECT    vw_selectAsset.assetmeta_x_nBmID AS moduleId,
@@ -305,7 +301,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var activeModules = queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+    var activeModules = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, queryOptions ) );
     var moduleContent = { };
 
     for ( var activeModule in activeModules ) {
@@ -334,7 +330,7 @@ component accessors=true {
   }
 
   public void function relocateOnce( required string domainname ) {
-    fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
     if ( domainname == "" || listFindNoCase( "dev,home,local", listLast( cgi.server_name, "." ) ) ) {
       return;
     }
@@ -363,8 +359,8 @@ component accessors=true {
   }
 
   public array function seoPathAsArray( ) {
-    fw.frameworkTrace( "<b>webmanager</b>: seoPathAsArray() called." );
-    var seoPath = utilityService.fixPathInfo( );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: seoPathAsArray() called." );
+    var seoPath = variables.utilityService.fixPathInfo( );
     var tmp = listToArray( seoPath, "/" );
     var seoPathArray = [ ];
 
@@ -380,26 +376,35 @@ component accessors=true {
   }
 
   public void function serveMedia( required struct requestContext ) {
-    fw.frameworkTrace( "<b>webmanager</b>: serveMedia() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: serveMedia() called." );
     param requestContext.file="";
     param requestContext.s="m";
 
     var fileExtension = listLast( requestContext.file, '.' );
 
-    if( fileExtension eq "svg"){
-      var imageToServe = config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#";
+    if( fileExtension eq "svg" ) {
+      var imageToServe = variables.config.mediaRoot & "/sites/site#variables.websiteId#/images/#requestContext.file#";
     }else{
-      if ( !utilityService.fileExistsUsingCache( "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#" ) ) {
-        imageScalerService.setDestinationDir( "#root#/www/inc/img/resized" );
-        imageScalerService.resizeFromPath( config.mediaRoot & "/sites/site#websiteId#/images/#requestContext.file#", requestContext.file, requestContext.s );
-        utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
+      if ( !variables.utilityService.fileExistsUsingCache(
+        "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#"
+      ) ) {
+        variables.imageScalerService.setDestinationDir( "#variables.root#/www/inc/img/resized" );
+        variables.imageScalerService.resizeFromPath(
+          variables.config.mediaRoot & "/sites/site#variables.websiteId#/images/#requestContext.file#",
+          requestContext.file,
+          requestContext.s
+        );
+        variables.utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
       }
-      var imageToServe = "#root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#";
+      var imageToServe = "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#";
     }
 
-    utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
-    utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#" );
-    fileService.writeToBrowser( imageToServe );
+    variables.utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
+    variables.utilityService.cfheader(
+      name = "Last-Modified",
+      value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#"
+    );
+    variables.fileService.writeToBrowser( imageToServe );
   }
 
   public struct function validate( required component beanToValidate ) {
@@ -407,91 +412,62 @@ component accessors=true {
     return validator.validate( beanToValidate );
   }
 
-  public array function searchArticles( required string searchterm , required string language="nl", required boolean ignoredate=false ){
+  public array function searchArticles( required string searchTerm, string language = "nl", boolean ignoreDate = false ) {
     var languageId = getLanguageId( language );
 
-    var sql = " EXEC sp_fullTextSearch
-                @searchterm = :searchterm,
-                @bwsID = :bwsID,
-                @languageID = :languageID,
-                @ignoredate = :ignoredate
+    var sql = "
+      EXEC sp_fullTextSearch
+        @searchTerm = :searchTerm,
+        @bwsID = :bwsID,
+        @languageID = :languageID,
+        @ignoreDate = :ignoreDate
     ";
 
     var queryParams = {
-      searchterm = {
-        value = searchterm,
-        cfsqltype = "CF_SQL_VARCHAR"
-      },
-      bwsID = {
-        value = variables.websiteId,
-        cfsqltype = "CF_SQL_INTEGER"
-      },
-      languageID = {
-        value = languageID,
-        cfsqltype = "CF_SQL_INTEGER"
-      },
-      ignoredate = {
-        value = ignoredate,
-        cfsqltype = "CF_SQL_BIT"
-      }
+      "searchTerm" = left( trim( searchTerm ), 64 ),
+      "bwsID" = variables.websiteId,
+      "languageID" = languageID,
+      "ignoreDate" = { "value" = ignoreDate, "cfsqltype" = "cf_sql_bit" }
     };
 
-    var searchResult = queryService.execute( sql, queryParams, queryOptions );
-    return queryService.toArray( searchResult );
+    var searchResult = variables.queryService.execute( sql, queryParams, queryOptions );
+
+    return variables.queryService.toArray( searchResult );
   }
 
-  public array function getPathFromId( required numeric articleId ){
+  public array function getPathFromId( required numeric articleId ) {
     var path = [];
+    var parent = { id = articleId };
 
-    var stop = false;
-    while( stop eq false ) {
-      var parent = getParentFromId( articleId );
-      articleId = parent.id;
-      arrayPrepend( path, utilityService.variableFormat( parent.name ) );
-      if( parent.id == 0 ){
-        stop = true;
-      }
-    }
+    while ( parent.id > 0 ) {
+      parent = getParentFromId( parent.id );
+      arrayPrepend( path, parent.name );
+    };
+
     return path;
   }
 
-
   // PRIVATE
 
-  private struct function getParentFromId( childId  ){
-    var sql = " SELECT    TOP 1
-                          vw_selectAsset.assetcontent_sTitleText AS path_sName,
-                          mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS path_x_nParentID,
-                          vw_countArticles.nCountArticles AS path_nArticleCount
+  private struct function getParentFromId( required numeric childId ) {
+    var sql = "
+      SELECT    TOP 1
+                dbo.variableFormatMstng( vw_selectAsset.assetcontent_sTitleText ) AS parentName,
+                mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId
 
-                FROM      mid_assetmetaAssetcontent mid_assetmetaAssetcontent_1
-                          INNER JOIN mid_assetmetaAssetcontent ON mid_assetmetaAssetcontent_1.assetmetaAssetcontent_x_nAssetContentID = mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetContentID
-                          INNER JOIN vw_selectAsset
-                          INNER JOIN mid_assetmetaAssetmeta ON vw_selectAsset.assetmeta_nID = mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID
-                          INNER JOIN tbl_assetMeta ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = tbl_assetMeta.assetmeta_nID ON mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetMetaID = vw_selectAsset.assetmeta_nID
-                          LEFT OUTER JOIN vw_countArticles ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = vw_countArticles.nMenuID
+      FROM      vw_selectAsset
+                INNER JOIN mid_assetmetaAssetmeta ON vw_selectAsset.assetmeta_nID = mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildID
+                INNER JOIN tbl_assetMeta ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID = tbl_assetMeta.assetmeta_nID
 
-                WHERE     mid_assetmetaAssetcontent_1.assetmetaAssetcontent_x_nAssetMetaID  = :childId
-                  AND     tbl_assetMeta.assetmeta_x_nTypeID IN ( :typeList )";
-    var queryParams = {
-      childId = {
-        value = childId,
-        cfsqltype = "cf_sql_integer"
-      },
-      typeList = {
-        value = "2,3,4",
-        cfsqltype = "cf_sql_integer",
-        list = true
-      }
-    };
-    var parent = queryService.execute( sql, queryParams, queryOptions );
-    return {
-      id = parent.path_x_nParentId[1],
-      name = parent.path_sName
-    };
+      WHERE     tbl_assetMeta.assetmeta_x_nTypeID IN ( 2, 3, 4 )
+        AND     vw_selectAsset.assetmeta_nID = :childId
+    ";
+    var queryParams = { "childId" = childId };
+    var parent = variables.queryService.execute( sql, queryParams, queryOptions );
+    return { id = parent.parentId[ 1 ], name = parent.parentName };
   }
 
-  private numeric function getLanguageId( required string sLanguage ){
+  private numeric function getLanguageId( required string sLanguage ) {
     var sql = " SELECT    language_nID
                 FROM      lst_language
                 WHERE     language_sAbbreviation = :sLanguage";
@@ -500,12 +476,12 @@ component accessors=true {
       "sLanguage" = sLanguage
     };
 
-    var result = queryService.execute( sql, queryParams, queryOptions );
+    var result = variables.queryService.execute( sql, queryParams, queryOptions );
     return val( result.language_nId[1] );
   }
 
   private string function getBasePath( required array seoPathArray ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getBasePath() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getBasePath() called." );
     if ( seoPathArray[ 1 ] != variables.defaultLanguage ) {
       return "/#seoPathArray[ 1 ]#";
     }
@@ -514,7 +490,7 @@ component accessors=true {
   }
 
   private string function getNavPath( required array seoPathArray, numeric level ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getNavPath() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getNavPath() called." );
     var result = "";
     for ( var i = 2; i <= level; i++ ) {
       if ( !arrayIsDefined( seoPathArray, i ) ) {
@@ -526,7 +502,7 @@ component accessors=true {
   }
 
   private string function getCurrentBaseMenuItem( required array seoPathArray ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getCurrentBaseMenuItem() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getCurrentBaseMenuItem() called." );
     if ( arrayLen( seoPathArray ) > 1 ) {
       return seoPathArray[ 2 ];
     }
@@ -535,12 +511,12 @@ component accessors=true {
   }
 
   private string function getCurrentMenuItem( required array seoPathArray ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getCurrentMenuItem() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getCurrentMenuItem() called." );
     return seoPathArray[ arrayLen( seoPathArray ) ];
   }
 
   private string function getPageTitle( required array seoPathArray, string titleDelimiter = " - " ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getPageTitle() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getPageTitle() called." );
     if ( arrayIsEmpty( seoPathArray ) ) {
       return "";
     }
@@ -551,7 +527,7 @@ component accessors=true {
       arrayDeleteAt( seoPathArray, 1 );
     }
 
-    var reversedSeoPath = utilityService.arrayReverse( seoPathArray );
+    var reversedSeoPath = variables.utilityService.arrayReverse( seoPathArray );
     var fullPath = arrayToList( reversedSeoPath, variables.safeDelim );
     var asTitle = replace( fullPath, variables.safeDelim, titleDelimiter, 'all' );
 
@@ -559,12 +535,12 @@ component accessors=true {
   }
 
   private numeric function getArticleIdFromPath( required any path ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getArticleIdFromPath() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getArticleIdFromPath() called." );
     return getMenuIdFromPath( path );
   }
 
   private numeric function getMenuIdFromPath( required any path ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getMenuIdFromPath() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getMenuIdFromPath() called." );
     var pathArray = isArray( path ) ? path : listToArray( path, "/" );
     var pathLength = arrayLen( pathArray );
 
@@ -573,12 +549,18 @@ component accessors=true {
     }
 
     var sql_from = " FROM vw_selectAsset AS nav_level_1 ";
-    var sql_where = " WHERE nav_level_1.assetmeta_x_nBwsId = :websiteId AND
-                            nav_level_1.assetmeta_x_nTypeId IN ( 2, 3 ) AND
-                            nav_level_1.assetmeta_x_nBmId = 14 AND
-                            dbo.variableFormatMstng( nav_level_1.assetcontent_sTitleText ) IN ( :nav_level_1_name, '_' + :nav_level_1_name ) ";
+    var sql_where = " WHERE nav_level_1.assetmeta_x_nBwsId = :websiteId
+                        AND nav_level_1.assetmeta_x_nTypeId IN ( 2, 3 )
+                        AND nav_level_1.assetmeta_x_nBmId = 14
+                        AND dbo.variableFormatMstng( nav_level_1.assetcontent_sTitleText ) IN (
+                              :menuName_1,
+                              '_' + :menuName_1,
+                              REPLACE( :menuName_1, '-', '_' ),
+                              '_' + REPLACE( :menuName_1, '-', '_' )
+                            )
+        ";
     var queryParams = {
-      "nav_level_1_name" = replace( pathArray[ 1 ], "-", "_", "all" ),
+      "menuName_1" = pathArray[ 1 ],
       "websiteId" = variables.websiteId
     };
 
@@ -589,16 +571,23 @@ component accessors=true {
         INNER JOIN vw_selectAsset AS nav_level_#i#
           ON link_#i-1#_#i#.assetmetaAssetmeta_x_nChildId = nav_level_#i#.assetmeta_nID
       ";
-      sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId AND
-                         nav_level_#i#.assetmeta_x_nTypeId IN ( 2, 3 ) AND
-                         nav_level_#i#.assetmeta_x_nBmId = 14 AND
-                         dbo.variableFormatMstng( nav_level_#i#.assetcontent_sTitleText ) IN ( :nav_level_#i#_name, '_' + :nav_level_#i#_name ) ";
-      queryParams[ "nav_level_#i#_name" ] = replace( pathArray[ i ], "-", "_", "all" );
+      sql_where &= " AND nav_level_#i#.assetmeta_x_nBwsId = :websiteId
+                     AND nav_level_#i#.assetmeta_x_nTypeId IN ( 2, 3 )
+                     AND nav_level_#i#.assetmeta_x_nBmId = 14
+                     AND dbo.variableFormatMstng( nav_level_#i#.assetcontent_sTitleText ) IN (
+                           :menuName_#i#,
+                           '_' + :menuName_#i#,
+                           REPLACE( :menuName_#i#, '-', '_' ),
+                           '_' + REPLACE( :menuName_#i#, '-', '_' )
+                         )
+      ";
+      queryParams[ "menuName_#i#" ] = pathArray[ i ];
     }
 
-    var sql_select = " SELECT nav_level_#pathLength#.assetmeta_nID ";
+    var sql_select = " SELECT DISTINCT nav_level_#pathLength#.assetmeta_nID ";
     var sql = sql_select & sql_from & sql_where;
-    var pathQuery = queryService.execute( sql, queryParams, queryOptions );
+
+    var pathQuery = variables.queryService.execute( sql, queryParams, queryOptions );
 
     if ( pathQuery.recordCount == 1 ) {
       return pathQuery.assetmeta_nID[ 1 ];
@@ -608,7 +597,7 @@ component accessors=true {
   }
 
   private struct function getPageDetails( pageId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getPageDetails() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getPageDetails() called." );
     var sql = "
       SELECT    assetmeta_nID               AS pageId,
                 assetcontent_sTitleText     AS name,
@@ -634,17 +623,17 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var queryResult = queryService.execute( sql, queryParams, queryOptions );
+    var queryResult = variables.queryService.execute( sql, queryParams, queryOptions );
 
     if ( queryResult.recordCount == 0 ) {
-      return {};
+      return { };
     }
 
-    return queryService.toArray( queryResult )[ 1 ];
+    return variables.queryService.toArray( queryResult )[ 1 ];
   }
 
   private array function getArticleImages( required numeric articleId ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getArticleImages() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getArticleImages() called." );
     var sql = "
       SELECT    vw_selectAsset.assetcontent_sFileExtension AS src,
                 vw_selectAsset.assetcontent_sTitleText AS alt,
@@ -668,17 +657,18 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    return queryService.toArray( queryService.execute( sql, queryParams, queryOptions ) );
+    return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, queryOptions ) );
   }
 
   private array function getFullNavigation( ) {
     var sql = "
-      SELECT    tbl_assetMeta.assetmeta_x_nBwsID                      AS websiteId,
+      SELECT    tbl_assetMeta.assetmeta_x_nBwsID AS websiteId,
                 mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId,
-                tbl_assetMeta.assetmeta_nID                           AS menuId,
-                tbl_assetContent.assetcontent_sTitleText              AS name,
-                parentMenu.assetmeta_nSortKey                         AS parentSortKey,
-                tbl_assetMeta.assetmeta_nSortKey                      AS sortKey
+                tbl_assetMeta.assetmeta_nID AS menuId,
+                tbl_assetContent.assetcontent_sTitleText AS name,
+                dbo.variableFormatMstng( tbl_assetContent.assetcontent_sTitleText ) AS formatted,
+                parentMenu.assetmeta_nSortKey AS parentSortKey,
+                tbl_assetMeta.assetmeta_nSortKey AS sortKey
 
       FROM      mid_assetmetaAssetcontent
                 INNER JOIN tbl_assetContent ON mid_assetmetaAssetcontent.assetmetaAssetcontent_x_nAssetContentID = tbl_assetContent.assetcontent_nID
@@ -696,20 +686,14 @@ component accessors=true {
     ";
 
     var queryParams = {
-      "websiteId" = websiteId
+      "websiteId" = variables.websiteId
     };
 
-    var localQueryOptions = duplicate( queryOptions );
-
-    localQueryOptions[ "cachedWithin" ] = createTimespan( 0, 0, 15, 0 );
-
-    var fullNavigationQuery = queryService.execute( sql, queryParams, queryOptions );
-
-    return dataService.queryToTree( fullNavigationQuery );
+    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, queryOptions ) );
   }
 
   private string function getTemplate( required struct requestContext ) {
-    fw.frameworkTrace( "<b>webmanager</b>: getTemplate() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getTemplate() called." );
     var defaultTemplate = "main.default";
 
     if ( !structKeyExists( requestContext, "pageDetails" ) ||
@@ -717,11 +701,11 @@ component accessors=true {
          !len( requestContext.pageDetails.template ) ||
          !isNumeric( requestContext.pageDetails.template ) ||
          requestContext.pageDetails.template < 1 ||
-         requestContext.pageDetails.template > arrayLen( config.templates ) ) {
+         requestContext.pageDetails.template > arrayLen( variables.config.templates ) ) {
       return defaultTemplate;
     }
 
-    return config.templates[ requestContext.pageDetails.template ];
+    return variables.config.templates[ requestContext.pageDetails.template ];
   }
 
   private boolean function isALanguage( required string potentialLanguage ) {
@@ -729,7 +713,7 @@ component accessors=true {
   }
 
   private string function asLocale( required string webmanagerLanguage ) {
-    fw.frameworkTrace( "<b>webmanager</b>: asLocale() called." );
+    variables.fw.frameworkTrace( "<b>webmanager</b>: asLocale() called." );
     return variables.supportedLocales[ webmanagerLanguage ];
   }
 

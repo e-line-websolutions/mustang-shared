@@ -3,6 +3,8 @@
   <cfproperty name="logService" />
   <cfproperty name="config" />
 
+  <cfprocessingdirective pageEncoding="utf-8" />
+
   <cfscript>
   public any function init( ) {
     return this;
@@ -162,7 +164,15 @@
   }
 
   public string function variableFormat( inputString ) {
-    return lCase( reReplace( reReplace( trim( inputString ), '[^\w -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
+    return lCase( reReplace( reReplace( trim( utf8ToAscii( inputString ) ), '[^\w -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
+  }
+
+  public String function utf8ToAscii( required string input ) {
+    var normalizer = createObject( 'java', 'java.text.Normalizer' );
+    var normalizer_NFD =  createObject( 'java', 'java.text.Normalizer$Form' ).valueOf('NFD');
+    var normalizedInput = normalizer.normalize( input, normalizer_NFD );
+
+    return normalizedInput.replaceAll( '\p{InCombiningDiacriticalMarks}+','' ).replaceAll( '[^\p{ASCII}]+', '' );
   }
 
   /**
@@ -275,10 +285,18 @@
   }
 
   public string function encryptForUrl( stringToEncrypt, encryptKey ) {
+    if ( isNull( encryptKey ) ) {
+      encryptKey = variables.config.encryptKey;
+    }
+
     return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey ) ) );
   }
 
   public string function decryptForUrl( stringToEncrypt, encryptKey ) {
+    if ( isNull( encryptKey ) ) {
+      encryptKey = variables.config.encryptKey;
+    }
+
     return decrypt( toString( toBinary( base64URLDecode( stringToEncrypt ) ) ), encryptKey );
   }
 

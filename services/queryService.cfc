@@ -30,39 +30,59 @@ component accessors=true {
     * @version  1, September 22, 2014
     * @version  2, December 29, 2015
     */
-  public any function execute( required string sql_statement, any queryParams={}, struct queryOptions={}) {
-    var timer = getTickCount( );
+  public any function execute( required string sql_statement, any queryParams = { }, struct queryOptions = { } ) {
+    var localQueryOptions = duplicate( queryOptions );
+    var cacheId = buildCacheId( sql_statement, queryParams );
 
+    if ( structKeyExists( localQueryOptions, "cachedWithin" ) && isNumeric( localQueryOptions.cachedWithin ) && val( localQueryOptions.cachedWithin ) > 0 ) {
+      var cacheFor = localQueryOptions.cachedWithin;
+      structDelete( localQueryOptions, "cachedWithin" );
+      var cachedQuery = cacheGet( cacheId );
+      if ( !isNull( cachedQuery ) ) {
+        logService.writeLogLevel( "#request.appName#: (cached) #sql_statement#", "queryService" );
+        return cachedQuery;
+      }
+    }
+
+    var timer = getTickCount( );
     if( structKeyExists( server, "railo" ) ||
         structKeyExists( server, "lucee" ) || (
           structKeyExists( server, "coldfusion" ) &&
-          int( listFirst( server.coldfusion.productVersion )) >= 11
-        )) {
-      var result = queryExecute( sql_statement, queryParams, queryOptions );
+          int( listFirst( server.coldfusion.productVersion ) ) >= 11
+        ) ) {
+      try {
+        var result = queryExecute( sql_statement, queryParams, localQueryOptions );
+      } catch ( any e ) {
+        writeDump( sql_statement );
+        writeDump( e );
+      }
       var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-      logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
+      logService.writeLogLevel( "#request.appName#: #getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
+      if ( !isNull( cacheFor ) ) {
+        cachePut( cacheId, result, cacheFor );
+      }
       return result;
     }
 
     // normalize query params:
-    var parameters = [];
-    if( isArray( queryParams )) {
+    var parameters = [ ];
+    if( isArray( queryParams ) ) {
       for( var param in queryParams ) {
-        if( isNull( param )) {
+        if( isNull( param ) ) {
           arrayAppend( parameters, { "null" = true } );
-        } else if( isSimpleValue( param )) {
-          arrayAppend( parameters, { "value" = param });
+        } else if( isSimpleValue( param ) ) {
+          arrayAppend( parameters, { "value" = param } );
         } else {
           arrayAppend( parameters, param );
         }
       }
-    } else if( isStruct( queryParams )) {
+    } else if( isStruct( queryParams ) ) {
       for( var key in queryParams ) {
-        if( isSimpleValue( queryParams[key])) {
-          arrayAppend( parameters, { "name" = key, "value" = queryParams[key]});
+        if( isSimpleValue( queryParams[ key ] ) ) {
+          arrayAppend( parameters, { "name" = key, "value" = queryParams[ key ] } );
         } else {
           var parameter = { "name" = key };
-          structAppend( parameter, queryParams[key]);
+          structAppend( parameter, queryParams[ key ] );
           arrayAppend( parameters, parameter );
         }
       }
@@ -71,37 +91,50 @@ component accessors=true {
     }
 
     // run and return query using query.cfc:
-    var args = duplicate( queryOptions );
-        args[ "sql" ] = sql_statement;
-        args[ "name" ] = hash( sql_statement );// needed for cache
-        args[ "parameters" ] = parameters;
+    localQueryOptions.sql = sql_statement;
+    localQueryOptions.name = cacheId;
+    localQueryOptions.parameters = parameters;
 
-    var result = new query( argumentCollection = args ).execute().getResult();
+    var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
     var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-    logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
+    logService.writeLogLevel( "#request.appName#: #getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
+    if ( !isNull( cacheFor ) ) {
+      cachePut( cacheId, result, cacheFor );
+    }
     return result;
   }
 
   /** Courtesy of user 'Tomalak' from http://stackoverflow.com/questions/2653804/how-to-sort-an-array-of-structs-in-coldfusion#answer-2653972
     */
-  public array function arrayOfStructSort( required array base, string sortType="text", string sortOrder="ASC", string pathToSubElement="" ) {
-    var tmpStruct = {};
-    var returnVal = [];
+  public array function arrayOfStructSort(
+    required array base,
+    string sortType = "text",
+    string sortOrder = "ASC",
+    string pathToSubElement = ""
+  ) {
+    var tmpStruct = { };
+    var returnVal = [ ];
 
-    for( var i=1; i<=arrayLen( base ); i++ ) {
-      tmpStruct[i] = base[i];
+    for( var i = 1; i <= arrayLen( base ); i++ ) {
+      tmpStruct[ i ] = base[ i ];
     }
 
     var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
 
-    for( var i=1; i<=arrayLen( keys ); i++ ) {
-      returnVal[i] = tmpStruct[keys[i]];
+    for( var i = 1; i <= arrayLen( keys ); i++ ) {
+      returnVal[ i ] = tmpStruct[ keys[ i ] ];
     }
 
     return returnVal;
   }
 
-  public any function ormNativeQuery( string sql, struct where = { }, struct options = { }, array entities = [ ], unique = false ) {
+  public any function ormNativeQuery(
+    string sql,
+    struct where = { },
+    struct options = { },
+    array entities = [ ],
+    unique = false
+  ) {
     var ormSession = ormGetSession( );
     var sqlQuery = ormSession.createSQLQuery( sql );
     var paramMetadata = sqlQuery.getParameterMetadata( );
@@ -162,14 +195,14 @@ component accessors=true {
 
   public string function buildQueryForEntity( entityName ) {
     var entity = entityNew( entityName );
-    var tableName = entity.getTableName();
+    var tableName = entity.getTableName( );
     var sqlEntities = [ entityName ];
     var metaDataTable = "mainEntity";
     var SQLSelect = " SELECT DISTINCT mainEntity.* ";
     var SQLFrom = " FROM #tableName# mainEntity ";
-    if( isInstanceOf( entity, "#config.root#.model.logged" )) {
-      var loggedObj = createObject( "#config.root#.model.logged" ).init();
-      metaDataTable = loggedObj.getTableName();
+    if( isInstanceOf( entity, "#config.root#.model.logged" ) ) {
+      var loggedObj = createObject( "#config.root#.model.logged" ).init( );
+      metaDataTable = loggedObj.getTableName( );
       SQLFrom &= " INNER JOIN #metaDataTable# ON mainEntity.id = #metaDataTable#.id ";
       SQLSelect &= ", #metaDataTable#.* ";
     }
@@ -182,8 +215,14 @@ component accessors=true {
     var result = "";
     var inputAsArray = listToArray( input, "." );
     var escapeChars = {
-      "PostgreSQL" = [ '"', '"' ],
-      "SQLServer" = [ '[', ']' ]
+      "PostgreSQL" = [
+        '"',
+        '"'
+      ],
+      "SQLServer" = [
+        '[',
+        ']'
+      ]
     };
 
     for ( var field in inputAsArray ) {
@@ -199,10 +238,10 @@ component accessors=true {
 
     if ( isNull( ds ) ) {
       if( val( server.coldfusion.productversion ) < 10 ) {
-        var appMetadata = application.getApplicationSettings();
+        var appMetadata = application.getApplicationSettings( );
         ds = appMetadata.datasource;
       } else {
-        var appMetadata = getApplicationMetaData();
+        var appMetadata = getApplicationMetaData( );
         if( structKeyExists( appMetadata, "ormsettings" ) && structKeyExists( appMetadata.ormsettings, "datasource" ) ) {
           ds = appMetadata.ormsettings.datasource;
         } else if ( structKeyExists( appMetadata, "datasource" ) ) {
@@ -217,5 +256,17 @@ component accessors=true {
       variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
       variables.dialect = listFirst( dbinfo.DRIVER_NAME, " " );
     }
+  }
+
+  private string function buildCacheId( required string sql_statement, required struct queryParams ) {
+    var params = [];
+    var sortedKeys = structKeyArray( queryParams );
+    arraySort( sortedKeys, "textnocase" );
+    for ( var key in sortedKeys ) {
+      var value = queryParams[ key ];
+      if ( isStruct( value ) ) { value = value.value; }
+      if ( isSimpleValue( value ) ) { arrayAppend( params, "#key#=#value#" ); }
+    }
+    return hash( lcase( reReplace( sql_statement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
   }
 }
