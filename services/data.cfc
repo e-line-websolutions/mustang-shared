@@ -541,12 +541,8 @@ component accessors=true {
     var parents = { '#arguments.parentId#' = { "children" = [ ] } };
 
     for ( var row in asArrayOfStructs ) {
-      parents[ row.menuId ] = {
-        "menuId" = row.menuId,
-        "name" = row.name,
-        "formatted" = variables.utilityService.variableFormat( row.name ),
-        "children" = [ ]
-      };
+      parents[ row.menuId ] = row;
+      parents[ row.menuId ].children = [ ];
     }
 
     for ( var row in asArrayOfStructs ) {
