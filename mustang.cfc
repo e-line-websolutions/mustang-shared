@@ -12,11 +12,19 @@ component extends=framework.one {
       structDelete( application, "threads" );
       try { ORMEvictQueries( ); } catch ( any e ) { }
       cacheRemove( arrayToList( cacheGetAllIds( ) ) );
-      logService.writeLogLevel( "Caches purged", request.appName );
+      logService.writeLogLevel( "NUKE: Caches purged", request.appName );
 
       // rebuild ORM:
-      ORMReload( );
-      logService.writeLogLevel( "ORM reloaded", request.appName );
+      if ( variables.cfg.useOrm ) {
+        var hbmxmlFiles = directoryList( this.ormSettings.CFCLocation, true, "path", "*.hbmxml" );
+        for ( var filepath in hbmxmlFiles ) {
+          fileDelete( filepath );
+        }
+        logService.writeLogLevel( "NUKE: HBMXML files deleted", request.appName );
+
+        ORMReload( );
+        logService.writeLogLevel( "NUKE: ORM reloaded", request.appName );
+      }
     }
 
     logService.writeLogLevel( "Application initialized", request.appName );
@@ -194,6 +202,7 @@ component extends=framework.one {
     param variables.cfg.securedSubsystems="";
     param variables.cfg.showDebug=false;
     param variables.cfg.webroot="";
+    param variables.cfg.useOrm=true;
 
     variables.live = variables.cfg.appIsLive;
     variables.i18n = 0;
