@@ -200,6 +200,15 @@ component accessors=true {
     return potentialDate;
   }
 
+  public boolean function hasMissingStructKeys( required struct inputStruct, required array structKeys ) {
+    for ( var key in structKeys ) {
+      if ( !structKeyExists( inputStruct, key ) ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // convenience functions
 
   public any function processEntity( any data,
