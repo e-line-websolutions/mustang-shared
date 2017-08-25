@@ -1,6 +1,7 @@
 component accessors=true {
   property emailService;
   property contactService;
+  property utilityService;
   property config;
 
   this.logLevels = [ "information", "warning", "error", "fatal" ];
@@ -45,10 +46,13 @@ component accessors=true {
 
     param config.paths.errors="C:/TEMP/";
 
-    savecontent variable="local.debug" {
-      writeDump( data );
-    }
+    thread name="debugWritingThread_#createUUID()#" data = data config = config utilityService = utilityService {
+      utilityService.setCFSetting( "requestTimeout", 600 );
+      savecontent variable="local.debug" {
+        writeDump( data );
+      }
 
-    fileWrite( "#config.paths.errors#/error-#createUUID( )#.html", debug );
+      fileWrite( "#config.paths.errors#/error-#createUUID( )#.html", debug );
+    }
   }
 }
