@@ -16,7 +16,13 @@ component extends=framework.one {
 
       // rebuild ORM:
       if ( variables.cfg.useOrm ) {
-        var hbmxmlFiles = directoryList( this.ormSettings.CFCLocation, true, "path", "*.hbmxml" );
+        var modelPath = this.ormSettings.CFCLocation;
+
+        if ( left( modelPath, 1 ) == "/" ) {
+          modelPath = expandPath( modelPath );
+        }
+
+        var hbmxmlFiles = directoryList( modelPath, true, "path", "*.hbmxml" );
         for ( var filepath in hbmxmlFiles ) {
           fileDelete( filepath );
         }

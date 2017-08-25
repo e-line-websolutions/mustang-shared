@@ -40,19 +40,28 @@ component accessors=true {
   }
 
   public void function dumpToFile( any data, boolean force = false ) {
-    if ( !config.showDebug && !force ) {
+    if ( !variables.config.showDebug && !force ) {
       return;
     }
 
-    param config.paths.errors="C:/TEMP/";
-
-    thread name="debugWritingThread_#createUUID()#" data = data config = config utilityService = utilityService {
-      utilityService.setCFSetting( "requestTimeout", 600 );
-      savecontent variable="local.debug" {
-        writeDump( data );
+    try {
+      thread name="debugWritingThread_#createUUID( )#" data = data {
+        writeToFile( data );
       }
-
-      fileWrite( "#config.paths.errors#/error-#createUUID( )#.html", debug );
+    } catch ( any e ) {
+      writeToFile( data );
     }
+  }
+
+  private void function writeToFile( any data ) {
+    param variables.config.paths.errors="C:/TEMP";
+
+    variables.utilityService.setCFSetting( "requestTimeout", 600 );
+
+    savecontent variable="local.debug" {
+      writeDump( data );
+    }
+
+    fileWrite( "#variables.config.paths.errors#/error-#createUUID( )#.html", debug );
   }
 }
