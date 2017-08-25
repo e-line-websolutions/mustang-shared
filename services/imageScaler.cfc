@@ -82,7 +82,7 @@ component accessors=true {
     logService.writeLogLevel( "SAVED: #variables.destinationDir#/#size#-#imageName#", "imageScaler" );
   }
 
-  private boolean function skipResize( size, imageName ) {
+  public boolean function skipResize( size, imageName ) {
     if ( utilityService.fileExistsUsingCache( "#variables.destinationDir#/#size#-#imageName#" ) && !structKeyExists( url, "nuke" ) ) {
       logService.writeLogLevel( "SKIPPED: #variables.destinationDir#/#size#-#imageName# already exists.", "imageScaler" );
       return true;
