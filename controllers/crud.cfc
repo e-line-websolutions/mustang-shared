@@ -431,6 +431,7 @@ component accessors=true {
     param rc.formprepend="";
     param rc.formappend="";
     param rc.namePrepend="";
+    param rc.tabs=[];
 
     rc.submitButtons = variables.submitButtons;
     rc.fallbackView = ":elements/edit";

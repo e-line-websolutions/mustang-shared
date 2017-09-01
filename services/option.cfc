@@ -1,12 +1,14 @@
 component accessors=true {
   property dataService;
+  property queryService;
 
   property struct allOptions;
   property struct sourceMapping;
 
   // constructor
 
-  public component function init( ) {
+  public component function init( queryService ) {
+    structAppend( variables, arguments );
     variables.allOptions = { };
     reloadOptions( );
     return this;
@@ -15,13 +17,12 @@ component accessors=true {
   // public functions
 
   public void function reloadOptions( ) {
-    var allOptions = variables.allOptions;
     var result = { };
     var optionsInDb = __getOptionsFromDB( );
 
     for( var option in optionsInDb ) {
-      var key = option.get( 'key' );
-      var value = option.get( 'value' );
+      var key = option[ 1 ];
+      var value = option[ 2 ];
 
       if( !structKeyExists( result, key ) ) {
         result[ key ] = [ ];
@@ -89,7 +90,6 @@ component accessors=true {
   }
 
   private array function __getOptionsFromDB( ) {
-    var result = ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
-    return result;
+    return queryService.ormNativeQuery( "SELECT o.id, o.name FROM mustang.#queryService.escapeField( 'option' )# o WHERE o.name <> ''" );
   }
 }
