@@ -10,7 +10,9 @@ component extends=framework.one {
     if ( structKeyExists( url, "nuke" ) ) {
       // empty caches:
       structDelete( application, "threads" );
-      try { ORMEvictQueries( ); } catch ( any e ) { }
+      try {
+        ORMEvictQueries( );
+      } catch ( any e ) { }
       cacheRemove( arrayToList( cacheGetAllIds( ) ) );
       logService.writeLogLevel( "NUKE: Caches purged", request.appName );
 
@@ -66,17 +68,24 @@ component extends=framework.one {
     controller( ":i18n.load" );
 
     // content:
-    if ( getSubsystem( ) == getDefaultSubsystem( ) || listFindNoCase( variables.cfg.contentSubsystems, getSubsystem( ) ) ) {
+    if ( getSubsystem( ) == getDefaultSubsystem( ) || listFindNoCase(
+      variables.cfg.contentSubsystems,
+      getSubsystem( )
+    ) ) {
       controller( ":admin-ui.load" );
     }
 
     // try to queue up crud (admin) actions:
-    if ( getSubsystem( ) == getDefaultSubsystem( ) && !util.fileExistsUsingCache( variables.root & "/controllers/#getSection( )#.cfc" ) ) {
+    if ( getSubsystem( ) == getDefaultSubsystem( ) && !util.fileExistsUsingCache(
+      variables.root & "/controllers/#getSection( )#.cfc"
+    ) ) {
       controller( ":crud.#getItem( )#" );
     }
 
     // try to queue up api actions:
-    if ( getSubsystem( ) == "api" && !util.fileExistsUsingCache( variables.root & "/subsystems/api/controllers/#getSection( )#.cfc" ) ) {
+    if ( getSubsystem( ) == "api" && !util.fileExistsUsingCache(
+      variables.root & "/subsystems/api/controllers/#getSection( )#.cfc"
+    ) ) {
       controller( "api:main.#getItem( )#" );
     }
   }
@@ -90,7 +99,7 @@ component extends=framework.one {
   }
 
   public void function onError( any exception, string event ) {
-    param request.action="main.default";
+    param request.action = "main.default";
 
     if ( listFindNoCase( "adminapi,api", listFirst( cgi.PATH_INFO, "/" ) ) ) {
       if ( structKeyExists( exception, "cause" ) ) {
@@ -126,7 +135,9 @@ component extends=framework.one {
       return view( getSection( ) & "/" & getItem( ) );
     }
 
-    if ( util.fileExistsUsingCache( variables.root & "/subsystems/" & getSubsystem( ) & "/views/" & getSection( ) & "/" & getItem( ) & ".cfm" ) ) {
+    if ( util.fileExistsUsingCache(
+      variables.root & "/subsystems/" & getSubsystem( ) & "/views/" & getSection( ) & "/" & getItem( ) & ".cfm"
+    ) ) {
       return view( getSubsystem( ) & ":" & getSection( ) & "/" & getItem( ) );
     }
 
@@ -146,7 +157,13 @@ component extends=framework.one {
 
     if ( isNull( resources ) || request.reset || !variables.cfg.appIsLive ) {
       var listOfResources = "";
-      var modelFiles = directoryList( this.mappings[ "/#request.context.config.root#" ] & "/model", true, "name", "*.cfc", "name asc" );
+      var modelFiles = directoryList(
+        this.mappings[ "/#request.context.config.root#" ] & "/model",
+        true,
+        "name",
+        "*.cfc",
+        "name asc"
+      );
 
       for ( var fileName in modelFiles ) {
         listOfResources = listAppend( listOfResources, reverse( listRest( reverse( fileName ), "." ) ) );
@@ -154,11 +171,13 @@ component extends=framework.one {
 
       var resources = this.routes;
 
-      resources.addAll( [
-        { "^/api/auth/:item" = "/api:auth/:item/" },
-        { "^/api/$" = "/api:main/notfound" },
-        { "$RESOURCES" = { resources = listOfResources, subsystem = "api" } }
-      ] );
+      resources.addAll(
+        [
+          { "^/api/auth/:item" = "/api:auth/:item/" },
+          { "^/api/$" = "/api:main/notfound" },
+          { "$RESOURCES" = { resources = listOfResources, subsystem = "api" } }
+        ]
+      );
 
       cachePut( "resources-#this.name#", resources );
     }
@@ -172,43 +191,21 @@ component extends=framework.one {
     request.context.startTime = getTickCount( );
 
     // Overwrite these in the app's own Application.cfc
-    param request.version="?";
-    param request.appName="?";
+    param request.version = "?";
+    param request.appName = "?";
 
     if ( isNull( request.appSimpleName ) ) {
       request.appSimpleName = listFirst( request.appName, " ,-" );
     }
 
     // CF application setup:
-    this.mappings[ "/root" ] = variables.root = request.root = getRoot();
+    this.mappings[ "/root" ] = variables.root = request.root = getRoot( );
     this.sessionManagement = true;
     this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
-    this.routes = [];
+    this.routes = [ ];
 
     // Private variables:
-    variables.cfg = request.context.config = readConfig( );
-
-    param variables.cfg.appIsLive=true;
-    param variables.cfg.contentSubsystems="";
-    param variables.cfg.datasource="";
-    param variables.cfg.debugEmail="beta-errors@e-line.nl";
-    param variables.cfg.debugIP="127.0.0.1";
-    param variables.cfg.defaultLanguage="en_US";
-    param variables.cfg.disableSecurity=false;
-    param variables.cfg.dontSecureFQA="";
-    param variables.cfg.encryptKey="Xeexnvtvtz7wbxu4v892gHjs9ecwL778C2h8MhM4DumnhDDYnqEycmc2erytpNXR";
-    param variables.cfg.log=true;
-    param variables.cfg.logNotes=false;
-    param variables.cfg.nukeScript="";
-    param variables.cfg.ownerEmail="administrator@e-line.nl";
-    param variables.cfg.paths={};
-    param variables.cfg.reloadpw="1";
-    param variables.cfg.root="root";
-    param variables.cfg.secureDefaultSubsystem=true;
-    param variables.cfg.securedSubsystems="";
-    param variables.cfg.showDebug=false;
-    param variables.cfg.webroot="";
-    param variables.cfg.useOrm=true;
+    request.context.config = variables.cfg = readConfig( );
 
     variables.live = variables.cfg.appIsLive;
     variables.i18n = 0;
@@ -228,7 +225,9 @@ component extends=framework.one {
     request.reset = structKeyExists( url, "reload" );
 
     // Config based global variables:
-    request.context.debug = variables.cfg.showDebug && ( listFind( variables.cfg.debugIP, cgi.remote_addr ) || !len( trim( variables.cfg.debugIP ) ) );
+    request.context.debug = variables.cfg.showDebug && ( listFind( variables.cfg.debugIP, cgi.remote_addr ) || !len(
+      trim( variables.cfg.debugIP )
+    ) );
     request.webroot = variables.cfg.webroot;
 
     if ( len( variables.cfg.paths.fileUploads ) ) {
@@ -263,12 +262,7 @@ component extends=framework.one {
         "/#variables.cfg.root#/model/services",
         "/#variables.cfg.root#/subsystems/api/services"
       ],
-      diConfig = {
-        constants = {
-          root = variables.root,
-          config = cfg
-        }
-      },
+      diConfig = { constants = { root = variables.root, config = cfg } },
       routesCaseSensitive = false,
       environments = {
         live = {
@@ -276,9 +270,7 @@ component extends=framework.one {
           password = variables.cfg.reloadpw,
           trace = variables.cfg.showDebug
         },
-        dev = {
-          trace = variables.cfg.showDebug
-        }
+        dev = { trace = variables.cfg.showDebug }
       },
       subsystems = { api = { error = "api:main.error" } }
     };
@@ -305,7 +297,33 @@ component extends=framework.one {
     }
 
     // not cached:
-    var defaultSettings = { "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name };
+    var defaultSettings = {
+      "appIsLive" = true,
+      "contentSubsystems" = "",
+      "datasource" = "",
+      "debugEmail" = "beta-errors@e-line.nl",
+      "debugIP" = "127.0.0.1",
+      "defaultLanguage" = "en_US",
+      "disableSecurity" = false,
+      "dontSecureFQA" = "",
+      "encryptKey" = "Xeexnvtvtz7wbxu4v892gHjs9ecwL778C2h8MhM4DumnhDDYnqEycmc2erytpNXR",
+      "log" = true,
+      "logNotes" = false,
+      "nukeScript" = "",
+      "ownerEmail" = "administrator@e-line.nl",
+      "paths" = {
+        "basecfc" = "",
+        "fileUploads" = "",
+        "errors" = "C:/TEMP"
+      },
+      "reloadpw" = "1",
+      "root" = "root",
+      "secureDefaultSubsystem" = true,
+      "securedSubsystems" = "",
+      "showDebug" = false,
+      "useOrm" = true,
+      "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name
+    };
 
     if ( fileExists( variables.root & "/config/default.json" ) ) {
       var defaultConfig = deserializeJSON( fileRead( variables.root & "/config/default.json", "utf-8" ) );
@@ -318,6 +336,8 @@ component extends=framework.one {
     }
 
     cachePut( "config-#this.name#", defaultSettings );
+
+    writeLog( "#this.name#: config reloaded" );
 
     return defaultSettings;
   }
@@ -337,7 +357,10 @@ component extends=framework.one {
   }
 
   private void function addToConstants( required struct websiteSpecificConstants ) {
-    variables.framework.diConfig.constants = mergeStructs( websiteSpecificConstants, variables.framework.diConfig.constants );
+    variables.framework.diConfig.constants = mergeStructs(
+      websiteSpecificConstants,
+      variables.framework.diConfig.constants
+    );
   }
 
   private void function addMapping( required string name, required string absolutePath ) {

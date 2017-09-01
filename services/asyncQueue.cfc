@@ -140,8 +140,6 @@ component accessors=true {
 
       arrayDeleteAt( variables.taskQueue, 1 );
 
-      variables.logService.writeLogLevel( "Selected task: #taskItem.taskMethod# for thread #taskItem.threadName#", "asyncQueue" );
-
       return taskItem;
     }
   }
