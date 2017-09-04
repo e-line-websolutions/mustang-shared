@@ -36,7 +36,14 @@ component extends=framework.one {
   }
 
   public void function onError( any exception, string event ) {
-    writeDump( arguments );abort;
+    if ( arrayFind( this.debugIps, cgi.remote_addr ) ) {
+      writeDump( arguments );
+      abort;
+    }
+
+    getpagecontext().getcfoutput().clearall();
+    include "/error.html";
+    abort;
   }
 
   public string function onMissingView( struct rc ) {
@@ -55,6 +62,7 @@ component extends=framework.one {
     param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
     param request.domainName=cgi.server_name;
 
+    this.debugIps = listToArray( "95.97.10.147,127.0.0.1" );
     this.sessionManagement = true;
 
     variables.root = this.mappings[ "/root" ] = getRoot( );
