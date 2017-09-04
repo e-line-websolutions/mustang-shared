@@ -329,9 +329,10 @@ component accessors=true {
     return "";
   }
 
-  public void function relocateOnce( required string domainname ) {
+  public void function relocateOnce( string domainname = "" ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
-    if ( domainname == "" || listFindNoCase( "dev,home,local", listLast( cgi.server_name, "." ) ) ) {
+
+    if ( domainname == "" || !isLiveUrl( ) ) {
       return;
     }
 
@@ -352,6 +353,8 @@ component accessors=true {
           ? '?' & cgi.query_string
           : ''
       );
+
+    relocateTo = replace( relocateTo, '/index.cfm', '/', 'one' );
 
     if( cgi.server_name != domainname ) {
       location( relocateTo, false, 301 );
@@ -445,6 +448,18 @@ component accessors=true {
     };
 
     return path;
+  }
+
+  public boolean function isLiveUrl( ) {
+    var nonLiveWords = listToArray( "dev,staging,home,local" );
+
+    for ( var part in nonLiveWords ) {
+      if ( listFindNoCase( cgi.server_name, part, "." ) ) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   // PRIVATE
