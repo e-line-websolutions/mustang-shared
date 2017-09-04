@@ -82,6 +82,11 @@ component accessors=true {
     return result;
   }
 
+  public string function writeBase64ImageToFile( Base64EncodedFile, location ){
+    var binarycode = binaryDecode( Base64EncodedFile, 'Base64' );
+    fileWrite( location , binarycode );
+  }
+
   private string function getMimetype( required string filePath ) {
     switch( listLast( filePath, '.' ) ) {
       case 'jpg' :
