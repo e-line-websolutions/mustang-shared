@@ -41,8 +41,12 @@ component extends=framework.one {
       abort;
     }
 
-    getpagecontext().getcfoutput().clearall();
-    include "/error.html";
+    var pc = getpagecontext( );
+    pc.getcfoutput( ).clearall( );
+    pc.getresponse( ).getresponse( ).setstatus( 500 );
+    if ( fileExists( variables.root & "/error.html" ) ) {
+      include "/root/error.html";
+    }
     abort;
   }
 

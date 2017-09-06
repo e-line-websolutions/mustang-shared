@@ -127,7 +127,15 @@ component extends=framework.one {
       }
     }
 
-    super.onError( argumentCollection = arguments );
+    try {
+      super.onError( argumentCollection = arguments );
+    } catch ( any e ) {
+      writeOutput( '<h1>#e.message#</h1>' );
+      writeOutput( 'Original error below:' );
+      writeOutput( '<br>' & exception.message );
+      writeOutput( '<br>' & exception.detail );
+      abort;
+    }
   }
 
   public string function onMissingView( struct rc ) {
@@ -308,6 +316,7 @@ component extends=framework.one {
       "dontSecureFQA" = "",
       "encryptKey" = "Xeexnvtvtz7wbxu4v892gHjs9ecwL778C2h8MhM4DumnhDDYnqEycmc2erytpNXR",
       "log" = true,
+      "logLevel" = "information",
       "logNotes" = false,
       "nukeScript" = "",
       "ownerEmail" = "administrator@e-line.nl",
