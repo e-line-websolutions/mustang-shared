@@ -86,8 +86,9 @@
         context.getCFOutput( ).clear( );
 
         logService.writeLogLevel(
-          file = "limiter",
-          text = "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#"
+          "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#",
+          "mustang-limiter",
+          "debug"
         );
 
         // set cache timeout to duration, so user remains locked out for the duration:
