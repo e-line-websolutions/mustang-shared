@@ -47,17 +47,25 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile( any data, boolean force = false ) {
+  public void function dumpToFile( any data, boolean force = false, fireAndForget = true ) {
+    return;
     if ( !variables.config.showDebug && !force ) {
+    }
+
+    if ( fireAndForget ) {
+      thread name="debugWritingThread_#createUUID( )#" data = data {
+        writeToFile( data );
+      }
       return;
     }
 
     try {
-      thread name="debugWritingThread_#createUUID( )#" data = data {
-        writeToFile( data );
-      }
-    } catch ( any e ) {
       writeToFile( data );
+    } catch ( any e ) {
+      writeLogLevel( "Error writing data to file", "logService", "error" );
+      try {
+        writeToFile( e );
+      } catch ( any e ) { }
     }
   }
 

@@ -28,8 +28,6 @@ component accessors=true {
   }
 
   public void function addTask( required any taskMethod, any taskArguments = { } ) {
-    variables.logService.writeLogLevel( "Executing task (t. #variables.threadIndex#).", "asyncQueue" );
-
     lock name=variables.lockName timeout=variables.lockTimeout {
       addNewTaskItem( taskMethod, taskArguments, variables.threadName );
 
@@ -52,12 +50,10 @@ component accessors=true {
 
           while ( structKeyExists( local, "taskItem" ) ) {
             try {
-              variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) started.", "asyncQueue" );
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
-              variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) done.", "asyncQueue" );
             } catch ( any e ) {
               variables.logService.writeLogLevel( "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)", "asyncQueue", "error" );
-              variables.logService.dumpToFile( e, true );
+              variables.logService.dumpToFile( e, true, false );
               rethrow;
             }
 
@@ -86,7 +82,7 @@ component accessors=true {
         try {
           thread action="terminate" name=queuedTasks.threadName;
         } catch ( any e ) {
-          variables.logService.dumpToFile( e, true );
+          variables.logService.dumpToFile( e, true, false );
         }
       }
       variables.taskQueue = [ ];
