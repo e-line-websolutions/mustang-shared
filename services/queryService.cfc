@@ -144,7 +144,7 @@ component accessors=true {
 
       if( isArray( value ) ) {
         sqlQuery = sqlQuery.setParameterList( key, value );
-      } else if( isDate( value ) ) {
+      } else if( isDate( value ) && !isNumeric( value ) ) {
         var asJavaDate = createObject( "java", "java.util.Date" ).init( value.getTime( ) );
         sqlQuery = sqlQuery.setDate( key, asJavaDate );
       } else if( isNull( value ) ) {
