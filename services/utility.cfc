@@ -356,6 +356,21 @@
   }
 
   /**
+   * From http://www.compoundtheory.com/how-to-tell-if-code-is-being-run-inside-a-cfthread-tag/
+   */
+  public boolean function amInCFThread( ) {
+    var javaThread = createObject( "java", "java.lang.Thread" );
+
+    if ( javaThread.currentThread( )
+      .getThreadGroup( )
+      .getName( ) eq "cfthread" ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * this function takes urls in a text string and turns them into links.
    * version 2 by lucas sherwood, lucas@thebitbucket.net.
    * version 3 updated to allow for ;

@@ -27,9 +27,10 @@ component accessors=true {
   public boolean function writeLogLevel( required string text, string file = request.appName, string level = "debug", string type = "" ) {
     param variables.config.logLevel="fatal";
 
+    // makes this function compatible with CF's BIF:
     if ( arrayFindNoCase( this.logLevels, type ) ) {
       level = type;
-    } // <-- makes this function compatible with CF's BIF
+    }
 
     var requestedLevel = arrayFindNoCase( this.logLevels, level );
 
@@ -47,12 +48,12 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile( any data, boolean force = false, fireAndForget = true ) {
-    return;
+  public void function dumpToFile( any data, boolean force = false ) {
     if ( !variables.config.showDebug && !force ) {
+      return;
     }
 
-    if ( fireAndForget ) {
+    if ( !utilityService.amInCFThread( ) ) {
       thread name="debugWritingThread_#createUUID( )#" data = data {
         writeToFile( data );
       }
@@ -65,7 +66,9 @@ component accessors=true {
       writeLogLevel( "Error writing data to file", "logService", "error" );
       try {
         writeToFile( e );
-      } catch ( any e ) { }
+      } catch ( any e ) {
+        writeLogLevel( e.message, "logService", "fatal" );
+      }
     }
   }
 

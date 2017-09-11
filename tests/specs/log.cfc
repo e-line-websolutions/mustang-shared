@@ -9,7 +9,7 @@ component extends="testbox.system.BaseSpec" {
           showDebug = false
         } );
 
-        expect( logService.writeLogLevel( text = "test", level = "debug" ) ).toBeFalse( );
+        expect( logService.writeLogLevel( text = "test 1", level = "debug" ) ).toBeFalse( );
       } );
 
       it( "Expects writing at a level HIGHER than the log threshold to show up in logs", function( ) {
@@ -20,7 +20,7 @@ component extends="testbox.system.BaseSpec" {
           showDebug = false
         } );
 
-        expect( logService.writeLogLevel( text = "test", level = "information" ) ).toBeTrue( );
+        expect( logService.writeLogLevel( text = "test 2", level = "information" ) ).toBeTrue( );
       } );
 
       it( "Expects writing at a the same level as the log threshold to show up in logs", function( ) {
@@ -31,7 +31,34 @@ component extends="testbox.system.BaseSpec" {
           showDebug = false
         } );
 
-        expect( logService.writeLogLevel( text = "test", level = "information" ) ).toBeTrue( );
+        expect( logService.writeLogLevel( text = "test 3", level = "information" ) ).toBeTrue( );
+      } );
+    } );
+
+    describe( "Test dumpToFile() in nested thread", function( ) {
+      beforeEach( function( ) {
+        request.appName = "mustangSharedTests";
+        logService = new services.log( config = {
+          debugEmail = "bugs@mstng.info",
+          logLevel = "debug",
+          showDebug = true
+        }, utilityService = new services.utility( ) );
+      } );
+
+      it( "Expects dumpToFile() to choose direct writing when nested inside another thread", function( ) {
+        expect( function ( ) {
+          thread name="t1" logService=logService {
+            logService.dumpToFile( { "testData" = true } );
+          }
+        } ).notToThrow( );
+
+        thread action="join" name="t1";
+      } );
+
+      it( "Expects dumpToFile() to choose threaded writing when on the main thread", function( ) {
+        expect( function ( ) {
+          logService.dumpToFile( { "testData" = true } );
+        } ).notToThrow( );
       } );
     } );
   }
