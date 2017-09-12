@@ -43,11 +43,12 @@ component extends=framework.one {
 
     var pc = getpagecontext( );
     pc.getcfoutput( ).clearall( );
-    pc.getresponse( ).getresponse( ).setstatus( 500 );
-    if ( fileExists( variables.root & "/error.html" ) ) {
-      include "/root/error.html";
+    pc.getresponse( ).getresponse( ).setstatus( 500, exception.message );
+
+    if ( fileExists( variables.root & "/www/error.html" ) ) {
+      include "/root/www/error.html";
+      writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
     }
-    abort;
   }
 
   public string function onMissingView( struct rc ) {
