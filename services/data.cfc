@@ -469,14 +469,14 @@ component accessors=true {
    * Convert a CFML date object to an ISO 8601 formatted date string.
    * Output like this: 2014-07-08T12:05:25.8Z
    */
-  public string function convertToISO8601( required date datetime, boolean convertToUTC = true ) {
+  public string function convertToIso8601( required date datetime, boolean convertToUTC = true ) {
     if ( convertToUTC ) {
       datetime = dateConvert( "local2utc", datetime );
     }
     return ( dateFormat( datetime, "yyyy-mm-dd" ) & "T" & timeFormat( datetime, "HH:mm:ss" ) & ".0Z" );
   }
 
-  public string function convertToCFDatePart( required string part ) {
+  public string function convertToCfDatePart( required string part ) {
     var validDateParts = listToArray( "yyyy,q,m,d,w,ww,h,n,s" );
 
     if( arrayFindNoCase( validDateParts, part ) ) {
@@ -501,6 +501,11 @@ component accessors=true {
   public array function dataAsArray( data, xpath = "", filter = { }, map = { id = "id", name = "name" } ) {
     var filtered = xmlFilter( data, xpath, filter );
     return xmlToArrayOfStructs( filtered, map );
+  }
+
+  public boolean function isIso8601Date( required string value ) {
+    var regex = "^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$";
+    return reFind( regex, value );
   }
 
   /**
