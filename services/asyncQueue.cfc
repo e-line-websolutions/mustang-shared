@@ -18,6 +18,8 @@ component accessors=true {
     variables.lockName = getAsyncTaskLockName( );
     variables.lockTimeout = 30;
 
+    abortQueue( );
+
     return this;
   }
 

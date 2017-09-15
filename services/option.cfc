@@ -126,6 +126,6 @@ component accessors=true {
   }
 
   private array function __getOptionsFromDB( ) {
-    return queryService.ormNativeQuery( "SELECT o.id, o.name FROM mustang.#queryService.escapeField( 'option' )# o WHERE o.name <> ''" );
+    return ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
   }
 }
