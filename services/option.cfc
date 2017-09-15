@@ -35,8 +35,8 @@ component accessors=true {
     var optionsInDb = __getOptionsFromDB( );
 
     for( var option in optionsInDb ) {
-      var key = option[ 1 ];
-      var value = option[ 2 ];
+      var key = option.get( 'key' );
+      var value = option.get( 'value' );
 
       if( !structKeyExists( result, key ) ) {
         result[ key ] = [ ];
