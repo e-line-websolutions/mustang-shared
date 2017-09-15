@@ -1,11 +1,12 @@
 component accessors=true {
   property beanFactory;
 
+  property dataService;
   property fileService;
   property imageScalerService;
+  property logService;
   property queryService;
   property utilityService;
-  property dataService;
 
   property config;
   property datasource;
@@ -52,6 +53,7 @@ component accessors=true {
 
   public void function appendPageDataToRequestContext( required struct requestContext ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: appendPageDataToRequestContext() called." );
+
     var seoPathArray = seoPathAsArray( );
     var pageData = {
       "pageTemplate" = "",
@@ -108,6 +110,7 @@ component accessors=true {
     if ( !arrayIsEmpty( allCacheIds ) ) {
       cacheRemove( arrayToList( allCacheIds ) );
     }
+    variables.logService.writeLogLevel( "Caches cleared" );
   }
 
   public string function getActionFromPath( array seoPathArray ) {
