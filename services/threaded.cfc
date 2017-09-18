@@ -1,7 +1,4 @@
 component accessors=true extends="mustang.services.asyncQueue" {
-  property progressService;
-  property logService;
-
   private void function initThreads( ) {
     application.threads = { };
   }
