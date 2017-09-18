@@ -12,7 +12,13 @@ component accessors=true {
     if ( isNull( ds ) && !isNull( config.datasource ) ) {
       ds = config.datasource;
     }
-    setupVendor( utilityService, ds );
+
+    if ( !isNull( ds ) ) {
+      setupVendor( utilityService, ds );
+    }
+
+    structAppend( variables, arguments );
+
     return this;
   }
 
@@ -31,10 +37,12 @@ component accessors=true {
     * @version  2, December 29, 2015
     */
   public any function execute( required string sql_statement, any queryParams = { }, struct queryOptions = { } ) {
+    addDatasource( queryOptions );
+
     var localQueryOptions = duplicate( queryOptions );
-    var cacheId = buildCacheId( sql_statement, queryParams );
 
     if ( structKeyExists( localQueryOptions, "cachedWithin" ) && isNumeric( localQueryOptions.cachedWithin ) && val( localQueryOptions.cachedWithin ) > 0 ) {
+      var cacheId = buildCacheId( sql_statement, queryParams );
       var cacheFor = localQueryOptions.cachedWithin;
       structDelete( localQueryOptions, "cachedWithin" );
       var cachedQuery = cacheGet( cacheId );
@@ -53,8 +61,9 @@ component accessors=true {
       try {
         var result = queryExecute( sql_statement, queryParams, localQueryOptions );
       } catch ( any e ) {
-        writeDump( sql_statement );
-        writeDump( e );
+        logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
+        logService.dumpToFile( [ sql_statement, e ] );
+        rethrow;
       }
       var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
       logService.writeLogLevel( "#request.appName#: #getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
@@ -92,10 +101,18 @@ component accessors=true {
 
     // run and return query using query.cfc:
     localQueryOptions.sql = sql_statement;
-    localQueryOptions.name = cacheId;
+    if ( !isNull( cacheFor ) ) {
+      localQueryOptions.name = cacheId;
+    }
     localQueryOptions.parameters = parameters;
 
-    var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
+    try {
+      var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
+    } catch ( any e ) {
+      logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
+      logService.dumpToFile( [ sql_statement, e ] );
+      rethrow;
+    }
     var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
     logService.writeLogLevel( "#request.appName#: #getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
     if ( !isNull( cacheFor ) ) {
@@ -258,7 +275,7 @@ component accessors=true {
     }
   }
 
-  private string function buildCacheId( required string sql_statement, required struct queryParams ) {
+  private string function buildCacheId( required string sql_statement, required any queryParams ) {
     var params = [];
     var sortedKeys = structKeyArray( queryParams );
     arraySort( sortedKeys, "textnocase" );
@@ -268,5 +285,15 @@ component accessors=true {
       if ( isSimpleValue( value ) ) { arrayAppend( params, "#key#=#value#" ); }
     }
     return hash( lcase( reReplace( sql_statement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
+  }
+
+  private void function addDatasource( queryOptions ) {
+    if ( ( structKeyExists( queryOptions, "dbtype" ) && queryOptions.dbtype == "query" ) || structKeyExists( queryOptions, "datasource" ) ) {
+      return;
+    }
+
+    if ( !isNull( variables.ds ) ) {
+      queryOptions.datasource = variables.ds;
+    }
   }
 }
