@@ -7,32 +7,32 @@ component extends=framework.one {
     var bf = getBeanFactory( );
     var logService = bf.getBean( "logService" );
 
-    if ( structKeyExists( url, "nuke" ) ) {
-      // empty caches:
+    // empty caches:
+    if ( structKeyExists( url, "clear" ) ) {
       structDelete( application, "threads" );
       try {
         ORMEvictQueries( );
       } catch ( any e ) { }
       cacheRemove( arrayToList( cacheGetAllIds( ) ) );
-      logService.writeLogLevel( "NUKE: Caches purged", request.appName );
+      logService.writeLogLevel( "CACHE: Caches purged", request.appName );
+    }
 
-      // rebuild ORM:
-      if ( variables.cfg.useOrm ) {
-        var modelPath = this.ormSettings.CFCLocation;
+    // rebuild ORM:
+    if ( variables.cfg.useOrm && structKeyExists( url, "nuke" ) ) {
+      var modelPath = this.ormSettings.CFCLocation;
 
-        if ( left( modelPath, 1 ) == "/" ) {
-          modelPath = expandPath( modelPath );
-        }
-
-        var hbmxmlFiles = directoryList( modelPath, true, "path", "*.hbmxml" );
-        for ( var filepath in hbmxmlFiles ) {
-          fileDelete( filepath );
-        }
-        logService.writeLogLevel( "NUKE: HBMXML files deleted", request.appName );
-
-        ORMReload( );
-        logService.writeLogLevel( "NUKE: ORM reloaded", request.appName );
+      if ( left( modelPath, 1 ) == "/" ) {
+        modelPath = expandPath( modelPath );
       }
+
+      var hbmxmlFiles = directoryList( modelPath, true, "path", "*.hbmxml" );
+      for ( var filepath in hbmxmlFiles ) {
+        fileDelete( filepath );
+      }
+      logService.writeLogLevel( "NUKE: HBMXML files deleted", request.appName );
+
+      ORMReload( );
+      logService.writeLogLevel( "NUKE: ORM reloaded", request.appName );
     }
 
     logService.writeLogLevel( "Application initialized", request.appName );
