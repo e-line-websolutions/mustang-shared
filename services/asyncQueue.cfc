@@ -2,7 +2,6 @@ component accessors=true {
   // Taken from http://www.bennadel.com/blog/2528-asynctaskqueue-cfc---running-low-priority-tasks-in-a-single-cfthread.htm
   // de-ben-ified by mjhagen.
 
-  property config;
   property logService;
   property taskQueue;
   property beanFactory;
@@ -40,7 +39,7 @@ component accessors=true {
       variables.isThreadRunning = true;
 
       if ( !structKeyExists( server, "lucee" ) ) {
-        var threadfixService = beanFactory.getBean( "threadfix" );
+        var threadfixService = variables.beanFactory.getBean( "threadfix" );
         threadfixService.cacheScriptObjects( );
       }
 
