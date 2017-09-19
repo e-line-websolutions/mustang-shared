@@ -41,6 +41,8 @@ component accessors=true {
       "cachedWithin" = createTimespan( 0, 0, 5, 0 )
     };
 
+    variables.resizeBeforeServe = "jpg,jpeg,png,gif";
+
     return this;
   }
 
@@ -388,9 +390,7 @@ component accessors=true {
 
     var fileExtension = listLast( requestContext.file, '.' );
 
-    if( fileExtension eq "svg" ) {
-      var imageToServe = variables.config.mediaRoot & "/sites/site#variables.websiteId#/images/#requestContext.file#";
-    }else{
+    if( listFind( variables.resizeBeforeServe, fileExtension ) ) {
       if ( !variables.utilityService.fileExistsUsingCache(
         "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#"
       ) ) {
@@ -402,7 +402,9 @@ component accessors=true {
         );
         variables.utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
       }
-      var imageToServe = "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#";
+      var fileToServe = "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#";
+    }else{
+      var fileToServe = variables.config.mediaRoot & "/sites/site#variables.websiteId#/images/#requestContext.file#";
     }
 
     variables.utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
@@ -410,7 +412,7 @@ component accessors=true {
       name = "Last-Modified",
       value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#"
     );
-    variables.fileService.writeToBrowser( imageToServe );
+    variables.fileService.writeToBrowser( fileToServe );
   }
 
   public struct function validate( required component beanToValidate ) {
