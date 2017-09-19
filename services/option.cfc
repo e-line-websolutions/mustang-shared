@@ -1,14 +1,10 @@
 component accessors=true {
-  property queryService;
-  property dataService;
-  property logService;
-
   property struct allOptions;
   property array optionEntities;
 
   // constructor
 
-  public component function init( queryService ) {
+  public component function init( ) {
     structAppend( variables, arguments );
 
     variables.allOptions = { };
@@ -84,18 +80,16 @@ component accessors=true {
 
   private any function __searchOptions( required string entityName, required string optionName ) {
     var sql = '
-      SELECT    o.*
-      FROM      #queryService.escapeField( 'mustang.option', '' )# o
-      WHERE     LOWER( o.type ) = :entityName
+      FROM      option o
+      WHERE     o.class = :entityName
         AND     LOWER( o.name ) = :optionName
     ';
 
-    return queryService.ormNativeQuery(
+    return ORMExecuteQuery(
       sql,
       { "entityName" = lCase( entityName ), "optionName" = lCase( optionName ) },
-      { "ignorecase" = true },
-      [ entityName ],
-      true
+      true,
+      { "ignorecase" = true }
     );
   }
 
