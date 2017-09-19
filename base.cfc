@@ -97,4 +97,11 @@ component {
       return "dropcreate";
     }
   }
+
+  public void function loadListener( bf ) {
+    // ACF / Lucee compatibility services:
+    if ( !structKeyExists( server, "lucee" ) ) {
+      bf.declareBean( "threadfix", "mustang.compatibility.acf.threadfix" );
+    }
+  }
 }
