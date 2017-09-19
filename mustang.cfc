@@ -34,7 +34,8 @@ component extends=framework.one {
       constants = {
         root = variables.root,
         config = variables.cfg
-      }
+      },
+      loadListener = variables.mstng.loadListener
     },
     environments = {
       live = {
