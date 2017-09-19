@@ -83,14 +83,18 @@ component {
   }
 
   public string function getDbCreate( required struct config ) {
-    if ( structKeyExists( url, "reload" ) && url.reload == config.reloadpw ) {
-      if ( structKeyExists( url, "nuke" ) ) {
-        return "dropcreate";
-      } else {
-        return "update";
-      }
+    if ( !structKeyExists( url, "reload" ) || !structKeyExists( url, "nuke" ) ) {
+      return "none";
     }
 
-    return "none";
+    if ( compare( url.reload, config.reloadpw ) != 0 ) {
+      return "none";
+    }
+
+    if ( config.appIsLive ) {
+      return "update";
+    } else {
+      return "dropcreate";
+    }
   }
 }
