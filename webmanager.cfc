@@ -1,7 +1,6 @@
 component extends=framework.one {
   variables.framework = { };
   variables.mstng = new base( variables.framework );
-
   variables.cfg = variables.mstng.readConfig( );
   variables.root = variables.mstng.getRoot( );
 
@@ -10,13 +9,11 @@ component extends=framework.one {
   param request.version="?";
   param request.context.startTime=getTickCount( );
   param request.context.config=variables.cfg;
+  param request.webroot=variables.cfg.webroot;
+  param request.appSimpleName=listFirst( request.appName, " ,-_" );
+  param request.context.debug=variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
 
   variables.mstng.cleanXHTMLQueryString( );
-
-  this.mappings[ "/root" ] = request.root = variables.root;
-  this.sessionManagement = true;
-  this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
-
   variables.live = variables.cfg.appIsLive;
   variables.routes = [ ];
   variables.mstng.mergeStructs( {
@@ -54,14 +51,13 @@ component extends=framework.one {
     ]
   }, variables.framework );
 
-  // WEBMANAGER WEB SITE
+  this.mappings[ "/root" ] = request.root = variables.root;
+  this.sessionManagement = true;
+  this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
 
   if ( isNull( request.appSimpleName ) ) {
     request.appSimpleName = listFirst( request.appName, " ,-_" );
   }
-
-  request.context.debug = variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
-  request.webroot = variables.cfg.webroot;
 
   this.webmanagerDefaults = {
     mediaRoot = variables.mstng.fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
