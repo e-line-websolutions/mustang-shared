@@ -6,11 +6,6 @@ component accessors=true {
 
   this.logLevels = [ "debug", "information", "warning", "error", "fatal" ];
 
-  public component function init( config, emailService, contactService, utilityService ) {
-    structAppend( variables, arguments );
-    return this;
-  }
-
   public string function reportError( message, file = request.appName, sendMail = true ) {
     writeLogLevel( message, file, "error" );
 
@@ -53,7 +48,7 @@ component accessors=true {
       return;
     }
 
-    if ( !utilityService.amInCFThread( ) ) {
+    if ( !variables.utilityService.amInCFThread( ) ) {
       thread name="debugWritingThread_#createUUID( )#" data = data {
         writeToFile( data );
       }
