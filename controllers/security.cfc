@@ -82,23 +82,26 @@ component accessors=true {
 
     updateUserWith.contactID = user.getID( );
 
+    var securityLogaction = variables.optionService.getOptionByName( "logaction", "security" );
+
     if ( variables.config.log ) {
       structAppend(
         updateUserWith,
         {
           add_logEntry = {
-            relatedEntity = user,
-            by = user,
-            dd = now( ),
-            ip = cgi.remote_addr,
-            logaction = variables.optionService.getOptionByName( "logaction", "security" ),
-            note = "Logged in"
+            "relatedEntity" = user.getId( ),
+            "by" = user.getId( ),
+            "dd" = now( ),
+            "ip" = cgi.remote_addr,
+            "logaction" = securityLogaction.getId( ),
+            "note" = "Logged in"
           }
         }
       );
     }
 
     var originalLogSetting = variables.config.log;
+
     request.context.variables.config.log = false;
 
     transaction {
