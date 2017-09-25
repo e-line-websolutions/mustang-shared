@@ -284,7 +284,7 @@ component accessors=true {
       if ( isStruct( value ) ) { value = value.value; }
       if ( isSimpleValue( value ) ) { arrayAppend( params, "#key#=#value#" ); }
     }
-    return hash( lcase( reReplace( sql_statement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
+    return "query_" & hash( lcase( reReplace( sql_statement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
   }
 
   private void function addDatasource( queryOptions ) {

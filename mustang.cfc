@@ -17,39 +17,39 @@ component extends=framework.one {
   variables.live = variables.cfg.appIsLive;
   variables.routes = [ ];
   variables.mstng.mergeStructs( {
-    routesCaseSensitive = false,
-    generateSES = true,
-    SESOmitIndex = true,
-    base = "/#variables.cfg.root#",
-    baseURL = variables.cfg.webroot,
-    error = "app.error",
-    unhandledPaths = "/inc,/tests,/browser,/cfimage,/diagram",
-    diLocations = [
+    "routesCaseSensitive" = false,
+    "generateSES" = true,
+    "SESOmitIndex" = true,
+    "base" = "/#variables.cfg.root#",
+    "baseURL" = variables.cfg.webroot,
+    "error" = "app.error",
+    "unhandledPaths" = "/inc,/tests,/browser,/cfimage,/diagram",
+    "diLocations" = [
       "/mustang/services",
       "/#variables.cfg.root#/services",
       "/#variables.cfg.root#/model/services",
       "/#variables.cfg.root#/subsystems/api/services"
     ],
-    diConfig = {
-      constants = {
-        root = variables.root,
-        config = variables.cfg
+    "diConfig" = {
+      "constants" = {
+        "root" = variables.root,
+        "config" = variables.cfg
       },
-      loadListener = variables.mstng.loadListener
+      "loadListener" = variables.mstng.loadListener
     },
-    environments = {
-      live = {
-        cacheFileExists = true,
-        password = variables.cfg.reloadpw,
-        trace = variables.cfg.showDebug
+    "environments" = {
+      "live" = {
+        "cacheFileExists" = true,
+        "password" = variables.cfg.reloadpw,
+        "trace" = variables.cfg.showDebug
       },
-      dev = {
-        trace = variables.cfg.showDebug
+      "dev" = {
+        "trace" = variables.cfg.showDebug
       }
     },
-    subsystems = {
-      api = {
-        error = "api:main.error"
+    "subsystems" = {
+      "api" = {
+        "error" = "api:main.error"
       }
     }
   }, variables.framework );
@@ -178,7 +178,7 @@ component extends=framework.one {
   public void function onError( any exception, string event ) {
     param request.action="main.default";
 
-    if ( listFindNoCase( "adminapi,api", listFirst( cgi.PATH_INFO, "/" ) ) ) {
+    if ( listFindNoCase( "adminapi,api", listFirst( cgi.path_info, "/" ) ) ) {
       if ( structKeyExists( exception, "cause" ) ) {
         return onError( exception.cause, event );
       }
@@ -251,7 +251,7 @@ component extends=framework.one {
   }
 
   public array function getRoutes( ) {
-    var resources = cacheGet( "resources-#this.name#" );
+    var resources = cacheGet( "resources_#this.name#" );
 
     if ( isNull( resources ) || !variables.cfg.appIsLive ) {
       var listOfResources = "";
@@ -271,7 +271,7 @@ component extends=framework.one {
         ]
       );
 
-      cachePut( "resources-#this.name#", resources );
+      cachePut( "resources_#this.name#", resources );
     }
 
     return resources;

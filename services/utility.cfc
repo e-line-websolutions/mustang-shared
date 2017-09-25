@@ -57,7 +57,7 @@
   }
 
   public void function limiter( numeric duration = 5, numeric maxAttempts = 100, numeric timespan = 10 ) {
-    var cacheID = hash( "rate_limiter_" & CGI.REMOTE_ADDR );
+    var cacheID = "rate-limiter_" & hash( CGI.REMOTE_ADDR );
     var rate = cacheGet( cacheId );
     var cacheTime = createTimeSpan( 0, 0, 0, timespan );
 
@@ -302,7 +302,7 @@
   }
 
   public boolean function fileExistsUsingCache( required string absolutePath ) {
-    var cachedPaths = cacheGet( "cachedPaths-#request.appName#" );
+    var cachedPaths = cacheGet( "cachedPaths_#request.appName#" );
 
     if ( isNull( cachedPaths ) || request.reset ) {
       var cachedPaths = { };
@@ -310,7 +310,7 @@
 
     if ( !structKeyExists( cachedPaths, absolutePath ) ) {
       cachedPaths[ absolutePath ] = fileExists( absolutePath );
-      cachePut( "cachedPaths-#request.appName#", cachedPaths );
+      cachePut( "cachedPaths_#request.appName#", cachedPaths );
     }
 
     return cachedPaths[ absolutePath ];
