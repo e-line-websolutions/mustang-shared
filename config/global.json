@@ -23,5 +23,6 @@
   "secureDefaultSubsystem": true,
   "securedSubsystems": "",
   "showDebug": false,
-  "useOrm": true
+  "useOrm": true,
+  "templates": []
 }

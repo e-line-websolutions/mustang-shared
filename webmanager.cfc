@@ -1,7 +1,14 @@
 component extends=framework.one {
   variables.framework = { };
   variables.mstng = new base( variables.framework );
-  variables.cfg = variables.mstng.readConfig( );
+
+  variables.cfg = {
+    "mediaRoot" = "D:/Accounts/E/E-Line Websolutions CM/files"
+  };
+
+  variables.mstng.mergeStructs( variables.mstng.readConfig( ), variables.cfg );
+  variables.cfg.useOrm = false;
+
   variables.root = variables.mstng.getRoot( );
 
   param request.domainName=cgi.server_name;
@@ -17,33 +24,33 @@ component extends=framework.one {
   variables.live = variables.cfg.appIsLive;
   variables.routes = [ ];
   variables.mstng.mergeStructs( {
-    routesCaseSensitive = false,
-    generateSES = true,
-    SESOmitIndex = true,
-    base = "/root",
-    diLocations = [
+    "routesCaseSensitive" = false,
+    "generateSES" = true,
+    "SESOmitIndex" = true,
+    "base" = "/root",
+    "diLocations" = [
       "/mustang/services",
       "/root/model/services"
     ],
-    diConfig = {
-      constants = {
-        root = variables.root,
-        config = variables.cfg,
-        ds = "e-line_cm",
-        navigationType = "per-level"
+    "diConfig" = {
+      "constants" = {
+        "root" = variables.root,
+        "config" = variables.cfg,
+        "ds" = "e-line_cm",
+        "navigationType" = "per-level"
       }
     },
-    environments = {
-      live = {
-        cacheFileExists = true,
-        password = variables.cfg.reloadpw,
-        trace = variables.cfg.showDebug
+    "environments" = {
+      "live" = {
+        "cacheFileExists" = true,
+        "password" = variables.cfg.reloadpw,
+        "trace" = variables.cfg.showDebug
       },
-      dev = {
-        trace = variables.cfg.showDebug
+      "dev" = {
+        "trace" = variables.cfg.showDebug
       }
     },
-    routes = [
+    "routes" = [
       { "/media/:file" = "/media/load/file/:file" },
       { "/forms/:action" = "/forms/:action" },
       { "/api/:action" = "/api/:action" },
@@ -58,16 +65,6 @@ component extends=framework.one {
   if ( isNull( request.appSimpleName ) ) {
     request.appSimpleName = listFirst( request.appName, " ,-_" );
   }
-
-  this.webmanagerDefaults = {
-    mediaRoot = variables.mstng.fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
-    defaultLanguage = "nl_NL",
-    useOrm = false,
-    logLevel = "error",
-    templates = [ ]
-  };
-
-  variables.mstng.mergeStructs( this.webmanagerDefaults, variables.cfg );
 
   public string function getEnvironment( ) {
     return variables.live ? "live" : "dev";
