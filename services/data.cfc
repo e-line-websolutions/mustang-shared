@@ -344,6 +344,148 @@ component accessors=true {
     return result;
   }
 
+  public any function deOrm( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false ) {
+    level = max( 0, level );
+    maxLevel = min( 5, maxLevel );
+
+    if( level == 0 ) {
+      variables.utilityService.setCFSetting( "requesttimeout", 10 );
+    }
+
+    var useJsonService = variables.jsonService;
+
+    if ( !isNull( variables.jsonJavaService ) && isObject( variables.jsonJavaService ) ) {
+      useJsonService = variables.jsonJavaService;
+    }
+
+    if( isNull( data ) || ( maxLevel > 0 && level > maxLevel && !isSimpleValue( data ) ) ) {
+      return;
+    }
+
+    var nextLevel = level + 1;
+    var maxArrayItt = 100;
+    var result = "";
+
+    // data parsing:
+    if( isSimpleValue( data ) ) {
+      var result = data;
+    } else if( isArray( data ) ) {
+      var result = [ ];
+      var itemCounter = 0;
+      for( var el in data ) {
+        if( ++itemCounter > maxArrayItt ) {
+          arrayAppend( result, "capped at #maxArrayItt# results" );
+          break;
+        } else {
+          var newData = deOrm( el, level, maxLevel, basicsOnly );
+          if( !isNull( newData ) ) {
+            arrayAppend( result, newData );
+          }
+        }
+      }
+    } else if( isObject( data ) ) {
+      var allowedFieldTypes = "id,column,many-to-one,one-to-many,many-to-many"; // level 0 only
+
+      if( level > 1 || basicsOnly ) {
+        allowedFieldTypes = "id,column,many-to-one";
+      }
+
+      if( level >= maxLevel && !maxLevel == 0 ) {
+        allowedFieldTypes = "id,column";
+      }
+
+      var result = { };
+      var allFields = getInheritedProperties( data );
+
+      for( var key in allFields ) {
+        var fieldProperties = {
+          "inapi" = true,
+          "fieldtype" = "column",
+          "dataType" = ""
+        };
+
+        structAppend( fieldProperties, allFields[ key ], true );
+
+        if ( listFindNoCase( "numeric,string,boolean", fieldProperties.fieldtype ) ) {
+          fieldProperties.fieldtype = "column";
+        }
+
+        if ( !fieldProperties.inapi ) {
+          continue;
+        }
+
+        if ( !listFindNoCase( allowedFieldTypes, fieldProperties.fieldtype ) ) {
+          continue;
+        }
+
+        if ( !structKeyExists( data, "get#fieldProperties.name#" ) ) {
+          continue;
+        }
+
+        var value = variables.utilityService.cfinvoke( data, "get#fieldProperties.name#" );
+
+        if( isNull( value ) ) {
+          continue;
+        }
+
+        if( fieldProperties.dataType == "json" ) {
+          try {
+            structAppend( result, useJsonService.deserialize( value ) );
+          } catch ( any e ) {
+          }
+          continue;
+        }
+
+
+        if( fieldProperties.fieldtype contains "to-many" ) {
+          basicsOnly = true; // next level only allow to-one
+        }
+
+        result[ fieldProperties.name ] = deOrm( value, nextLevel, maxLevel, basicsOnly );
+      }
+    } else if( isStruct( data ) ) {
+      var result = { };
+      for( var key in data ) {
+        var value = data[ key ];
+        result[ key ] = deOrm( value, nextLevel, maxLevel, basicsOnly );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+    * a struct containing this objects and its ancestors properties
+    */
+  public struct function getInheritedProperties( object ) {
+    var md = getMetaData( object );
+    var result = { };
+
+    while ( structKeyExists( md, "extends" ) ) {
+      if ( structKeyExists( md, "properties" ) && isArray( md.properties ) ) {
+        var numberOfProperties = arrayLen( md.properties );
+
+        for ( var i = 1; i <= numberOfProperties; i++ ) {
+          var property = md.properties[ i ];
+
+          if ( !structKeyExists( result, property.name ) ) {
+            result[ property.name ] = { };
+          }
+
+          if ( structKeyExists( property, "cfc" ) ) {
+            property.entityName = getEntityName( property.cfc );
+            property.tableName = getTableName( property.cfc );
+          }
+
+          structAppend( result[ property.name ], property, false );
+        }
+      }
+      md = md.extends;
+    }
+
+    return result;
+  }
+
   public void function nil( ) {
   }
 

@@ -2,6 +2,7 @@ component accessors=true {
   property emailService;
   property contactService;
   property utilityService;
+  property dataService;
   property config;
 
   this.logLevels = [ "debug", "information", "warning", "error", "fatal" ];
@@ -19,12 +20,16 @@ component accessors=true {
     return message;
   }
 
-  public boolean function writeLogLevel( required string text, string file = request.appName, string level = "debug", string type = "" ) {
+  public boolean function writeLogLevel( required string text, string file = request.appName, string level = "debug", string type ) {
     param variables.config.logLevel="fatal";
 
-    // makes this function compatible with CF's BIF:
-    if ( arrayFindNoCase( this.logLevels, type ) ) {
-      level = type;
+    if ( isNull( type ) ) {
+      type = level;
+    } else {
+      // makes this function compatible with CF's BIF:
+      if ( arrayFindNoCase( this.logLevels, type ) ) {
+        level = type;
+      }
     }
 
     var requestedLevel = arrayFindNoCase( this.logLevels, level );
@@ -36,7 +41,7 @@ component accessors=true {
     var levelThreshold = arrayFindNoCase( this.logLevels, variables.config.logLevel );
 
     if ( requestedLevel >= levelThreshold ) {
-      writeLog( text = text, type = level, file = file );
+      writeLog( text = text, type = mapLevelToCfType( level ), file = file );
       return true;
     }
 
@@ -48,15 +53,17 @@ component accessors=true {
       return;
     }
 
-    if ( !variables.utilityService.amInCFThread( ) ) {
-      thread name="debugWritingThread_#createUUID( )#" data = data {
-        writeToFile( data );
-      }
-      return;
-    }
-
     try {
-      writeToFile( data );
+      var asStruct = variables.dataService.deOrm( data );
+
+      if ( !variables.utilityService.amInCFThread( ) ) {
+        thread name="debugWritingThread_#createUUID( )#" threadData = asStruct {
+          writeToFile( threadData );
+        }
+        return;
+      }
+
+      writeToFile( asStruct );
     } catch ( any e ) {
       writeLogLevel( "Error writing data to file", "logService", "error" );
       try {
@@ -77,5 +84,12 @@ component accessors=true {
     }
 
     fileWrite( "#variables.config.paths.errors#/error-#createUUID( )#.html", debug );
+  }
+
+  private string function mapLevelToCfType( level ) {
+    var logTypes = [ "information", "warning", "warning", "error", "fatal" ];
+    var levelIndex = arrayFindNoCase( this.logLevels, level );
+
+    return logTypes[ levelIndex ];
   }
 }
