@@ -72,11 +72,13 @@ component accessors=true {
       return fileExists( filePath );
     }
 
-    var result = cacheGet( filePath );
+    var cacheKey = "file_" & hash( filePath );
+
+    var result = cacheGet( cacheKey );
 
     if ( isNull( result ) ) {
       var result = fileExists( filePath );
-      cachePut( filePath, result );
+      cachePut( cacheKey, result );
     }
 
     return result;

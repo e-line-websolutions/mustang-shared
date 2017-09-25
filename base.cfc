@@ -10,7 +10,7 @@ component {
 
   public struct function readConfig( string site = cgi.server_name ) {
     if ( !structKeyExists( url, "reload" ) ) {
-      var cachedConfig = cacheGet( "config-#variables.name#" );
+      var cachedConfig = cacheGet( "config_#variables.name#" );
 
       // found cached settings, only use it in live apps:
       if ( !isNull( cachedConfig ) &&
@@ -40,7 +40,7 @@ component {
       mergeStructs( siteConfig, defaultSettings );
     }
 
-    cachePut( "config-#variables.name#", defaultSettings );
+    cachePut( "config_#variables.name#", defaultSettings );
 
     return defaultSettings;
   }
