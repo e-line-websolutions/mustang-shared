@@ -3,6 +3,7 @@ component accessors=true {
   // de-ben-ified by mjhagen.
 
   property logService;
+  property utilityService;
   property taskQueue;
   property beanFactory;
 
@@ -16,6 +17,7 @@ component accessors=true {
     variables.isThreadRunning = false;
     variables.lockName = getAsyncTaskLockName( );
     variables.lockTimeout = 30;
+    variables.runSingleThreaded = false;
 
     abortQueue( );
 
@@ -29,6 +31,11 @@ component accessors=true {
   }
 
   public void function addTask( required any taskMethod, any taskArguments = { } ) {
+    if ( variables.runSingleThreaded ) {
+      taskMethod( argumentCollection = taskArguments );
+      return;
+    }
+
     lock name=variables.lockName timeout=variables.lockTimeout {
       addNewTaskItem( taskMethod, taskArguments, variables.threadName );
 
@@ -82,9 +89,7 @@ component accessors=true {
       for ( var queuedTasks in variables.taskQueue ) {
         try {
           thread action="terminate" name=queuedTasks.threadName;
-        } catch ( any e ) {
-          variables.logService.dumpToFile( e, true, false );
-        }
+        } catch ( any e ) { }
       }
       variables.taskQueue = [ ];
     }

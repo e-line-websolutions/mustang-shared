@@ -178,6 +178,11 @@ component extends=framework.one {
   public void function onError( any exception, string event ) {
     param request.action="main.default";
 
+    if ( request.context.debug ) {
+      writeDump( arguments );
+      abort;
+    }
+
     if ( listFindNoCase( "adminapi,api", listFirst( cgi.path_info, "/" ) ) ) {
       if ( structKeyExists( exception, "cause" ) ) {
         return onError( exception.cause, event );

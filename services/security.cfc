@@ -7,6 +7,8 @@ component accessors=true {
 
   property any bcrypt;
 
+
+
   public component function init( root, config ) {
     var bCryptPath = replace( getDirectoryFromPath( getCurrentTemplatePath( ) ), "\", "/", "all" ) & "../lib/bcrypt";
 
@@ -113,17 +115,17 @@ component accessors=true {
   }
 
   public string function hashPassword( required string password ) {
-    var t = 0;
+    var minSpeed = 250;
     var cost = 4;
-    while ( t < 500 && cost <= 30 ) {
+    do {
       var salt = variables.bcrypt.gensalt( cost );
       var hashedPW = variables.bcrypt.hashpw( password, salt );
-      // test speed of decryption:
       var start = getTickCount( );
       variables.bcrypt.checkpw( password, hashedPW );
-      t = getTickCount( ) - start;
+      var hashSpeed = getTickCount( ) - start;
+      logService.writeLogLevel( "Password hash speed #hashSpeed#ms at #cost#.", "securityService", "debug" );
       cost++;
-    }
+    } while ( hashSpeed < minSpeed && cost <= 30 );
     return hashedPW;
   }
 

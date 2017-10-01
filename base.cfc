@@ -1,7 +1,7 @@
 component {
   public component function init( framework ) {
     variables.basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
-    variables.root = getRoot( variables.basePath );
+    variables.root = getRoot( );
     variables.name = hash( variables.basePath );
     variables.framework = framework;
 
@@ -12,12 +12,12 @@ component {
     if ( !structKeyExists( url, "reload" ) ) {
       var cachedConfig = cacheGet( "config_#variables.name#" );
 
-      // found cached settings, only use it in live apps:
-      if ( !isNull( cachedConfig ) &&
-          structKeyExists( cachedConfig, "appIsLive" ) &&
-          isBoolean( cachedConfig.appIsLive ) &&
-          cachedConfig.appIsLive ) {
-        return cachedConfig;
+      if ( !isNull( cachedConfig ) ) {
+        param cachedConfig.appIsLive=true;
+
+        if ( cachedConfig.appIsLive ) {
+          return cachedConfig;
+        }
       }
     }
 
@@ -64,7 +64,7 @@ component {
     mergeStructs( websiteSpecificConstants, variables.framework.diConfig.constants );
   }
 
-  public string function getRoot( string basePath ) {
+  public string function getRoot( string basePath = variables.basePath ) {
     var tmp = fixPath( basePath );
     return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
   }

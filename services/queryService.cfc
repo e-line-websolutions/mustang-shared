@@ -1,7 +1,6 @@
 component accessors=true {
   property config;
   property ds;
-  property utilityService;
   property dataService;
   property logService;
 
@@ -19,11 +18,13 @@ component accessors=true {
 
     structAppend( variables, arguments );
 
+    variables.queryServiceLogId = 0;
+
     return this;
   }
 
   public array function toArray( required query inputQuery ) {
-    return dataService.queryToArrayOfStructs( inputQuery );
+    return variables.dataService.queryToArrayOfStructs( inputQuery );
   }
 
   /** Backports CF11's queryExecute() to CF9 & CF10
@@ -39,85 +40,71 @@ component accessors=true {
   public any function execute( required string sql_statement, any queryParams = { }, struct queryOptions = { } ) {
     addDatasource( queryOptions );
 
+    variables.queryServiceLogId++;
+
+    var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
+
+    variables.logService.writeLogLevel(
+      "#request.appName# (#variables.queryServiceLogId#): execute( #sqlToLog# ) called.",
+      "queryService"
+    );
+
     var localQueryOptions = duplicate( queryOptions );
 
-    if ( structKeyExists( localQueryOptions, "cachedWithin" ) && isNumeric( localQueryOptions.cachedWithin ) && val( localQueryOptions.cachedWithin ) > 0 ) {
+    if ( structKeyExists( localQueryOptions, "cachedWithin" ) &&
+         isNumeric( localQueryOptions.cachedWithin ) &&
+         val( localQueryOptions.cachedWithin ) > 0 ) {
       var cacheId = buildCacheId( sql_statement, queryParams );
       var cacheFor = localQueryOptions.cachedWithin;
       structDelete( localQueryOptions, "cachedWithin" );
       var cachedQuery = cacheGet( cacheId );
       if ( !isNull( cachedQuery ) ) {
-        logService.writeLogLevel( "#request.appName#: (cached) #sql_statement#", "queryService" );
+        variables.logService.writeLogLevel(
+          "#request.appName# (#variables.queryServiceLogId#): returning cached result.",
+          "queryService"
+        );
         return cachedQuery;
       }
     }
 
-    var timer = getTickCount( );
-    if( structKeyExists( server, "railo" ) ||
-        structKeyExists( server, "lucee" ) || (
-          structKeyExists( server, "coldfusion" ) &&
-          int( listFirst( server.coldfusion.productVersion ) ) >= 11
-        ) ) {
-      try {
-        var result = queryExecute( sql_statement, queryParams, localQueryOptions );
-      } catch ( any e ) {
-        logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
-        logService.dumpToFile( [ sql_statement, e ] );
-        rethrow;
-      }
-      var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-      logService.writeLogLevel( "#request.appName#: #getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
-      if ( !isNull( cacheFor ) ) {
-        cachePut( cacheId, result, cacheFor );
-      }
-      return result;
-    }
-
-    // normalize query params:
-    var parameters = [ ];
-    if( isArray( queryParams ) ) {
-      for( var param in queryParams ) {
-        if( isNull( param ) ) {
-          arrayAppend( parameters, { "null" = true } );
-        } else if( isSimpleValue( param ) ) {
-          arrayAppend( parameters, { "value" = param } );
-        } else {
-          arrayAppend( parameters, param );
-        }
-      }
-    } else if( isStruct( queryParams ) ) {
-      for( var key in queryParams ) {
-        if( isSimpleValue( queryParams[ key ] ) ) {
-          arrayAppend( parameters, { "name" = key, "value" = queryParams[ key ] } );
-        } else {
-          var parameter = { "name" = key };
-          structAppend( parameter, queryParams[ key ] );
-          arrayAppend( parameters, parameter );
-        }
-      }
-    } else {
-      throw "unexpected type for queryParams";
-    }
-
-    // run and return query using query.cfc:
-    localQueryOptions.sql = sql_statement;
-    if ( !isNull( cacheFor ) ) {
-      localQueryOptions.name = cacheId;
-    }
-    localQueryOptions.parameters = parameters;
-
     try {
-      var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
+      var timer = getTickCount( );
+
+      if( isModernCFML( ) ) {
+        var result = queryExecute( sql_statement, queryParams, localQueryOptions );
+      } else {
+        // run and return query using query.cfc:
+        localQueryOptions.sql = sql_statement;
+        if ( !isNull( cacheFor ) ) {
+          localQueryOptions.name = cacheId;
+        }
+        localQueryOptions.parameters = normalizeParameters( queryParams );
+        var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
+      }
+
+      variables.logService.writeLogLevel(
+        "#request.appName# (#variables.queryServiceLogId#): query completed in #getTickCount( ) - timer#ms.",
+        "queryService"
+      );
     } catch ( any e ) {
-      logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
-      logService.dumpToFile( [ sql_statement, e ] );
+      variables.logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
+      variables.logService.dumpToFile(
+        [
+          sql_statement,
+          e
+        ]
+      );
       rethrow;
     }
-    var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-    logService.writeLogLevel( "#request.appName#: #getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
+
+    if ( isNull( result ) ) {
+      return;
+    }
+
     if ( !isNull( cacheFor ) ) {
       cachePut( cacheId, result, cacheFor );
     }
+
     return result;
   }
 
@@ -276,24 +263,69 @@ component accessors=true {
   }
 
   private string function buildCacheId( required string sql_statement, required any queryParams ) {
-    var params = [];
+    var params = [ ];
     var sortedKeys = structKeyArray( queryParams );
     arraySort( sortedKeys, "textnocase" );
     for ( var key in sortedKeys ) {
       var value = queryParams[ key ];
-      if ( isStruct( value ) ) { value = value.value; }
-      if ( isSimpleValue( value ) ) { arrayAppend( params, "#key#=#value#" ); }
+      if ( isStruct( value ) ) {
+        value = value.value;
+      }
+      if ( isSimpleValue( value ) ) {
+        arrayAppend( params, "#key#=#value#" );
+      }
     }
     return "query_" & hash( lcase( reReplace( sql_statement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
   }
 
   private void function addDatasource( queryOptions ) {
-    if ( ( structKeyExists( queryOptions, "dbtype" ) && queryOptions.dbtype == "query" ) || structKeyExists( queryOptions, "datasource" ) ) {
+    if ( ( structKeyExists( queryOptions, "dbtype" ) && queryOptions.dbtype == "query" ) || structKeyExists(
+      queryOptions,
+      "datasource"
+    ) ) {
       return;
     }
 
     if ( !isNull( variables.ds ) ) {
       queryOptions.datasource = variables.ds;
     }
+  }
+
+  private boolean function isModernCFML( ) {
+    return ( structKeyExists( server, "railo" ) ||
+             structKeyExists( server, "lucee" ) || (
+             structKeyExists( server, "coldfusion" ) &&
+               int( listFirst( server.coldfusion.productVersion ) ) >= 11
+             ) );
+  }
+
+  private array function normalizeParameters( required any queryParams ) {
+    var result = [ ];
+
+    if( isArray( queryParams ) ) {
+      for( var param in queryParams ) {
+        if( isNull( param ) ) {
+          arrayAppend( result, { "null" = true } );
+        } else if( isSimpleValue( param ) ) {
+          arrayAppend( result, { "value" = param } );
+        } else {
+          arrayAppend( result, param );
+        }
+      }
+    } else if( isStruct( queryParams ) ) {
+      for( var key in queryParams ) {
+        if( isSimpleValue( queryParams[ key ] ) ) {
+          arrayAppend( result, { "name" = key, "value" = queryParams[ key ] } );
+        } else {
+          var parameter = { "name" = key };
+          structAppend( parameter, queryParams[ key ] );
+          arrayAppend( result, parameter );
+        }
+      }
+    } else {
+      throw "unexpected type for queryParams";
+    }
+
+    return result;
   }
 }

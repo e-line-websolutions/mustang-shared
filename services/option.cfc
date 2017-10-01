@@ -1,25 +1,30 @@
 component accessors=true {
+  property config;
   property struct allOptions;
   property array optionEntities;
 
   // constructor
 
-  public component function init( ) {
+  public component function init( config ) {
     structAppend( variables, arguments );
 
     variables.allOptions = { };
     variables.optionEntities = [ ];
 
-    var allEntities = ormGetSessionFactory( ).getAllClassMetadata( );
+    param config.useOrm=true;
 
-    for( var key in allEntities ) {
-      var entity = allEntities[ key ];
-      if( entity.getMappedSuperclass( ) == "option" ) {
-        arrayAppend( variables.optionEntities, key );
+    if ( config.useOrm ) {
+      var allEntities = ormGetSessionFactory( ).getAllClassMetadata( );
+
+      for( var key in allEntities ) {
+        var entity = allEntities[ key ];
+        if( entity.getMappedSuperclass( ) == "option" ) {
+          arrayAppend( variables.optionEntities, key );
+        }
       }
-    }
 
-    reloadOptions( );
+      reloadOptions( );
+    }
 
     return this;
   }
@@ -55,7 +60,7 @@ component accessors=true {
       return;
     }
 
-    optionName = trim( lCase( optionName ) );
+    optionName = trim( optionName );
 
     if( !len( optionName ) ) {
       throw( "Missing option name for #entityName#", "optionService.getOptionByName.missingOptionError" );
