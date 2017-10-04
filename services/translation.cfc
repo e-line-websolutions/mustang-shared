@@ -21,7 +21,13 @@ component accessors=true {
 
   // PUBLIC
 
-  public string function translate( label, localeID = getLocaleId( ), alternative, stringVariables = { }, capFirst = true ) {
+  public string function translate(
+    string label,
+    string localeID = getLocaleId( ),
+    string alternative,
+    struct stringVariables = { },
+    boolean capFirst = true
+  ) {
     if ( !isNull( fw ) ) {
       fw.frameworkTrace( "<b>i18n</b>: translate() called." );
     }
@@ -128,14 +134,7 @@ component accessors=true {
       var country = entityLoad( "country", { "iso2" = defaultCountryCode }, true );
 
       if ( !isNull( language ) && !isNull( country ) ) {
-        var localeObj = entityLoad(
-          "locale",
-          {
-            country = country,
-            language = language
-          },
-          true
-        );
+        var localeObj = entityLoad( "locale", { country = country, language = language }, true );
       }
 
       if ( !isNull( localeObj ) ) {
@@ -146,7 +145,7 @@ component accessors=true {
     }
   }
 
-  public function getLocaleId( ) {
+  public string function getLocaleId( ) {
     if ( isNull( session.localeID ) ) {
       setLocaleId( config.defaultLanguage );
     }
@@ -171,7 +170,11 @@ component accessors=true {
     }
   }
 
-  private string function cacheRead( required string translation, string localeID = getLocaleId( ), boolean reload = false ) {
+  private string function cacheRead(
+    required string translation,
+    string localeID = getLocaleId( ),
+    boolean reload = false
+  ) {
     if ( !isNull( fw ) ) {
       fw.frameworkTrace( "<b>i18n</b>: cacheRead() called." );
     }
