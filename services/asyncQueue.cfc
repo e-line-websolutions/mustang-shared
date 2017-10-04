@@ -61,7 +61,7 @@ component accessors=true {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
             } catch ( any e ) {
               variables.logService.writeLogLevel( "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)", "asyncQueue", "error" );
-              variables.logService.dumpToFile( e, true, false );
+              variables.logService.dumpToFile( e, true, true );
               rethrow;
             }
 

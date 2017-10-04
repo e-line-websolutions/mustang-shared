@@ -3,6 +3,7 @@ component accessors=true {
   property contactService;
   property utilityService;
   property dataService;
+  property debugService;
   property config;
 
   this.logLevels = [ "debug", "information", "warning", "error", "fatal" ];
@@ -48,13 +49,17 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile( any data, boolean force = false ) {
+  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false ) {
     if ( !variables.config.showDebug && !force ) {
       return;
     }
 
     try {
       var asStruct = variables.dataService.deOrm( data );
+
+      if ( saveStacktrace ) {
+        writeToFile( variables.debugService.getStackTrace( ), "stacktrace" );
+      }
 
       if ( !variables.utilityService.amInCFThread( ) ) {
         thread name="debugWritingThread_#createUUID( )#" threadData = asStruct {
@@ -74,7 +79,7 @@ component accessors=true {
     }
   }
 
-  private void function writeToFile( any data ) {
+  private void function writeToFile( any data, fileNamePrefix = "error" ) {
     param variables.config.paths.errors="C:/TEMP";
 
     variables.utilityService.setCFSetting( "requestTimeout", 600 );
@@ -83,7 +88,7 @@ component accessors=true {
       writeDump( data );
     }
 
-    fileWrite( "#variables.config.paths.errors#/error-#createUUID( )#.html", debug );
+    fileWrite( "#variables.config.paths.errors#/#fileNamePrefix#-#createUUID( )#.html", debug );
   }
 
   private string function mapLevelToCfType( level ) {
