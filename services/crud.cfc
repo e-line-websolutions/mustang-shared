@@ -1,6 +1,6 @@
 component accessors=true {
   property logService;
-  property dataService;
+  property utilityService;
 
   // PUBLIC
 
@@ -58,7 +58,7 @@ component accessors=true {
       var result = entityToSave.save( formData );
     }
 
-    logService.writeLogLevel( "Entity '#entityName#' saved" );
+    variables.logService.writeLogLevel( "Entity '#entityName#' saved" );
 
     return result;
   }
@@ -76,26 +76,28 @@ component accessors=true {
   private void function changeEntityDeletedState( required string entityName, required boolean state ) {
     var formData = getFormData( );
 
-    transaction {
-      var entityToDelete = entityLoadByPK( entityName, formData[ "#entityName#id" ] );
-
-      if ( !isNull( entityToDelete ) ) {
-        entityToDelete.save( { "deleted" = state } );
-
-        if ( entityToDelete.propertyExists( "log" ) ) {
-          var logentry = entityNew( "logentry", { relatedEntity = entityToDelete } );
-          logentry.enterIntoLog( state?'deleted':'restored' );
-        }
-      }
+    if ( !structKeyExists( formData, "#entityName#id" ) ) {
+      throw(
+        "Cannot change deleted state of #entityName#, missing primary key",
+        "crudService.changeEntityDeletedState.missingPrimaryKeyError"
+      );
     }
 
-    logService.writeLogLevel( "Entity '#entityName#' marked as #state?'deleted':'restored'#" );
+    var entityToDelete = entityLoadByPK( entityName, formData[ "#entityName#id" ] );
+
+    if ( !isNull( entityToDelete ) ) {
+      transaction {
+        variables.utilityService.cfinvoke( entityToDelete, ( state ? "delete" : "restore" ) );
+      }
+      variables.logService.writeLogLevel( "Entity '" & entityName & "' marked as " & ( state ? "deleted" : "restored" ) );
+    }
   }
 
   private struct function getFormData( ) {
     var formData = { };
-    structAppend( formData, url, true );
-    structAppend( formData, form, true );
+
+    structAppend( formData, url );
+    structAppend( formData, form );
 
     return formData;
   }
