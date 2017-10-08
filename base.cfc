@@ -1,9 +1,9 @@
 component {
-  public component function init( framework ) {
+  public component function init( fw1Config ) {
     variables.basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
     variables.root = getRoot( );
     variables.name = hash( variables.basePath );
-    variables.framework = framework;
+    variables.framework = fw1Config;
 
     return this;
   }

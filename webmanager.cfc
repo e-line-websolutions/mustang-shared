@@ -38,7 +38,8 @@ component extends=framework.one {
         "config" = variables.cfg,
         "ds" = "e-line_cm",
         "navigationType" = "per-level"
-      }
+      },
+      "loadListener" = variables.mstng.loadListener
     },
     "environments" = {
       "live" = {
