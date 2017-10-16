@@ -114,20 +114,38 @@ component extends=framework.one {
   }
 
   public void function onError( any exception, string event ) {
-    if ( listFind( variables.cfg.debugIP, cgi.remote_addr ) ) {
-      writeDump( arguments );
-      abort;
+    if ( structKeyExists( exception, "Cause" ) ) {
+      exception = exception.cause;
     }
 
-    var pc = getpagecontext( );
-    pc.getcfoutput( ).clearall( );
-    pc.getresponse( )
-      .getresponse( )
-      .setstatus( 500, exception.message );
+    param exception.message="Uncaught Error";
+    param exception.detail="";
+
+    var pc = getPageContext( );
+    pc.getCfoutput( ).clearAll( );
+    pc.getResponse( )
+      .getResponse( )
+      .setStatus( 500, exception.message );
+
+    var showDebugError = listFind( variables.cfg.debugIP, cgi.remote_addr );
+
+    if ( cgi.path_info contains "/api/" || showDebugError ) {
+      pc.getResponse( )
+        .setContentType( "text/plain" );
+
+      writeOutput( exception.message );
+
+      if ( showDebugError ) {
+        writeOutput( chr( 13 ) & chr( 13 ) & exception.stackTrace );
+      }
+
+      abort;
+    }
 
     if ( fileExists( variables.root & "/www/error.html" ) ) {
       include "/root/www/error.html";
       writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+      abort;
     }
   }
 
