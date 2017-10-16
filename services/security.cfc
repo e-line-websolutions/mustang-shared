@@ -1,13 +1,10 @@
 component accessors=true {
   property config;
-
   property dataService;
   property logService;
   property utilityService;
 
   property any bcrypt;
-
-
 
   public component function init( root, config ) {
     var bCryptPath = replace( getDirectoryFromPath( getCurrentTemplatePath( ) ), "\", "/", "all" ) & "../lib/bcrypt";
@@ -198,6 +195,39 @@ component accessors=true {
     return false;
   }
 
+  /*
+   * From https://github.com/misterdai/cfbackport/blob/master/cf10.cfm
+   * Altered a bit to follow project coding style
+   **/
+  public void function invalidateSession( ) {
+    if ( val( server.coldfusion.productversion ) >= 10 ) {
+      sessionInvalidate( );
+      return;
+    }
+
+    if ( structKeyExists( session, "cfid" ) && structKeyExists( session, "cftoken" ) ) {
+      var sessionId = session.cfid & '_' & session.cftoken;
+    }
+
+    // Fire onSessionEnd
+    var appEvents = application.getEventInvoker( );
+    appEvents.onSessionEnd( [ application, session ] );
+
+    // Make sure that session is empty
+    for ( var key in session ) {
+      if ( !listFindNoCase( "cfid,cftoken,sessionid,urltoken", key ) ) {
+        structDelete( session, key );
+      }
+    }
+    // structClear( session );
+
+    // Clean up the session
+    if ( !isNull( sessionId ) ) {
+      var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
+      sessionTracker.cleanUp( application.applicationName, sessionId );
+    }
+  }
+
   // private
 
   private void function cachePermissions( required array allPermissions ) {
@@ -250,33 +280,5 @@ component accessors=true {
       "userid" = '',
       "canAccessAdmin" = false
     };
-  }
-
-  /*
-   * From https://github.com/misterdai/cfbackport/blob/master/cf10.cfm
-   * Altered a bit to follow project coding style
-   **/
-  public void function invalidateSession( ) {
-    if ( val( server.coldfusion.productversion ) >= 10 ) {
-      sessionInvalidate( );
-      return;
-    }
-
-    if ( structKeyExists( session, "cfid" ) && structKeyExists( session, "cftoken" ) ) {
-      var sessionId = session.cfid & '_' & session.cftoken;
-    }
-
-    // Fire onSessionEnd
-    var appEvents = application.getEventInvoker( );
-    appEvents.onSessionEnd( [ application, session ] );
-
-    // Make sure that session is empty
-    structClear( session );
-
-    // Clean up the session
-    if ( !isNull( sessionId ) ) {
-      var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
-      sessionTracker.cleanUp( application.applicationName, sessionId );
-    }
   }
 }
