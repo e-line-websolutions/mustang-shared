@@ -160,6 +160,26 @@ component accessors=true {
     return false;
   }
 
+  public any function keyValuePairFind( any data, string key, string value, string scope = "one" ) {
+    var itemsWithKey = structFindKey( { data = data }, key, "all" );
+    var result = [ ];
+
+    for ( var item in itemsWithKey ) {
+      if ( item.value == value ) {
+        if ( scope == "one" ) {
+          return item.owner;
+        }
+        arrayAppend( result, item.owner );
+      }
+    }
+
+    if ( !arrayIsEmpty( result ) ) {
+      return result;
+    }
+
+    return;
+  }
+
   /**
     By Tomalak
     See: https://stackoverflow.com/a/2653972/2378532
@@ -313,7 +333,7 @@ component accessors=true {
 
         if( fieldProperties.dataType == "json" ) {
           try {
-            structAppend( result, useJsonService.deserialize( value ));
+            structAppend( result, useJsonService.deserialize( value ) );
           } catch ( any e ) {
             variables.logService.dumpToFile( { "dataService.processEntity()" = {
               "Exception" = e,
@@ -333,7 +353,7 @@ component accessors=true {
       }
 
     } else if( isStruct( data )) {
-      var result = {};
+      var result = { };
       for( var key in data ) {
         var value = data[ key ];
         result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );

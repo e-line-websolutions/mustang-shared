@@ -49,7 +49,7 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false ) {
+  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false, string level = "error" ) {
     if ( !variables.config.showDebug && !force ) {
       return;
     }
@@ -58,17 +58,17 @@ component accessors=true {
       var asStruct = variables.dataService.deOrm( data );
 
       if ( saveStacktrace ) {
-        writeToFile( variables.debugService.getStackTrace( ), "stacktrace" );
+        asStruct.stackTrace = variables.debugService.getStackTrace( );
       }
 
       if ( !variables.utilityService.amInCFThread( ) ) {
-        thread name="debugWritingThread_#createUUID( )#" threadData = asStruct {
-          writeToFile( threadData );
+        thread name="debugWritingThread_#createUUID( )#" threadData = { data = asStruct, args = arguments } {
+          writeToFile( threadData.data, threadData.args.level );
         }
         return;
       }
 
-      writeToFile( asStruct );
+      writeToFile( asStruct, level );
     } catch ( any e ) {
       writeLogLevel( "Error writing data to file", "logService", "error" );
       try {

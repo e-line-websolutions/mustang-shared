@@ -64,14 +64,14 @@ component extends=framework.one {
     if ( variables.cfg.useOrm ) {
       this.ormEnabled = true;
       this.ormSettings = {
-        cfcLocation = variables.root & "model",
+        "cfcLocation" = variables.root & "model",
 
-        dbCreate = variables.mstng.getDbCreate( variables.cfg ),
-        sqlScript = variables.cfg.nukescript,
+        "dbCreate" = variables.mstng.getDbCreate( variables.cfg ),
+        "sqlScript" = variables.cfg.nukescript,
 
-        secondaryCacheEnabled = variables.live ? true : false,
-        cacheProvider = "ehcache",
-        cacheConfig = "ehcache-config_ORM_#request.appSimpleName#.xml"
+        "secondaryCacheEnabled" = variables.live ? true : false,
+        "cacheProvider" = "ehcache",
+        "cacheConfig" = "ehcache-config_ORM_#request.appSimpleName#.xml"
       };
     }
   }
@@ -118,6 +118,25 @@ component extends=framework.one {
         logService.writeLogLevel( "NUKE: HBMXML files deleted", request.appName );
 
         ORMReload( );
+
+        var hbmxmlFiles = directoryList( modelPath, true, "path", "*.hbmxml" );
+
+        if ( arrayLen( hbmxmlFiles ) ) {
+          if ( !directoryExists( variables.root & "documentation" ) ) {
+            directoryCreate( variables.root & "documentation" );
+          }
+
+          if ( !directoryExists( variables.root & "documentation/hbmxml" ) ) {
+            directoryCreate( variables.root & "documentation/hbmxml" );
+          }
+
+          for ( var filepath in hbmxmlFiles ) {
+            var fileName = getFileFromPath( filepath );
+            var destination = variables.root & "documentation/hbmxml/" & fileName;
+            fileMove( filepath, destination );
+          }
+        }
+
         logService.writeLogLevel( "NUKE: ORM reloaded", request.appName );
       }
     }
