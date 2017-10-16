@@ -516,6 +516,9 @@ component accessors=true {
 
     for ( var columnInForm in columnsInForm ) {
       if ( !isNull( columnInForm ) ) {
+        if ( !isNull( columnInForm.entityname ) ) {
+          columnInForm.subclasses = createObject( "java", "java.util.Arrays" ).asList( entityNew( columnInForm.entityname ).getSubClasses( ) );
+        }
         arrayAppend( rc.columns, columnInForm );
       }
     }
