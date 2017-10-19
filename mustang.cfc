@@ -1,5 +1,7 @@
 component extends=framework.one {
-  variables.framework = { };
+  if ( !structKeyExists( variables, "framework" ) ) {
+    variables.framework = { };
+  }
   variables.mstng = new base( variables.framework );
   variables.cfg = variables.mstng.readConfig( );
   variables.root = variables.mstng.getRoot( );
@@ -80,6 +82,10 @@ component extends=framework.one {
     this.mappings[ "/basecfc" ] = variables.cfg.paths.basecfc;
   }
 
+  if ( !structKeyExists( variables.cfg.paths, variables.cfg.root ) ) {
+    variables.cfg.paths[ variables.cfg.root ] = variables.root;
+  }
+
   if ( len( variables.cfg.paths.fileUploads ) ) {
     request.fileUploads = variables.cfg.paths.fileUploads;
   }
@@ -157,7 +163,6 @@ component extends=framework.one {
     var i18n = bf.getBean( "translationService" );
     var util = bf.getBean( "utilityService" );
 
-
     request.reset = reset;
     request.context.util = variables.util = util;
     request.context.i18n = variables.i18n = i18n;
@@ -195,48 +200,9 @@ component extends=framework.one {
   }
 
   public void function onError( any exception, string event ) {
-    param request.action="main.default";
-
-    if ( request.context.debug ) {
-      writeDump( arguments );
-      abort;
-    }
-
-    if ( listFindNoCase( "adminapi,api", listFirst( cgi.path_info, "/" ) ) ) {
-      if ( structKeyExists( exception, "cause" ) ) {
-        return onError( exception.cause, event );
-      }
-
-      if ( structKeyExists( exception, "message" ) && structKeyExists( exception, "detail" ) ) {
-        var jsonJavaService = getBeanFactory( ).getBean( "jsonJavaService" );
-        var pageContext = getPageContext( );
-        var response = pageContext.getResponse( );
-
-        response.setContentType( "application/json" );
-        response.setStatus( 500 );
-
-        writeOutput(
-          jsonJavaService.serialize(
-            {
-              "status" = "error",
-              "error" = "uncaught error: " & exception.message,
-              "detail" = exception.detail
-            }
-          )
-        );
-        abort;
-      }
-    }
-
-    try {
-      super.onError( argumentCollection = arguments );
-    } catch ( any e ) {
-      writeOutput( '<h1>#e.message#</h1>' );
-      writeOutput( 'Original error below:' );
-      writeOutput( '<br>' & exception.message );
-      writeOutput( '<br>' & exception.detail );
-      abort;
-    }
+    var args = arguments;
+    args.config = variables.cfg;
+    variables.mstng.handleExceptions( argumentCollection = args );
   }
 
   public string function onMissingView( struct rc ) {

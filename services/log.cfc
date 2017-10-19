@@ -8,6 +8,13 @@ component accessors=true {
 
   this.logLevels = [ "debug", "information", "warning", "error", "fatal" ];
 
+  public component function init( config ) {
+    if ( structKeyExists( config, "rollbar" ) ) {
+      variables.rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
+    }
+    return this;
+  }
+
   public string function reportError( message, file = request.appName, sendMail = true ) {
     writeLogLevel( message, file, "error" );
 
@@ -21,8 +28,13 @@ component accessors=true {
     return message;
   }
 
-  public boolean function writeLogLevel( required string text, string file = request.appName, string level = "debug", string type ) {
-    param variables.config.logLevel="fatal";
+  public boolean function writeLogLevel(
+    required string text,
+    string file = request.appName,
+    string level = "debug",
+    string type
+  ) {
+    param variables.config.logLevel = "fatal";
 
     if ( isNull( type ) ) {
       type = level;
@@ -42,6 +54,15 @@ component accessors=true {
     var levelThreshold = arrayFindNoCase( this.logLevels, variables.config.logLevel );
 
     if ( requestedLevel >= levelThreshold ) {
+      if ( structKeyExists( variables, "rollbar" ) ) {
+        var rollbarData = {
+          "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
+          "payload" = variables.rollbar.getPreparedMessagePayload( text, level )
+        };
+        sendGatewayMessage( "Rollbar", rollbarData );
+        return true;
+      }
+
       writeLog( text = text, type = mapLevelToCfType( level ), file = file );
       return true;
     }
@@ -55,10 +76,19 @@ component accessors=true {
     }
 
     try {
-      var asStruct = variables.dataService.deOrm( data );
+      var asStruct = { dump = variables.dataService.deOrm( duplicate( data ) ) };
 
       if ( saveStacktrace ) {
         asStruct.stackTrace = variables.debugService.getStackTrace( );
+      }
+
+      if ( structKeyExists( variables, "rollbar" ) ) {
+        var rollbarData = {
+          "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
+          "payload" = variables.rollbar.getPreparedMessagePayload( "debug data", level, data )
+        };
+        sendGatewayMessage( "Rollbar", rollbarData );
+        return;
       }
 
       if ( !variables.utilityService.amInCFThread( ) ) {

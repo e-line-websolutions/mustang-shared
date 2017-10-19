@@ -104,4 +104,49 @@ component {
       bf.declareBean( "threadfix", "mustang.compatibility.acf.threadfix" );
     }
   }
+
+  public void function handleExceptions( required struct config, any exception, string event ) {
+    exception = duplicate( exception );
+
+    if ( structKeyExists( exception, "Cause" ) ) {
+      exception = duplicate( exception.cause );
+    }
+
+    param exception.message="Uncaught Error";
+    param exception.detail="";
+
+    if ( !isNull( config.rollbar ) ) {
+      var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
+      rollbar.reportMessage( exception.message, "critical", exception );
+    }
+
+    var pc = getPageContext( );
+    pc.getCfoutput( ).clearAll( );
+    pc.getResponse( )
+      .getResponse( )
+      .setStatus( 500, exception.message );
+
+    var showDebugError = listFind( config.debugIP, cgi.remote_addr );
+
+    if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError ) {
+      pc.getResponse( )
+        .setContentType( "text/plain" );
+
+      writeOutput( exception.message );
+
+      if ( showDebugError ) {
+        writeOutput( chr( 13 ) & chr( 13 ) & exception.stackTrace );
+      }
+
+      abort;
+    }
+
+    if ( fileExists( variables.root & "/www/error.html" ) ) {
+      include "/root/www/error.html";
+      writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+      abort;
+    }
+
+    writeDump( exception );
+  }
 }

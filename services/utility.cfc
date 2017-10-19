@@ -85,7 +85,7 @@
 
         context.getCFOutput( ).clear( );
 
-        logService.writeLogLevel(
+        variables.logService.writeLogLevel(
           "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#",
           "mustang-limiter",
           "debug"
@@ -333,11 +333,11 @@
   public string function updateLocale( string newLocale = "" ) {
     try {
       var result = setLocale( newLocale );
-      logService.writeLogLevel( text = "Locale changed to #newLocale#", file = request.appName );
+      variables.logService.writeLogLevel( text = "Locale changed to #newLocale#", file = request.appName );
       return result;
     } catch ( any e ) {
       var errorMessage = "Error setting locale to '#newLocale#'";
-      logService.writeLogLevel( text = errorMessage, file = request.appName );
+      variables.logService.writeLogLevel( text = errorMessage, file = request.appName );
       savecontent variable="local.messageBody" {
         writeDump( newLocale );
         writeDump( e );
@@ -359,12 +359,16 @@
    * From http://www.compoundtheory.com/how-to-tell-if-code-is-being-run-inside-a-cfthread-tag/
    */
   public boolean function amInCFThread( ) {
-    var javaThread = createObject( "java", "java.lang.Thread" );
+    try {
+      var javaThread = createObject( "java", "java.lang.Thread" );
 
-    if ( javaThread.currentThread( )
-      .getThreadGroup( )
-      .getName( ) eq "cfthread" ) {
-      return true;
+      if ( javaThread.currentThread( )
+        .getThreadGroup( )
+        .getName( ) eq "cfthread" ) {
+        return true;
+      }
+    } catch ( any e ) {
+      variables.logService.writeLogLevel( e.message, "utilityService" );
     }
 
     return false;

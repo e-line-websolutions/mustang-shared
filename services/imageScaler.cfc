@@ -49,6 +49,10 @@ component accessors=true {
       return;
     }
 
+    if ( !utilityService.fileExistsUsingCache( sourcePath ) ) {
+      return;
+    }
+
     resizeFromImage( imageNew( sourcePath ), imageName, size, quality );
   }
 
