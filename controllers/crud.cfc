@@ -9,6 +9,8 @@ component accessors=true {
   property utilityService;
 
   public any function init( fw ) {
+    variables.framework = fw;
+
     param variables.listitems="";
     param variables.listactions=".new";
     param variables.confirmactions=".delete";
@@ -20,6 +22,8 @@ component accessors=true {
     param variables.entity=fw.getSection( );
     param array variables.submitButtons=[ ];
 
+    variables.ormEntities=structKeyArray( ORMGetSessionFactory( ).getAllClassMetadata( ) );
+
     return this;
   }
 
@@ -28,27 +32,36 @@ component accessors=true {
       return;
     }
 
-    if ( framework.getItem( ) == "edit" && !securityService.can( "change", framework.getSection( ) ) ) {
+    variables.entity = variables.framework.getSection( );
+    rc.useAsViewEntity = variables.entity;
+
+    if ( arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
+      rc.object = entityNew( variables.entity );
+      rc.entityInstanceVars = rc.object.getInstanceVariables( );
+      if ( structKeyExists( rc.entityInstanceVars.settings, "useForViews" ) ) {
+        rc.useAsViewEntity = rc.entityInstanceVars.settings.useForViews;
+      }
+    }
+
+    if ( variables.framework.getItem( ) == "edit" && !securityService.can( "change", rc.useAsViewEntity ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error-1",
-        "stringVariables" = { "section" = framework.getSection( ) }
+        "stringVariables" = { "section" = rc.useAsViewEntity }
       };
-      framework.redirect( ":", "alert" );
+      variables.framework.redirect( ":", "alert" );
     }
 
-    if ( !framework.getSection( ) == "main" && !securityService.can( "view", framework.getSection( ) ) ) {
+    if ( !rc.useAsViewEntity == "main" && !securityService.can( "view", rc.useAsViewEntity ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error-2",
-        "stringVariables" = { "section" = framework.getSection( ) }
+        "stringVariables" = { "section" = rc.useAsViewEntity }
       };
-      framework.redirect( ":", "alert" );
+      variables.framework.redirect( ":", "alert" );
     }
 
-    framework.setLayout( ":admin" );
-
-    variables.entity = framework.getSection( );
+    variables.framework.setLayout( ":admin" );
   }
 
   public void function default( required struct rc ) {
@@ -68,21 +81,21 @@ component accessors=true {
     param rc.classColumn="";
 
     // exit controller on non crud items
-    switch ( framework.getSection( ) ) {
+    switch ( variables.framework.getSection( ) ) {
       case "main":
         var dashboard = lCase( reReplace( rc.auth.role.name, '\W+', '-', 'all' ) );
 
         if ( utilityService.fileExistsUsingCache( root & "/views/main/dashboard-#dashboard#.cfm" ) ) {
-          framework.setView( '.dashboard-#dashboard#' );
+          variables.framework.setView( '.dashboard-#dashboard#' );
         } else {
-          framework.setView( '.dashboard-default' );
+          variables.framework.setView( '.dashboard-default' );
         }
 
         return;
 
       case "profile":
         rc.data = entityLoadByPK( "contact", rc.auth.userid );
-        framework.setView( 'profile.default' );
+        variables.framework.setView( 'profile.default' );
         return;
     }
 
@@ -94,14 +107,13 @@ component accessors=true {
     rc.entity = variables.entity;
 
     // exit with error when trying to control a non-persisted entity
-    if ( !arrayFindNoCase( structKeyArray( ORMGetSessionFactory( ).getAllClassMetadata( ) ), variables.entity ) ) {
+    if ( !arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
       rc.fallbackView = ":app/notfound";
-      framework.setView( '.#variables.entity#' );
+      variables.framework.setView( '.#variables.entity#' );
       return;
     }
 
-    var object = entityNew( variables.entity );
-    var entityProperties = getMetaData( object );
+    var entityProperties = getMetaData( rc.object );
     var property = "";
     var indexNr = 0;
     var orderNr = 0;
@@ -116,7 +128,7 @@ component accessors=true {
 
     rc.recordCounter = 0;
     rc.deleteddata = 0;
-    rc.properties = object.getInheritedProperties( );
+    rc.properties = rc.entityInstanceVars.properties;
     rc.lineactions = variables.lineactions;
     rc.listactions = variables.listactions;
     rc.confirmactions = variables.confirmactions;
@@ -408,12 +420,12 @@ component accessors=true {
   }
 
   public void function new( required struct rc ) {
-    if ( !securityService.can( "change", framework.getSection( ) ) ) {
+    if ( !securityService.can( "change", variables.framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error"
       };
-      framework.redirect( ".default", "alert" );
+      variables.framework.redirect( ".default", "alert" );
     }
 
     edit( rc = rc );
@@ -446,13 +458,12 @@ component accessors=true {
     }
 
     rc.entity = variables.entity;
-    var object = entityNew( rc.entity );
 
     // is this a loggable object?
-    rc.canBeLogged = ( config.log && isInstanceOf( object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
+    rc.canBeLogged = ( config.log && isInstanceOf( rc.object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
 
     // load form properties
-    rc.properties = object.getInheritedProperties( );
+    rc.properties = rc.entityInstanceVars.properties;
 
     var propertiesInForm = [ ];
 
@@ -462,8 +473,7 @@ component accessors=true {
       }
     }
 
-    rc.entityProperties = getMetaData( object );
-    rc.hideDelete = structKeyExists( rc.entityProperties, "hideDelete" );
+    rc.hideDelete = structKeyExists( rc.entityInstanceVars.settings, "hideDelete" );
 
     if ( structKeyExists( rc, "#rc.entity#id" ) && !len( trim( rc[ "#rc.entity#id" ] ) ) ) {
       structDelete( rc, "#rc.entity#id" );
@@ -473,12 +483,12 @@ component accessors=true {
       rc.data = entityLoadByPK( rc.entity, rc[ "#rc.entity#id" ] );
 
       if ( !isDefined( "rc.data" ) ) {
-        framework.redirect( rc.entity );
+        variables.framework.redirect( rc.entity );
       }
     }
 
     if ( isNull( rc.data ) ) {
-      rc.data = object;
+      rc.data = rc.object;
     }
 
     // prep the form fields and sort them in the right order
@@ -525,19 +535,19 @@ component accessors=true {
   }
 
   public void function delete( required struct rc ) {
-    if ( !securityService.can( "delete", framework.getSection( ) ) ) {
+    if ( !securityService.can( "delete", variables.framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error"
       };
-      framework.redirect( ".default", "alert" );
+      variables.framework.redirect( ".default", "alert" );
     }
 
     url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
 
     crudService.deleteEntity( variables.entity );
 
-    framework.redirect( ".default" );
+    variables.framework.redirect( ".default" );
   }
 
   public void function restore( required struct rc ) {
@@ -545,7 +555,7 @@ component accessors=true {
 
     crudService.restoreEntity( variables.entity );
 
-    framework.redirect( ".view", "#variables.entity#id" );
+    variables.framework.redirect( ".view", "#variables.entity#id" );
   }
 
   public void function save( required struct rc ) {
@@ -554,24 +564,24 @@ component accessors=true {
         "class" = "danger",
         "text" = "global-form-error"
       };
-      framework.redirect( ".default", "alert" );
+      variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
     }
 
-    if ( !securityService.can( "change", framework.getSection( ) ) ) {
+    if ( !securityService.can( "change", variables.framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error"
       };
-      framework.redirect( ".default", "alert" );
+      variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
     }
 
     rc.savedEntity = crudService.saveEntity( variables.entity );
 
     if ( !( structKeyExists( rc, "dontredirect" ) && rc.dontredirect ) ) {
       if ( structKeyExists( rc, "returnto" ) ) {
-        framework.redirect( rc.returnto );
+        variables.framework.redirect( rc.returnto );
       } else {
-        framework.redirect( ".default" );
+        variables.framework.redirect( rc.useAsViewEntity & ".default" );
       }
     }
   }
