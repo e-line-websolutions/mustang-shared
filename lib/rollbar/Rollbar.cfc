@@ -56,7 +56,7 @@ component output="false"
   {
     local.payload = preparePayload(arguments.level, arguments.user);
     local.payload["data"]["body"]["message"] = {"body" = arguments.message};
-    StructAppend(local.payload["data"]["body"]["message"], arguments.meta);
+    StructAppend(local.payload["data"]["body"]["message"], duplicate( arguments.meta ));
     return preparePayloadForTransmission(local.payload);
   }
 
@@ -174,6 +174,7 @@ component output="false"
     }catch(any e){
       toConsole(arguments, local, e);
     }
+    return {};
   }
 
   private struct function getRequestParamsForPayload()

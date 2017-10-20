@@ -362,9 +362,7 @@
     try {
       var javaThread = createObject( "java", "java.lang.Thread" );
 
-      if ( javaThread.currentThread( )
-        .getThreadGroup( )
-        .getName( ) eq "cfthread" ) {
+      if ( javaThread.currentThread( ).getThreadGroup( ).getName( ) == "cfthread" ) {
         return true;
       }
     } catch ( any e ) {

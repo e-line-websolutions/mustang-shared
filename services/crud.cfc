@@ -12,7 +12,6 @@ component accessors=true {
       var entityToSave = entityLoadByPK( entityName, formData[ "#entityName#id" ] );
     } else {
       var entityToSave = entityNew( entityName );
-      entitySave( entityToSave );
     }
 
     var entityProperties = entityToSave.getInheritedProperties( );

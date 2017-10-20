@@ -36,10 +36,11 @@ component accessors=true {
     rc.useAsViewEntity = variables.entity;
 
     if ( arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
-      rc.object = entityNew( variables.entity );
-      rc.entityInstanceVars = rc.object.getInstanceVariables( );
-      if ( structKeyExists( rc.entityInstanceVars.settings, "useForViews" ) ) {
-        rc.useAsViewEntity = rc.entityInstanceVars.settings.useForViews;
+      var object = entityNew( variables.entity );
+      var entityInstanceVars = object.getInstanceVariables( );
+
+      if ( structKeyExists( entityInstanceVars.settings, "useForViews" ) ) {
+        rc.useAsViewEntity = entityInstanceVars.settings.useForViews;
       }
     }
 
@@ -113,7 +114,9 @@ component accessors=true {
       return;
     }
 
-    var entityProperties = getMetaData( rc.object );
+    var object = entityNew( variables.entity );
+    var entityInstanceVars = object.getInstanceVariables( );
+
     var property = "";
     var indexNr = 0;
     var orderNr = 0;
@@ -128,7 +131,7 @@ component accessors=true {
 
     rc.recordCounter = 0;
     rc.deleteddata = 0;
-    rc.properties = rc.entityInstanceVars.properties;
+    rc.properties = entityInstanceVars.properties;
     rc.lineactions = variables.lineactions;
     rc.listactions = variables.listactions;
     rc.confirmactions = variables.confirmactions;
@@ -139,10 +142,10 @@ component accessors=true {
     rc.showAsTree = false;
 
     // exit out of controller if using a tree view (data retrieval goes through ajax calls instead)
-    if ( structKeyExists( entityProperties, "list" ) ) {
-      rc.tableView = ":elements/" & entityProperties.list;
+    if ( structKeyExists( entityInstanceVars.settings, "list" ) ) {
+      rc.tableView = ":elements/" & entityInstanceVars.settings.list;
 
-      if ( entityProperties.list == "hierarchy" ) {
+      if ( entityInstanceVars.settings.list == "hierarchy" ) {
         rc.allColumns = { };
         rc.allData = [ ];
         rc.showAsTree = true;
@@ -157,16 +160,16 @@ component accessors=true {
       }
     }
 
-    if ( structKeyExists( entityProperties, "classColumn" ) && len( trim( entityProperties.classColumn ) ) ) {
-      classColumn = entityProperties.classColumn;
+    if ( structKeyExists( entityInstanceVars.settings, "classColumn" ) && len( trim( entityInstanceVars.settings.classColumn ) ) ) {
+      classColumn = entityInstanceVars.settings.classColumn;
     }
 
     rc.defaultSort = "";
 
-    if ( structKeyExists( entityProperties, "defaultSort" ) ) {
-      rc.defaultSort = entityProperties.defaultSort;
-    } else if ( structKeyExists( entityProperties.extends, "defaultSort" ) ) {
-      rc.defaultSort = entityProperties.extends.defaultSort;
+    if ( structKeyExists( entityInstanceVars.settings, "defaultSort" ) ) {
+      rc.defaultSort = entityInstanceVars.settings.defaultSort;
+    } else if ( structKeyExists( entityInstanceVars.settings.extends, "defaultSort" ) ) {
+      rc.defaultSort = entityInstanceVars.settings.extends.defaultSort;
     }
 
     if ( len( trim( rc.orderby ) ) ) {
@@ -294,8 +297,8 @@ component accessors=true {
           whereBlock &= " ) ";
         }
 
-        if ( structKeyExists( entityProperties, "where" ) && len( trim( entityProperties.where ) ) ) {
-          whereBlock &= entityProperties.where;
+        if ( structKeyExists( entityInstanceVars.settings, "where" ) && len( trim( entityInstanceVars.settings.where ) ) ) {
+          whereBlock &= entityInstanceVars.settings.where;
         }
 
         var HQLcounter = " SELECT COUNT( mainEntity ) AS total ";
@@ -460,10 +463,13 @@ component accessors=true {
     rc.entity = variables.entity;
 
     // is this a loggable object?
-    rc.canBeLogged = ( config.log && isInstanceOf( rc.object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
+    var object = entityNew( variables.entity );
+    var entityInstanceVars = object.getInstanceVariables( );
+
+    rc.canBeLogged = ( config.log && isInstanceOf( object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
 
     // load form properties
-    rc.properties = rc.entityInstanceVars.properties;
+    rc.properties = entityInstanceVars.properties;
 
     var propertiesInForm = [ ];
 
@@ -473,7 +479,7 @@ component accessors=true {
       }
     }
 
-    rc.hideDelete = structKeyExists( rc.entityInstanceVars.settings, "hideDelete" );
+    rc.hideDelete = structKeyExists( entityInstanceVars.settings, "hideDelete" );
 
     if ( structKeyExists( rc, "#rc.entity#id" ) && !len( trim( rc[ "#rc.entity#id" ] ) ) ) {
       structDelete( rc, "#rc.entity#id" );
@@ -488,7 +494,7 @@ component accessors=true {
     }
 
     if ( isNull( rc.data ) ) {
-      rc.data = rc.object;
+      rc.data = object;
     }
 
     // prep the form fields and sort them in the right order
@@ -545,7 +551,7 @@ component accessors=true {
 
     url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
 
-    crudService.deleteEntity( variables.entity );
+    variables.crudService.deleteEntity( variables.entity );
 
     variables.framework.redirect( ".default" );
   }
@@ -553,7 +559,7 @@ component accessors=true {
   public void function restore( required struct rc ) {
     url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
 
-    crudService.restoreEntity( variables.entity );
+    variables.crudService.restoreEntity( variables.entity );
 
     variables.framework.redirect( ".view", "#variables.entity#id" );
   }
@@ -575,7 +581,7 @@ component accessors=true {
       variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
     }
 
-    rc.savedEntity = crudService.saveEntity( variables.entity );
+    rc.savedEntity = variables.crudService.saveEntity( variables.entity );
 
     if ( !( structKeyExists( rc, "dontredirect" ) && rc.dontredirect ) ) {
       if ( structKeyExists( rc, "returnto" ) ) {

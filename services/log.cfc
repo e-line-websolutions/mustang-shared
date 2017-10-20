@@ -70,7 +70,12 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false, string level = "error" ) {
+  public void function dumpToFile(
+    any data,
+    boolean force = false,
+    boolean saveStacktrace = false,
+    string level = "error"
+  ) {
     if ( !variables.config.showDebug && !force ) {
       return;
     }
@@ -92,7 +97,8 @@ component accessors=true {
       }
 
       if ( !variables.utilityService.amInCFThread( ) ) {
-        thread name="debugWritingThread_#createUUID( )#" threadData = { data = asStruct, args = arguments } {
+        var threadData = { data = asStruct, args = arguments };
+        thread name="debugWritingThread_#createUUID( )#" threadData = threadData {
           writeToFile( threadData.data, threadData.args.level );
         }
         return;
