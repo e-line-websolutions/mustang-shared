@@ -421,6 +421,10 @@ component accessors=true {
   }
 
   public array function searchArticles( required string searchTerm, string language = "nl", boolean ignoreDate = false ) {
+    if ( !len( trim( searchTerm ) ) ) {
+      return [ ];
+    }
+
     var languageId = getLanguageId( language );
 
     var sql = "

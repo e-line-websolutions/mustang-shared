@@ -115,11 +115,6 @@ component {
     param exception.message="Uncaught Error";
     param exception.detail="";
 
-    if ( !isNull( config.rollbar ) ) {
-      var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
-      rollbar.reportMessage( exception.message, "critical", exception );
-    }
-
     var pc = getPageContext( );
     pc.getCfoutput( ).clearAll( );
     pc.getResponse( )
@@ -127,6 +122,11 @@ component {
       .setStatus( 500, exception.message );
 
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );
+
+    if ( !showDebugError && !isNull( config.rollbar ) ) {
+      var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
+      rollbar.reportMessage( exception.message, "critical", exception );
+    }
 
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError ) {
       pc.getResponse( )
@@ -146,7 +146,5 @@ component {
       writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
       abort;
     }
-
-    writeDump( exception );
   }
 }

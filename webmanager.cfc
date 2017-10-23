@@ -87,7 +87,7 @@ component extends=framework.one {
       setupSession( );
     }
 
-    var bf = getBeanFactory( );
+    var bf = getDefaultBeanFactory( );
     var i18n = bf.getBean( "translationService" );
     var util = bf.getBean( "utilityService" );
     var wm = bf.getBean( "webmanagerService" );
