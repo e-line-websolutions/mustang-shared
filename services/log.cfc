@@ -9,7 +9,7 @@ component accessors=true {
   this.logLevels = [ "debug", "information", "warning", "error", "fatal" ];
 
   public component function init( config ) {
-    if ( structKeyExists( config, "rollbar" ) ) {
+    if ( structKeyExists( config, "rollbar" ) && structKeyExists( config.rollbar, "access_token" ) ) {
       variables.rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
     }
     return this;

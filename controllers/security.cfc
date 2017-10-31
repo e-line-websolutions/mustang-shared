@@ -80,20 +80,18 @@ component accessors=true {
     // Set auth struct:
     variables.securityService.refreshSession( user );
 
-    updateUserWith.contactID = user.getID( );
-
-    var securityLogaction = variables.optionService.getOptionByName( "logaction", "security" );
+    updateUserWith[ "contactID" ] = user.getID( );
 
     if ( variables.config.log ) {
       structAppend(
         updateUserWith,
         {
-          add_logEntry = {
+          "add_logEntry" = {
             "relatedEntity" = user.getId( ),
             "by" = user.getId( ),
             "dd" = now( ),
             "ip" = cgi.remote_addr,
-            "logaction" = securityLogaction.getId( ),
+            "logaction" = variables.optionService.getOptionByName( "logaction", "security" ),
             "note" = "Logged in"
           }
         }
@@ -102,13 +100,15 @@ component accessors=true {
 
     var originalLogSetting = variables.config.log;
 
-    request.context.variables.config.log = false;
+    request.context.config.log = false;
+
+    user.enableDebug( );
 
     transaction {
       user.save( updateUserWith );
     }
 
-    request.context.variables.config.log = originalLogSetting;
+    request.context.config.log = originalLogSetting;
 
     variables.logService.writeLogLevel( text = "user #user.getUsername( )# logged in.", type = "information", file = request.appName );
 
@@ -146,21 +146,21 @@ component accessors=true {
         var updateUserLog = {
           "contactID" = user.getID( ),
           "add_logEntry" = {
-            "relatedEntity" = user,
-            "logaction" = variables.optionService.getOptionByName( "logaction", "security" ),
-            "note" = logMessage,
-            "by" = user,
+            "relatedEntity" = user.getId( ),
+            "by" = user.getId( ),
             "dd" = now( ),
-            "ip" = cgi.remote_addr
+            "ip" = cgi.remote_addr,
+            "logaction" = variables.optionService.getOptionByName( "logaction", "security" ),
+            "note" = logMessage
           }
         };
 
         var originalLogSetting = variables.config.log;
-        request.context.variables.config.log = false;
+        request.context.config.log = false;
 
         user.save( updateUserLog );
 
-        request.context.variables.config.log = originalLogSetting;
+        request.context.config.log = originalLogSetting;
       }
     }
 

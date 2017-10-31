@@ -8,10 +8,35 @@ component accessors=true {
   property string enabled;
 
   property logService;
+  property utilityService;
 
   public component function init( ) {
-    reset( );
+    param variables.enabled=true;
+    param variables.outputToBuffer=false;
+
+    variables.timers = [ ];
+    variables.done = true;
+    variables.current = 0;
+    variables.prevTime = getTickCount( );
+    variables.total = 0;
+    variables.status = "Waiting";
+    variables.name = createUUID( );
+
+    structAppend( variables, arguments );
+
     return this;
+  }
+
+  public component function getInstance( boolean reInit = false ) {
+    if ( !reInit && !structKeyExists( session, "progress" ) ) {
+      reInit = true;
+    }
+
+    if ( reInit ) {
+      session.progress = init( argumentCollection = arguments );
+    }
+
+    return session.progress;
   }
 
   public void function addToTotal( ) {
@@ -66,30 +91,28 @@ component accessors=true {
     };
 
     if ( variables.done ) {
-      reset( );
+      structDelete( session, "progress" );
+      init( );
     }
 
     return result;
-  }
-
-  public component function getInstance( boolean reInit = false ) {
-    if ( !reInit && !structKeyExists( session, "progress" ) ) {
-      reInit = true;
-    }
-
-    if ( reInit ) {
-      session.progress = init( );
-    }
-
-    return session.progress;
   }
 
   public void function setStatus( required string status ) {
     if ( !variables.enabled ) {
       return;
     }
-    logService.writeLogLevel( "#variables.name# - " & status, "progressService", "information" );
+
     variables.status = status;
+
+    if ( variables.outputToBuffer ) {
+      writeOutput( variables.status & "<br>" );
+      if ( !variables.utilityService.amInCFThread( ) ) {
+        flush;
+      }
+    } else {
+      variables.logService.writeLogLevel( "#variables.name# - " & variables.status, "progressService", "information" );
+    }
   }
 
   public void function disable( ) {
@@ -105,17 +128,6 @@ component accessors=true {
     var steps = variables.total / variables.current; // number of steps
 
     return avgTime * steps;
-  }
-
-  private void function reset( ) {
-    variables.enabled = true;
-    variables.total = 0;
-    variables.current = 0;
-    variables.timers = [ ];
-    variables.done = true;
-    variables.status = "Waiting";
-    variables.prevTime = getTickCount( );
-    variables.name = createUUID( );
   }
 
   private string function getCalculatedTimeLeft( ) {

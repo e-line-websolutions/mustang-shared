@@ -4,6 +4,11 @@ component accessors=true {
   property utilityService;
   property logService;
 
+  public component function init( ) {
+    structAppend( variables, arguments );
+    return this;
+  }
+
   // sanitation functions:
 
   public numeric function sanitizeNumericValue( required string source ) {
@@ -348,7 +353,6 @@ component accessors=true {
           }
           continue;
         }
-
 
         if( fieldProperties.fieldtype contains "to-many" ) {
           basicsOnly = true; // next level only allow to-one

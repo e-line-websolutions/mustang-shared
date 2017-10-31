@@ -7,6 +7,7 @@
 
   <cfscript>
   public any function init( ) {
+    structAppend( variables, arguments );
     return this;
   }
 
