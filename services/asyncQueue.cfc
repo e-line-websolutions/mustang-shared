@@ -17,7 +17,10 @@ component accessors=true {
     variables.isThreadRunning = false;
     variables.lockName = getAsyncTaskLockName( );
     variables.lockTimeout = 30;
-    variables.runSingleThreaded = false;
+
+    param variables.runSingleThreaded = false;
+
+    structAppend( variables, arguments, true );
 
     abortQueue( );
 
@@ -27,7 +30,7 @@ component accessors=true {
   // public methods
 
   public component function getInstance( ) {
-    return init( );
+    return init( argumentCollection = arguments );
   }
 
   public void function addTask( required any taskMethod, any taskArguments = { } ) {
@@ -60,7 +63,11 @@ component accessors=true {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
             } catch ( any e ) {
-              variables.logService.writeLogLevel( "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)", "asyncQueue", "error" );
+              variables.logService.writeLogLevel(
+                "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)",
+                "asyncQueue",
+                "error"
+              );
               variables.logService.dumpToFile( e, true, true );
               rethrow;
             }
@@ -89,7 +96,8 @@ component accessors=true {
       for ( var queuedTasks in variables.taskQueue ) {
         try {
           thread action="terminate" name=queuedTasks.threadName;
-        } catch ( any e ) { }
+        } catch ( any e ) {
+        }
       }
       variables.taskQueue = [ ];
     }
@@ -97,7 +105,11 @@ component accessors=true {
 
   // private methods
 
-  private void function addNewTaskItem( required any taskMethod, required any taskArguments, required string threadName ) {
+  private void function addNewTaskItem(
+    required any taskMethod,
+    required any taskArguments,
+    required string threadName
+  ) {
     if ( isArray( taskArguments ) ) {
       taskArguments = convertArgumentsArrayToCollection( taskArguments );
     }

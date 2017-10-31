@@ -2,7 +2,7 @@ component accessors=true {
   property root;
   property config;
   property framework;
-
+  property beanFactory;
   property crudService;
   property jsonJavaService;
   property securityService;
@@ -44,6 +44,22 @@ component accessors=true {
       }
     }
 
+    if ( rc.useAsViewEntity != variables.entity ) {
+      var superClassControllerPath = "/#config.root#/controllers/#rc.useAsViewEntity#.cfc";
+
+      if ( utilityService.fileExistsUsingCache( expandPath( superClassControllerPath ) ) ) {
+        var superClassControllerDottedPath = "#config.root#.controllers.#rc.useAsViewEntity#";
+        var superClassController = createObject( superClassControllerDottedPath );
+        var fnName = "before#variables.framework.getItem( )#";
+
+        if ( structKeyExists( superClassController, fnName ) ) {
+          this[ "__" & fnName ] = superClassController[ fnName ];
+          var fn = this[ "__" & fnName ];
+          fn( rc = rc );
+        }
+      }
+    }
+
     if ( variables.framework.getItem( ) == "edit" && !securityService.can( "change", rc.useAsViewEntity ) ) {
       rc.alert = {
         "class" = "danger",
@@ -63,6 +79,24 @@ component accessors=true {
     }
 
     variables.framework.setLayout( ":admin" );
+  }
+
+  public void function after( required struct rc ) {
+    if ( rc.useAsViewEntity != variables.entity ) {
+      var superClassControllerPath = "/#config.root#/controllers/#rc.useAsViewEntity#.cfc";
+
+      if ( utilityService.fileExistsUsingCache( expandPath( superClassControllerPath ) ) ) {
+        var superClassControllerDottedPath = "#config.root#.controllers.#rc.useAsViewEntity#";
+        var superClassController = createObject( superClassControllerDottedPath );
+        var fnName = "after#variables.framework.getItem( )#";
+
+        if ( structKeyExists( superClassController, fnName ) ) {
+          this[ "__" & fnName ] = superClassController[ fnName ];
+          var fn = this[ "__" & fnName ];
+          fn( rc = rc );
+        }
+      }
+    }
   }
 
   public void function default( required struct rc ) {
