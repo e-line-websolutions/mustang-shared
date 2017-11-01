@@ -82,6 +82,10 @@ component extends=framework.one {
     this.mappings[ "/basecfc" ] = variables.cfg.paths.basecfc;
   }
 
+  if ( structKeyExists( variables.cfg.paths, "mustang" ) ) {
+    this.mappings[ "/mustang" ] = variables.cfg.paths.mustang;
+  }
+
   if ( !structKeyExists( variables.cfg.paths, variables.cfg.root ) ) {
     variables.cfg.paths[ variables.cfg.root ] = variables.root;
   }
