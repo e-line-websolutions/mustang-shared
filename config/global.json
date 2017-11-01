@@ -15,14 +15,14 @@
   "ownerEmail": "administrator@e-line.nl",
   "paths": {
     "basecfc": "",
-    "fileUploads": "",
-    "errors": "C:/TEMP"
+    "errors": "C:/TEMP",
+    "fileUploads": ""
   },
   "reloadpw": "1",
   "root": "root",
   "secureDefaultSubsystem": true,
   "securedSubsystems": "",
   "showDebug": false,
-  "useOrm": true,
-  "templates": []
+  "templates": [],
+  "useOrm": true
 }
