@@ -1,6 +1,7 @@
 component accessors=true {
   property config;
   property logService;
+  property utilityService;
 
   public void function send(
     required  string  from,
@@ -14,11 +15,11 @@ component accessors=true {
       var toEmail = isSimpleValue( to ) ? to : to.getEmail( );
       var sendTo = config.appIsLive ? toEmail : config.debugEmail;
 
-      if( !isValid( "email", from ) ) {
+      if( !utilityService.isValidEmail( from ) ) {
         throw( "Invalid from address", "emailService.send.invalidEmailError", from );
       }
 
-      if( !isValid( "email", sendTo ) ) {
+      if( !utilityService.isValidEmail( sendTo ) ) {
         throw( "Invalid to address", "emailService.send.invalidEmailError", sendTo );
       }
 

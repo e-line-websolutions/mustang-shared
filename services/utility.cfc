@@ -356,6 +356,10 @@
     return replace( pathInfo, "index.cfm", "", "one" );
   }
 
+  public boolean function isValidEmail( string email ){
+    return REFindNoCase( '^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,24}$', email ) gte 1;
+  }
+
   /**
    * From http://www.compoundtheory.com/how-to-tell-if-code-is-being-run-inside-a-cfthread-tag/
    */
