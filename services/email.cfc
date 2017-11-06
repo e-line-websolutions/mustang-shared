@@ -13,13 +13,13 @@ component accessors=true {
   ) {
     try {
       var toEmail = isSimpleValue( to ) ? to : to.getEmail( );
-      var sendTo = config.appIsLive ? toEmail : config.debugEmail;
+      var sendTo = variables.config.appIsLive ? toEmail : variables.config.debugEmail;
 
-      if( !utilityService.isValidEmail( from ) ) {
+      if( !variables.utilityService.isValidEmail( from ) ) {
         throw( "Invalid from address", "emailService.send.invalidEmailError", from );
       }
 
-      if( !utilityService.isValidEmail( sendTo ) ) {
+      if( !variables.utilityService.isValidEmail( sendTo ) ) {
         throw( "Invalid to address", "emailService.send.invalidEmailError", sendTo );
       }
 
@@ -37,9 +37,9 @@ component accessors=true {
 
       message.send( );
 
-      logService.writeLogLevel( text = "email sent: '#subject#' to #sendTo#.", type = "information", file = request.appName );
+      variables.logService.writeLogLevel( "email sent: '#subject#' to #sendTo#." );
     } catch ( any e ) {
-      logService.writeLogLevel( text = "Error sending email. (#e.message#)", type = "fatal", file = request.appName );
+      variables.logService.writeLogLevel( text = "Error sending email. (#e.message#)", type = "fatal" );
       rethrow;
     }
   }
