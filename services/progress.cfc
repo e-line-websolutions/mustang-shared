@@ -108,7 +108,7 @@ component accessors=true {
     if ( variables.outputToBuffer ) {
       writeOutput( variables.status & "<br>" );
       if ( !variables.utilityService.amInCFThread( ) ) {
-        flush;
+        getPageContext( ).getOut( ).flush( );
       }
     } else {
       variables.logService.writeLogLevel( "#variables.name# - " & variables.status, "progressService", "information" );

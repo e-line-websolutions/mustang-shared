@@ -91,11 +91,7 @@ component {
       return "none";
     }
 
-    if ( config.appIsLive ) {
-      return "update";
-    } else {
-      return "dropcreate";
-    }
+    return "update";
   }
 
   public void function loadListener( bf ) {

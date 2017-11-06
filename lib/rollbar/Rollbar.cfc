@@ -179,17 +179,25 @@ component output="false"
 
   private struct function getRequestParamsForPayload()
   {
-    local.reqData = GetHttpRequestData();
     local.result = {
       "url" = getRequestUrlFromCGI(),
-      "method" = local.reqData.method,
-      "headers" = local.reqData.headers,
       "get" = url,
       "query_string" = cgi.query_string,
       "post" = form,
-      "body" = local.reqData.content,
-      "user_ip" = cgi.remote_addr
+      "user_ip" = cgi.remote_addr,
+      "body" = ""
     };
+
+    try {
+      local.reqData = GetHttpRequestData();
+    } catch ( any e ) { }
+
+    if ( !isNull( local.reqData ) ) {
+      local.result[ "method" ] = local.reqData.method;
+      local.result[ "headers" ] = local.reqData.headers;
+      local.result[ "body" ] = local.reqData.content;
+    }
+
     // The following helps avoid JSON serialization issues by ColdFusion when the body is empty
     if (!Len(local.result['body'])) local.result['body'] = "";
 
