@@ -90,7 +90,7 @@ component accessors=true {
       if ( structKeyExists( variables, "rollbar" ) && level != "debug" ) {
         var rollbarData = {
           "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
-          "payload" = variables.rollbar.getPreparedMessagePayload( "debug data", level, data )
+          "payload" = variables.rollbar.getPreparedMessagePayload( "debug data", level, { meta = data } )
         };
         sendGatewayMessage( "Rollbar", rollbarData );
         return;
