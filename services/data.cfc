@@ -526,6 +526,26 @@ component accessors=true {
     return true;
   }
 
+  public boolean function isEmptyValue( any value ) {
+    if ( isNull( value ) ) {
+      return true;
+    }
+
+    if ( isSimpleValue( value ) && !len( trim( value ) ) ) {
+      return true;
+    }
+
+    if ( isArray( value ) && arrayIsEmpty( value ) ) {
+      return true;
+    }
+
+    if ( isStruct( value ) && structIsEmpty( value ) ) {
+      return true;
+    }
+
+    return false;
+  }
+
   // conversion / mapping functions
 
   public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = "id", name = "name" } ) {
@@ -704,6 +724,32 @@ component accessors=true {
     }
 
     return flattened;
+  }
+
+  public any function structFindPath( required struct inputStruct, required string keyPath ) {
+    var keyPathAsArray = listToArray( keyPath, "." );
+    var pathLength = arrayLen( keyPathAsArray );
+    var counter = 0;
+
+    for ( var key in keyPathAsArray ) {
+      counter++;
+
+      if ( structKeyExists( inputStruct, key ) ) {
+        inputStruct = inputStruct[ key ];
+      } else if ( counter != pathLength ) {
+        throw(
+          "Key not found",
+          "dataService.structFindPath.keyNotFoundError",
+          "Key #key# of path #keyPath# not found in struct."
+        );
+      }
+
+      if ( counter == pathLength ) {
+        return inputStruct;
+      }
+    }
+
+    return;
   }
 
   public struct function mapToTemplateFields( data, template ) {
