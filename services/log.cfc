@@ -81,7 +81,7 @@ component accessors=true {
     }
 
     try {
-      var asStruct = { dump = variables.dataService.deOrm( duplicate( data ) ) };
+      var asStruct = { dump = duplicate( data ) };
 
       if ( saveStacktrace ) {
         asStruct.stackTrace = variables.debugService.getStackTrace( );
@@ -108,7 +108,7 @@ component accessors=true {
     } catch ( any e ) {
       writeLogLevel( "Error writing data to file", "logService", "error" );
       try {
-        writeToFile( e );
+        writeToFile( duplicate( e ) );
       } catch ( any e ) {
         writeLogLevel( e.message, "logService", "fatal" );
       }
