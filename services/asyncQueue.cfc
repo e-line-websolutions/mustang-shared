@@ -63,12 +63,13 @@ component accessors=true {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
             } catch ( any e ) {
+              var exception = duplicate( e );
               variables.logService.writeLogLevel(
-                "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)",
+                "Error executing task (t. #variables.threadIndex#). (#exception.message#, #exception.detail#)",
                 "asyncQueue",
                 "error"
               );
-              variables.logService.dumpToFile( e, true, true );
+              variables.logService.dumpToFile( exception, true, true );
               rethrow;
             }
 
