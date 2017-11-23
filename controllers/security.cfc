@@ -34,10 +34,7 @@ component accessors=true {
       var user = variables.contactService.get( contactID );
 
       if ( isNull( user ) ) {
-        rc.alert = {
-          "class" = "danger",
-          "text" = "user-not-found"
-        };
+        rc.alert = { "class" = "danger", "text" = "user-not-found" };
         variables.logService.writeLogLevel( text = "authhash failed", type = "warning", file = request.appName );
         doLogout( rc );
       }
@@ -49,25 +46,30 @@ component accessors=true {
       var user = variables.contactService.getByUsername( rc.username );
 
       if ( isNull( user ) ) {
-        rc.alert = {
-          "class" = "danger",
-          "text" = "user-not-found"
-        };
-        variables.logService.writeLogLevel( text = "login failed: wrong username (#rc.username#)", type = "warning", file = request.appName );
+        rc.alert = { "class" = "danger", "text" = "user-not-found" };
+        variables.logService.writeLogLevel(
+          text = "login failed: wrong username (#rc.username#)",
+          type = "warning",
+          file = request.appName
+        );
         doLogout( rc );
       }
 
       // CHECK PASSWORD:
       var decryptSpeed = getTickCount( );
-      var passwordIsCorrect = variables.securityService.comparePassword( password = rc.password, storedPW = user.getPassword( ) );
+      var passwordIsCorrect = variables.securityService.comparePassword(
+        password = rc.password,
+        storedPW = user.getPassword( )
+      );
       decryptSpeed = getTickCount( ) - decryptSpeed;
 
       if ( !passwordIsCorrect ) {
-        rc.alert = {
-          "class" = "danger",
-          "text" = "password-incorrect"
-        };
-        variables.logService.writeLogLevel( text = "user #user.getUsername( )# login failed: wrong password ", type = "warning", file = request.appName );
+        rc.alert = { "class" = "danger", "text" = "password-incorrect" };
+        variables.logService.writeLogLevel(
+          text = "user #user.getUsername( )# login failed: wrong password ",
+          type = "warning",
+          file = request.appName
+        );
         doLogout( rc );
       }
 
@@ -83,19 +85,15 @@ component accessors=true {
     updateUserWith[ "contactID" ] = user.getID( );
 
     if ( variables.config.log ) {
-      structAppend(
-        updateUserWith,
-        {
-          "add_logEntry" = {
-            "relatedEntity" = user.getId( ),
-            "by" = user.getId( ),
-            "dd" = now( ),
-            "ip" = cgi.remote_addr,
-            "logaction" = variables.optionService.getOptionByName( "logaction", "security" ),
-            "note" = "Logged in"
-          }
-        }
-      );
+      var securityLogaction = variables.optionService.getOptionByName( "logaction", "security" );
+      updateUserWith[ "add_logEntry" ] = {
+        "relatedEntity" = user.getId( ),
+        "by" = user.getId( ),
+        "dd" = now( ),
+        "ip" = cgi.remote_addr,
+        "logaction" = securityLogaction.getId( ),
+        "note" = "Logged in"
+      };
     }
 
     var originalLogSetting = variables.config.log;
@@ -110,7 +108,11 @@ component accessors=true {
 
     request.context.config.log = originalLogSetting;
 
-    variables.logService.writeLogLevel( text = "user #user.getUsername( )# logged in.", type = "information", file = request.appName );
+    variables.logService.writeLogLevel(
+      text = "user #user.getUsername( )# logged in.",
+      type = "information",
+      file = request.appName
+    );
 
     rc.auth = variables.securityService.getAuth( );
 
@@ -132,6 +134,7 @@ component accessors=true {
   }
 
   public void function doLogout( required struct rc ) {
+
     // reset session
     variables.securityService.invalidateSession( );
 
