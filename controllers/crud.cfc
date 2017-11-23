@@ -33,7 +33,8 @@ component accessors=true {
     }
 
     variables.entity = variables.framework.getSection( );
-    rc.useAsViewEntity = variables.entity;
+
+    param rc.useAsViewEntity=variables.entity;
 
     if ( arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
       var object = entityNew( variables.entity );
@@ -43,6 +44,7 @@ component accessors=true {
         rc.useAsViewEntity = entityInstanceVars.settings.useForViews;
       }
     }
+
 
     if ( rc.useAsViewEntity != variables.entity ) {
       var superClassControllerPath = "/#config.root#/controllers/#rc.useAsViewEntity#.cfc";
@@ -82,6 +84,8 @@ component accessors=true {
   }
 
   public void function after( required struct rc ) {
+    param rc.useAsViewEntity=variables.entity;
+
     if ( rc.useAsViewEntity != variables.entity ) {
       var superClassControllerPath = "/#config.root#/controllers/#rc.useAsViewEntity#.cfc";
 
@@ -575,30 +579,36 @@ component accessors=true {
   }
 
   public void function delete( required struct rc ) {
+    param rc.useAsViewEntity=variables.entity;
+
     if ( !securityService.can( "delete", variables.framework.getSection( ) ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error"
       };
-      variables.framework.redirect( ".default", "alert" );
+      variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
     }
 
     url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
 
     variables.crudService.deleteEntity( variables.entity );
 
-    variables.framework.redirect( ".default" );
+    variables.framework.redirect( rc.useAsViewEntity & ".default" );
   }
 
   public void function restore( required struct rc ) {
+    param rc.useAsViewEntity=variables.entity;
+
     url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
 
     variables.crudService.restoreEntity( variables.entity );
 
-    variables.framework.redirect( ".view", "#variables.entity#id" );
+    variables.framework.redirect( rc.useAsViewEntity & ".view", "#variables.entity#id" );
   }
 
   public void function save( required struct rc ) {
+    param rc.useAsViewEntity=variables.entity;
+
     if ( structCount( form ) == 0 ) {
       rc.alert = {
         "class" = "danger",
