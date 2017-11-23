@@ -120,8 +120,11 @@ component {
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );
 
     if ( !showDebugError && !isNull( config.rollbar ) ) {
-      var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
-      rollbar.reportMessage( exception.message, "critical", exception );
+      try {
+        var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
+        rollbar.reportMessage( exception.message, "critical", exception );
+      } catch ( any e ) {
+      }
     }
 
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError ) {
