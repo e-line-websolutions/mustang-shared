@@ -356,6 +356,37 @@
     return replace( pathInfo, "index.cfm", "", "one" );
   }
 
+  public string function cleanPath( input ) {
+    var result = [ ];
+
+    if ( server.os.name contains "windows" ) {
+      var driveLetter = listFirst( input, ":" );
+      input = listRest( input, ":" );
+    }
+
+    var path = listToArray( input, "/\" );
+
+    for ( var item in path ) {
+      switch ( item ) {
+        case ".":
+          continue;
+
+        case "..":
+          pathLength = arrayLen( result );
+          if ( pathLength > 0 ) {
+            arrayDeleteAt( result, pathLength );
+          }
+          continue;
+
+        default:
+          arrayAppend( result, item );
+
+      }
+    }
+
+    return ( isNull( driveLetter ) ? "" : driveLetter & ":" ) & "/" & arrayToList( result, "/" ) & "/";
+  }
+
   public boolean function isValidEmail( string email ){
     return REFindNoCase( '^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,24}$', email ) gte 1;
   }
