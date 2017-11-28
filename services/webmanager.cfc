@@ -89,6 +89,7 @@ component accessors=true {
       if ( i == pathLength ) {
         pageData.articles = getArticles( currentMenuId );
         pageData.pageDetails = getPageDetails( currentMenuId );
+
         pageData.modules = getActiveModules( currentMenuId );
       }
 
@@ -626,8 +627,8 @@ component accessors=true {
       SELECT    assetmeta_nID               AS pageId,
                 assetcontent_sTitleText     AS name,
                 assetmeta_nRating           AS template,
-                assetcontent_sPath          AS htmlTitle,
-                assetcontent_sName          AS htmlKeywords,
+                assetcontent_sPath          AS htmlKeywords,
+                assetcontent_sName          AS htmlTitle,
                 assetcontent_sFileExtension AS htmlDescription,
                 assetcontent_sIntroText     AS unknown_1,
                 assetcontent_sBodyText      AS unknown_2
