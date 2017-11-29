@@ -43,12 +43,6 @@ component accessors=true {
     variables.queryServiceLogId++;
 
     var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-
-    variables.logService.writeLogLevel(
-      "#request.appName# (#variables.queryServiceLogId#): execute( #sqlToLog# ) called.",
-      "queryService"
-    );
-
     var localQueryOptions = duplicate( queryOptions );
 
     if ( structKeyExists( localQueryOptions, "cachedWithin" ) &&
@@ -59,10 +53,6 @@ component accessors=true {
       structDelete( localQueryOptions, "cachedWithin" );
       var cachedQuery = cacheGet( cacheId );
       if ( !isNull( cachedQuery ) ) {
-        variables.logService.writeLogLevel(
-          "#request.appName# (#variables.queryServiceLogId#): returning cached result.",
-          "queryService"
-        );
         return cachedQuery;
       }
     }
@@ -83,10 +73,13 @@ component accessors=true {
       }
 
       variables.logService.writeLogLevel(
-        "#request.appName# (#variables.queryServiceLogId#): query completed in #getTickCount( ) - timer#ms.",
+        "#request.appName# (#variables.queryServiceLogId#): #( getTickCount( ) - timer )#ms. SQL: #sqlToLog#",
         "queryService"
       );
     } catch ( any e ) {
+      if ( !isNull( sqlToLog ) ) {
+        e.message &= " (SQL: #sqlToLog#)";
+      }
       variables.logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
       variables.logService.dumpToFile(
         [
