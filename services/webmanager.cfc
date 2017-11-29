@@ -70,6 +70,7 @@ component accessors=true {
     pageData[ "currentBaseMenuItem" ] = getCurrentBaseMenuItem( seoPathArray );
     pageData[ "currentMenuItem" ] = getCurrentMenuItem( seoPathArray );
     pageData[ "pageTitle" ] = getPageTitle( seoPathArray );
+    pageData[ "websiteDetails" ] = getWebsiteDetails( );
 
     switch ( variables.navigationType ) {
       case "full":
@@ -645,6 +646,29 @@ component accessors=true {
 
     var queryParams = {
       "pageId" = pageId,
+      "websiteId" = variables.websiteId
+    };
+
+    var queryResult = variables.queryService.execute( sql, queryParams, queryOptions );
+
+    if ( queryResult.recordCount == 0 ) {
+      return { };
+    }
+
+    return variables.queryService.toArray( queryResult )[ 1 ];
+  }
+
+  private struct function getWebsiteDetails( ) {
+    variables.fw.frameworkTrace( "<b>webmanager</b>: getWebsiteDetails() called." );
+    var sql = "
+      SELECT    *
+
+      FROM      tbl_bws
+
+      WHERE     bws_nId = :websiteId
+    ";
+
+    var queryParams = {
       "websiteId" = variables.websiteId
     };
 
