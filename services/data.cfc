@@ -197,9 +197,20 @@ component accessors=true {
   public array function arrayOfStructsSort( required array base, string pathToSubElement = "", string sortType = "textnocase", string sortOrder = "ASC" ) {
     var baseLength = arrayLen( base );
     var tmpStruct = { };
+    var appendToStruct = [ ];
 
     for ( var i = 1; i <= baseLength; i++ ) {
       tmpStruct[ i ] = base[ i ];
+    }
+
+    if ( sortType == "numeric" && pathToSubElement != "" ) {
+      for ( var key in tmpStruct ) {
+        var element = evaluate( "tmpStruct.#key#.#pathToSubElement#" );
+        if ( !isNumeric( element ) && !isDate( element ) ) {
+          arrayAppend( appendToStruct, duplicate( tmpStruct[ key ] ) );
+          structDelete( tmpStruct, key );
+        }
+      }
     }
 
     var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
@@ -209,6 +220,8 @@ component accessors=true {
     for ( var i = 1; i <= keysLength; i++ ) {
       returnVal[ i ] = tmpStruct[ keys[ i ] ];
     }
+
+    returnVal.addAll( appendToStruct );
 
     return returnVal;
   }
