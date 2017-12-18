@@ -22,6 +22,10 @@ component extends=framework.one {
   param request.appSimpleName=listFirst( request.appName, " ,-_" );
   param request.context.debug=variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
 
+  if ( structKeyExists( variables.cfg, "domainName" ) ) {
+    request.domainName = variables.cfg.domainName;
+  }
+
   variables.mstng.cleanXHTMLQueryString( );
   variables.live = variables.cfg.appIsLive;
   variables.routes = [ ];
