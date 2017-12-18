@@ -2,6 +2,8 @@ component accessors=true {
   // Taken from http://www.bennadel.com/blog/2528-asynctaskqueue-cfc---running-low-priority-tasks-in-a-single-cfthread.htm
   // de-ben-ified by mjhagen.
 
+  property boolean runSingleThreaded;
+
   property logService;
   property utilityService;
   property taskQueue;
