@@ -29,7 +29,7 @@ component accessors=true {
 
   /** Backports CF11's queryExecute() to CF9 & CF10
     *
-    * @sql_statement  The SQL statement to execute
+    * @sqlStatement  The SQL statement to execute
     * @queryParams    Array, or struct of query parameters
     * @queryOptions   Struct with query options (like datasource)
     *
@@ -37,18 +37,18 @@ component accessors=true {
     * @version  1, September 22, 2014
     * @version  2, December 29, 2015
     */
-  public any function execute( required string sql_statement, any queryParams = { }, struct queryOptions = { } ) {
+  public any function execute( required string sqlStatement, any queryParams = { }, struct queryOptions = { } ) {
     addDatasource( queryOptions );
 
     variables.queryServiceLogId++;
 
-    var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
+    var sqlToLog = left( reReplace( sqlStatement, "\s+", " ", "all" ), 1000 );
     var localQueryOptions = duplicate( queryOptions );
 
     if ( structKeyExists( localQueryOptions, "cachedWithin" ) &&
          isNumeric( localQueryOptions.cachedWithin ) &&
          val( localQueryOptions.cachedWithin ) > 0 ) {
-      var cacheId = buildCacheId( sql_statement, queryParams );
+      var cacheId = buildCacheId( sqlStatement, queryParams );
       var cacheFor = localQueryOptions.cachedWithin;
       structDelete( localQueryOptions, "cachedWithin" );
       var cachedQuery = cacheGet( cacheId );
@@ -58,35 +58,24 @@ component accessors=true {
     }
 
     try {
-      var timer = getTickCount( );
-
       if( isModernCFML( ) ) {
-        var result = queryExecute( sql_statement, queryParams, localQueryOptions );
+        structAppend( local, localQueryOptions );
+        var result = queryExecute( sqlStatement, queryParams, localQueryOptions );
       } else {
         // run and return query using query.cfc:
-        localQueryOptions.sql = sql_statement;
+        localQueryOptions.sql = sqlStatement;
         if ( !isNull( cacheFor ) ) {
           localQueryOptions.name = cacheId;
         }
         localQueryOptions.parameters = normalizeParameters( queryParams );
         var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
       }
-
-      variables.logService.writeLogLevel(
-        "#request.appName# (#variables.queryServiceLogId#): #( getTickCount( ) - timer )#ms. SQL: #sqlToLog#",
-        "queryService"
-      );
     } catch ( any e ) {
       if ( !isNull( sqlToLog ) ) {
         e.message &= " (SQL: #sqlToLog#)";
       }
       variables.logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
-      variables.logService.dumpToFile(
-        [
-          sql_statement,
-          e
-        ]
-      );
+      variables.logService.dumpToFile( [ sqlStatement, e ] );
       rethrow;
     }
 
@@ -255,7 +244,7 @@ component accessors=true {
     }
   }
 
-  private string function buildCacheId( required string sql_statement, required any queryParams ) {
+  private string function buildCacheId( required string sqlStatement, required any queryParams ) {
     var params = [ ];
     var sortedKeys = structKeyArray( queryParams );
     arraySort( sortedKeys, "textnocase" );
@@ -268,7 +257,7 @@ component accessors=true {
         arrayAppend( params, "#key#=#value#" );
       }
     }
-    return "query_" & hash( lcase( reReplace( sql_statement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
+    return "query_" & hash( lcase( reReplace( sqlStatement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
   }
 
   private void function addDatasource( queryOptions ) {
