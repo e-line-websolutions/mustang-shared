@@ -79,7 +79,13 @@ component {
   }
 
   public string function fixPath( string originalPath ) {
-    return listChangeDelims( originalPath, '/', '\/' );
+    var output = listChangeDelims( originalPath, '/', '\/' );
+
+    if ( !server.os.name contains "Windows" && left( originalPath, 1 ) == "/" ) {
+      output = "/" & output;
+    }
+
+    return output;
   }
 
   public string function getDbCreate( required struct config ) {
@@ -112,10 +118,16 @@ component {
     param exception.detail="";
 
     var pc = getPageContext( );
-    pc.getCfoutput( ).clearAll( );
-    pc.getResponse( )
-      .getResponse( )
-      .setStatus( 500, exception.message );
+
+    if ( structKeyExists( server, "lucee" ) ) {
+      cfcontent( reset = true );
+      cfheader( statusCode = 500, statusText = exception.message );
+    } else {
+      pc.getCfoutput( ).clearAll( );
+      pc.getResponse( )
+        .getResponse( )
+        .setStatus( 500, exception.message );
+    }
 
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );
 
@@ -128,8 +140,12 @@ component {
     }
 
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError ) {
-      pc.getResponse( )
-        .setContentType( "text/plain" );
+      if ( structKeyExists( server, "lucee" ) ) {
+        cfcontent( type = "text/plain" );
+      } else {
+        pc.getResponse( )
+          .setContentType( "text/plain" );
+      }
 
       writeOutput( exception.message );
 
@@ -137,6 +153,12 @@ component {
         writeOutput( chr( 13 ) & chr( 13 ) & exception.stackTrace );
       }
 
+      abort;
+    }
+
+    if ( fileExists( variables.root & "/webroot/error.html" ) ) {
+      include "/root/webroot/error.html";
+      writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
       abort;
     }
 
