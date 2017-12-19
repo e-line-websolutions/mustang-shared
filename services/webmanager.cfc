@@ -391,6 +391,10 @@ component accessors=true {
     param requestContext.file="";
     param requestContext.s="m";
 
+    if( !variables.utilityService.fileExistsUsingCache( "#variables.config.mediaRoot#/sites/site#variables.websiteId#/images/#requestContext.file#" )){
+      throw( "File does not exist", "webmanagerService.serveMedia.fileNotFoundError" );
+    }
+
     var fileExtension = listLast( requestContext.file, '.' );
 
     if( listFind( variables.resizeBeforeServe, fileExtension ) ) {
