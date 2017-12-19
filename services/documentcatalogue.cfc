@@ -100,6 +100,18 @@ component accessors=true {
 
     var fields = queryService.toArray( queryResult );
     return fields;
+  }
 
+  public struct function updateDocument( required numeric documentId, required struct formData ) {
+    var docdb = { };
+    var input = arguments;
+    include "/mustang/lib/webmanager/modules/documentcatalogue/docdb_load_documents.cfm";
+    return input;
+  }
+
+  public struct function insertDocument( required string documentName, required numeric groupId, required struct formData ) {
+    var args = duplicate( arguments );
+    args.documentId = 0;
+    return updateDocument( argumentCollection = args );
   }
 }
