@@ -64,7 +64,7 @@ component accessors=true {
       "articles" = [ ],
       "navPath" = [ ],
       "stylesheets" = [ ],
-      "securityDetails" = { }
+      "security" = { }
     };
 
     pageData[ "basePath" ] = getBasePath( seoPathArray );
@@ -91,7 +91,7 @@ component accessors=true {
       if ( i == pathLength ) {
         pageData.articles = getArticles( currentMenuId );
         pageData.pageDetails = getPageDetails( currentMenuId );
-        pageData.securityDetails = getClientSecurity( currentMenuId );
+        // pageData.security = getClientSecurity( currentMenuId );
         pageData.modules = getActiveModules( currentMenuId );
       }
 
@@ -171,7 +171,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, queryOptions ), arguments.parentId );
+    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, variables.queryOptions ), arguments.parentId );
   }
 
   public array function getMenuItems( required numeric parentId ) {
@@ -199,7 +199,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var navigationQuery = variables.queryService.execute( sql, queryParams, queryOptions );
+    var navigationQuery = variables.queryService.execute( sql, queryParams, variables.queryOptions );
 
     return listToArray( valueList( navigationQuery.assetcontent_sTitleText, variables.safeDelim ), variables.safeDelim );
   }
@@ -230,7 +230,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var queryResult = variables.queryService.execute( sql, queryParams, queryOptions );
+    var queryResult = variables.queryService.execute( sql, queryParams, variables.queryOptions );
 
     if ( queryResult.recordCount == 0 ) {
       return;
@@ -273,7 +273,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var articles = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, queryOptions ) );
+    var articles = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
 
     var row = 0;
     for ( var article in articles ) {
@@ -309,7 +309,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var activeModules = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, queryOptions ) );
+    var activeModules = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
     var moduleContent = { };
 
     for ( var activeModule in activeModules ) {
@@ -391,7 +391,9 @@ component accessors=true {
     param requestContext.file="";
     param requestContext.s="m";
 
-    if( !variables.utilityService.fileExistsUsingCache( "#variables.config.mediaRoot#/sites/site#variables.websiteId#/images/#requestContext.file#" )){
+    if( !variables.utilityService.fileExistsUsingCache(
+      "#variables.config.mediaRoot#/sites/site#variables.websiteId#/images/#requestContext.file#"
+    ) ) {
       throw( "File does not exist", "webmanagerService.serveMedia.fileNotFoundError" );
     }
 
@@ -417,7 +419,7 @@ component accessors=true {
     variables.utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
     variables.utilityService.cfheader(
       name = "Last-Modified",
-      value = "#getHttpTimeString( dateAdd( 'ww', - 1, now( ) ) )#"
+      value = "#getHttpTimeString( dateAdd( 'ww', -1, now( ) ) )#"
     );
     variables.fileService.writeToBrowser( fileToServe );
   }
@@ -449,7 +451,7 @@ component accessors=true {
       "ignoreDate" = { "value" = ignoreDate, "cfsqltype" = "cf_sql_bit" }
     };
 
-    var searchResult = variables.queryService.execute( sql, queryParams, queryOptions );
+    var searchResult = variables.queryService.execute( sql, queryParams, variables.queryOptions );
 
     return variables.queryService.toArray( searchResult );
   }
@@ -494,7 +496,7 @@ component accessors=true {
         AND     vw_selectAsset.assetmeta_nID = :childId
     ";
     var queryParams = { "childId" = childId };
-    var parent = variables.queryService.execute( sql, queryParams, queryOptions );
+    var parent = variables.queryService.execute( sql, queryParams, variables.queryOptions );
     return { id = parent.parentId[ 1 ], name = parent.parentName };
   }
 
@@ -507,7 +509,7 @@ component accessors=true {
       "sLanguage" = sLanguage
     };
 
-    var result = variables.queryService.execute( sql, queryParams, queryOptions );
+    var result = variables.queryService.execute( sql, queryParams, variables.queryOptions );
     return val( result.language_nId[1] );
   }
 
@@ -618,7 +620,7 @@ component accessors=true {
     var sql_select = " SELECT DISTINCT nav_level_#pathLength#.assetmeta_nID ";
     var sql = sql_select & sql_from & sql_where;
 
-    var pathQuery = variables.queryService.execute( sql, queryParams, queryOptions );
+    var pathQuery = variables.queryService.execute( sql, queryParams, variables.queryOptions );
 
     if ( pathQuery.recordCount == 1 ) {
       return pathQuery.assetmeta_nID[ 1 ];
@@ -654,7 +656,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var queryResult = variables.queryService.execute( sql, queryParams, queryOptions );
+    var queryResult = variables.queryService.execute( sql, queryParams, variables.queryOptions );
 
     if ( queryResult.recordCount == 0 ) {
       return { };
@@ -677,7 +679,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    var queryResult = variables.queryService.execute( sql, queryParams, queryOptions );
+    var queryResult = variables.queryService.execute( sql, queryParams, variables.queryOptions );
 
     if ( queryResult.recordCount == 0 ) {
       return { };
@@ -711,7 +713,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, queryOptions ) );
+    return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
   }
 
   private array function getFullNavigation( ) {
@@ -743,7 +745,7 @@ component accessors=true {
       "websiteId" = variables.websiteId
     };
 
-    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, queryOptions ) );
+    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
   }
 
   private string function getTemplate( required struct requestContext ) {
@@ -762,7 +764,7 @@ component accessors=true {
     return variables.config.templates[ requestContext.pageDetails.template ];
   }
 
-  private boolean function getClientSecurity( required numeric menuId ) {
+  private array function getClientSecurity( required numeric menuId ) {
     var sql = '
       SELECT    assetcontent_sIntroText,
                 assetcontent_sBodyText
@@ -777,7 +779,7 @@ component accessors=true {
       "menuId" = menuId
     };
 
-    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, queryOptions ) );
+    return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
   }
 
   private boolean function isALanguage( required string potentialLanguage ) {
