@@ -63,7 +63,8 @@ component accessors=true {
       "modules" = { },
       "articles" = [ ],
       "navPath" = [ ],
-      "stylesheets" = [ ]
+      "stylesheets" = [ ],
+      "securityDetails" = { }
     };
 
     pageData[ "basePath" ] = getBasePath( seoPathArray );
@@ -90,7 +91,7 @@ component accessors=true {
       if ( i == pathLength ) {
         pageData.articles = getArticles( currentMenuId );
         pageData.pageDetails = getPageDetails( currentMenuId );
-
+        pageData.securityDetails = getClientSecurity( currentMenuId );
         pageData.modules = getActiveModules( currentMenuId );
       }
 
@@ -755,6 +756,24 @@ component accessors=true {
     }
 
     return variables.config.templates[ requestContext.pageDetails.template ];
+  }
+
+  private boolean function getClientSecurity( required numeric menuId ) {
+    var sql = '
+      SELECT    assetcontent_sIntroText,
+                assetcontent_sBodyText
+
+      FROM      tbl_assetcontent
+                INNER JOIN mid_assetmetaAssetcontent ON assetcontent_nID = assetmetaAssetcontent_x_nAssetcontentID
+
+      WHERE     assetmetaAssetcontent_x_nAssetmetaID = :menuId
+    ';
+
+    var queryParams = {
+      "menuId" = menuId
+    };
+
+    return variables.dataService.queryToTree( variables.queryService.execute( sql, queryParams, queryOptions ) );
   }
 
   private boolean function isALanguage( required string potentialLanguage ) {
