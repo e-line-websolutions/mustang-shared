@@ -1,6 +1,5 @@
 component accessors=true {
   property config;
-
   property dataService;
   property logService;
   property utilityService;
@@ -80,6 +79,8 @@ component accessors=true {
       if ( utilityService.isGuid( currentAuth.userId ) ) {
         user = entityLoadByPK( "contact", currentAuth.userId );
       }
+    } else {
+      entityReload( user );
     }
 
     createSession( );
@@ -111,17 +112,17 @@ component accessors=true {
   }
 
   public string function hashPassword( required string password ) {
-    var t = 0;
+    var minSpeed = 250;
     var cost = 4;
-    while ( t < 500 && cost <= 30 ) {
+    do {
       var salt = variables.bcrypt.gensalt( cost );
       var hashedPW = variables.bcrypt.hashpw( password, salt );
-      // test speed of decryption:
       var start = getTickCount( );
       variables.bcrypt.checkpw( password, hashedPW );
-      t = getTickCount( ) - start;
+      var hashSpeed = getTickCount( ) - start;
+      logService.writeLogLevel( "Password hash speed #hashSpeed#ms at #cost#.", "securityService", "debug" );
       cost++;
-    }
+    } while ( hashSpeed < minSpeed && cost <= 30 );
     return hashedPW;
   }
 
@@ -192,35 +193,39 @@ component accessors=true {
     }
 
     return false;
-
-    // REPLACES THIS:
-
-    // var isDefaultSubsystem = framework.getSubsystem() == framework.getDefaultSubsystem();
-    // var dontSecureDefaultSubsystem = isDefaultSubsystem && !config.secureDefaultSubsystem;
-    // var dontSecureCurrentSubsystem = len( trim( framework.getSubsystem()))
-    //       ? listFindNoCase( config.securedSubsystems, framework.getSubsystem()) eq 0
-    //       : false;
-    // var isAPISecurity = framework.getSubsystem() == "api" && framework.getSection() == "auth";
-    // var dontSecureThisFQA = structKeyExists( config, "dontSecureFQA" ) &&
-    //       len( config.dontSecureFQA ) &&
-    //       listFindNoCase( config.dontSecureFQA, rc.action );
-    // var dontSecureThisSubsystem = dontSecureDefaultSubsystem || dontSecureCurrentSubsystem;
-    // var isLoginPageOrAction = ( isDefaultSubsystem && framework.getSection() == "security" ) || isAPISecurity;
-    // var isCSS = framework.getSubsystem() == "adminapi" && framework.getSection() == "css";
-
-    // if( dontSecureThisFQA || dontSecureThisSubsystem || isLoginPageOrAction || isCSS ) {
-    //   return;
-    // }
   }
 
+  /*
+   * From https://github.com/misterdai/cfbackport/blob/master/cf10.cfm
+   * Altered a bit to follow project coding style
+   **/
+  public void function invalidateSession( ) {
+    if ( val( server.coldfusion.productversion ) >= 10 ) {
+      sessionInvalidate( );
+      return;
+    }
 
-  public boolean function captcha( required string response ) {
-    var httpService = new http(method = "POST", url = "https://www.google.com/recaptcha/api/siteverify");
-    httpService.addParam(name = "secret", type = "formfield", value = config.captchaSecret );
-    httpService.addParam(name = "response", type = "formfield", value = arguments.response );
-    httpService.addParam(name = "remoteip", type = "formfield", value = cgi.remote_addr );
-    var result = httpService.send().getPrefix();
-    return deserializeJSON( result.filecontent ).success;
+    if ( structKeyExists( session, "cfid" ) && structKeyExists( session, "cftoken" ) ) {
+      var sessionId = session.cfid & '_' & session.cftoken;
+    }
+
+    // Fire onSessionEnd
+    var appEvents = application.getEventInvoker( );
+    appEvents.onSessionEnd( [ application, session ] );
+
+    // Make sure that session is empty
+    for ( var key in session ) {
+      if ( !listFindNoCase( "cfid,cftoken,sessionid,urltoken", key ) ) {
+        structDelete( session, key );
+      }
+    }
+    // structClear( session );
+
+    // Clean up the session
+    if ( !isNull( sessionId ) ) {
+      var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
+      sessionTracker.cleanUp( application.applicationName, sessionId );
+    }
   }
 
   // private
@@ -275,33 +280,5 @@ component accessors=true {
       "userid" = '',
       "canAccessAdmin" = false
     };
-  }
-
-  /*
-   * From https://github.com/misterdai/cfbackport/blob/master/cf10.cfm
-   * Altered a bit to follow project coding style
-   **/
-  public void function invalidateSession( ) {
-    if ( val( server.coldfusion.productversion ) >= 10 ) {
-      sessionInvalidate( );
-      return;
-    }
-
-    if ( structKeyExists( session, "cfid" ) && structKeyExists( session, "cftoken" ) ) {
-      var sessionId = session.cfid & '_' & session.cftoken;
-    }
-
-    // Fire onSessionEnd
-    var appEvents = application.getEventInvoker( );
-    appEvents.onSessionEnd( [ application, session ] );
-
-    // Make sure that session is empty
-    structClear( session );
-
-    // Clean up the session
-    if ( !isNull( sessionId ) ) {
-      var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
-      sessionTracker.cleanUp( application.applicationName, sessionId );
-    }
   }
 }

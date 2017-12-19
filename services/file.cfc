@@ -20,7 +20,7 @@ component accessors=true {
       }
 
       try {
-        var uploadState = fileUpload( request.fileUploads & "/" & destination, uploadField, "", "MakeUnique" );
+        var uploadState = fileUpload( variables.config.paths.fileUploads & "/" & destination & "/excelfile-#createUuid()#.tmp", uploadField, "", "MakeUnique" );
         variables.filePath = uploadState.serverDirectory & "/" & uploadState.serverFile;
         variables.originalFileName = uploadState.clientFile;
         variables.fileName = uploadState.serverFile;
@@ -72,14 +72,21 @@ component accessors=true {
       return fileExists( filePath );
     }
 
-    var result = cacheGet( filePath );
+    var cacheKey = "file_" & hash( filePath );
+
+    var result = cacheGet( cacheKey );
 
     if ( isNull( result ) ) {
       var result = fileExists( filePath );
-      cachePut( filePath, result );
+      cachePut( cacheKey, result );
     }
 
     return result;
+  }
+
+  public string function writeBase64ImageToFile( Base64EncodedFile, location ){
+    var binarycode = binaryDecode( Base64EncodedFile, 'Base64' );
+    fileWrite( location , binarycode );
   }
 
   private string function getMimetype( required string filePath ) {
@@ -102,6 +109,8 @@ component accessors=true {
         return "application/x-rar-compressed";
       case 'swf' :
         return "application/x-shockwave-flash";
+      case 'svg' :
+        return "image/svg+xml";
     }
 
     return "application/octet-stream";

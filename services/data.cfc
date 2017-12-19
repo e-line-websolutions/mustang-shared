@@ -4,6 +4,11 @@ component accessors=true {
   property utilityService;
   property logService;
 
+  public component function init( ) {
+    structAppend( variables, arguments );
+    return this;
+  }
+
   // sanitation functions:
 
   public numeric function sanitizeNumericValue( required string source ) {
@@ -137,7 +142,12 @@ component accessors=true {
 
   // other data integrity and utility functions:
 
-  public boolean function isGUID( required string text ) {
+  public boolean function isGUID( required string text, boolean strict = false ) {
+    if ( strict ) {
+      var testForGuid = REMatchNoCase( "\{{0,1}[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}{0,1}", text );
+      return !arrayIsEmpty( testForGuid );
+    }
+
     if ( len( text ) < 32 ) {
       return false;
     }
@@ -160,6 +170,26 @@ component accessors=true {
     return false;
   }
 
+  public any function keyValuePairFind( any data, string key, string value, string scope = "one" ) {
+    var itemsWithKey = structFindKey( { data = data }, key, "all" );
+    var result = [ ];
+
+    for ( var item in itemsWithKey ) {
+      if ( item.value == value ) {
+        if ( scope == "one" ) {
+          return item.owner;
+        }
+        arrayAppend( result, item.owner );
+      }
+    }
+
+    if ( !arrayIsEmpty( result ) ) {
+      return result;
+    }
+
+    return;
+  }
+
   /**
     By Tomalak
     See: https://stackoverflow.com/a/2653972/2378532
@@ -167,9 +197,20 @@ component accessors=true {
   public array function arrayOfStructsSort( required array base, string pathToSubElement = "", string sortType = "textnocase", string sortOrder = "ASC" ) {
     var baseLength = arrayLen( base );
     var tmpStruct = { };
+    var appendToStruct = [ ];
 
     for ( var i = 1; i <= baseLength; i++ ) {
       tmpStruct[ i ] = base[ i ];
+    }
+
+    if ( sortType == "numeric" && pathToSubElement != "" ) {
+      for ( var key in tmpStruct ) {
+        var element = evaluate( "tmpStruct.#key#.#pathToSubElement#" );
+        if ( !isNumeric( element ) && !isDate( element ) ) {
+          arrayAppend( appendToStruct, duplicate( tmpStruct[ key ] ) );
+          structDelete( tmpStruct, key );
+        }
+      }
     }
 
     var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
@@ -179,6 +220,8 @@ component accessors=true {
     for ( var i = 1; i <= keysLength; i++ ) {
       returnVal[ i ] = tmpStruct[ keys[ i ] ];
     }
+
+    returnVal.addAll( appendToStruct );
 
     return returnVal;
   }
@@ -198,6 +241,15 @@ component accessors=true {
     }
 
     return potentialDate;
+  }
+
+  public boolean function hasMissingStructKeys( required struct inputStruct, required array structKeys ) {
+    for ( var key in structKeys ) {
+      if ( !structKeyExists( inputStruct, key ) ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // convenience functions
@@ -304,17 +356,16 @@ component accessors=true {
 
         if( fieldProperties.dataType == "json" ) {
           try {
-            structAppend( result, useJsonService.deserialize( value ));
+            structAppend( result, useJsonService.deserialize( value ) );
           } catch ( any e ) {
             variables.logService.dumpToFile( { "dataService.processEntity()" = {
               "Exception" = e,
               "Data" = value,
               "Property" = fieldProperties
-            } } );
+            } }, true );
           }
           continue;
         }
-
 
         if( fieldProperties.fieldtype contains "to-many" ) {
           basicsOnly = true; // next level only allow to-one
@@ -324,12 +375,154 @@ component accessors=true {
       }
 
     } else if( isStruct( data )) {
-      var result = {};
+      var result = { };
       for( var key in data ) {
         var value = data[ key ];
         result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
       }
 
+    }
+
+    return result;
+  }
+
+  public any function deOrm( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false ) {
+    level = max( 0, level );
+    maxLevel = min( 5, maxLevel );
+
+    if( level == 0 ) {
+      variables.utilityService.setCFSetting( "requesttimeout", 10 );
+    }
+
+    var useJsonService = variables.jsonService;
+
+    if ( !isNull( variables.jsonJavaService ) && isObject( variables.jsonJavaService ) ) {
+      useJsonService = variables.jsonJavaService;
+    }
+
+    if( isNull( data ) || ( maxLevel > 0 && level > maxLevel && !isSimpleValue( data ) ) ) {
+      return;
+    }
+
+    var nextLevel = level + 1;
+    var maxArrayItt = 100;
+    var result = "";
+
+    // data parsing:
+    if( isSimpleValue( data ) ) {
+      var result = data;
+    } else if( isArray( data ) ) {
+      var result = [ ];
+      var itemCounter = 0;
+      for( var el in data ) {
+        if( ++itemCounter > maxArrayItt ) {
+          arrayAppend( result, "capped at #maxArrayItt# results" );
+          break;
+        } else {
+          var newData = deOrm( el, level, maxLevel, basicsOnly );
+          if( !isNull( newData ) ) {
+            arrayAppend( result, newData );
+          }
+        }
+      }
+    } else if( isObject( data ) ) {
+      var allowedFieldTypes = "id,column,many-to-one,one-to-many,many-to-many"; // level 0 only
+
+      if( level > 1 || basicsOnly ) {
+        allowedFieldTypes = "id,column,many-to-one";
+      }
+
+      if( level >= maxLevel && !maxLevel == 0 ) {
+        allowedFieldTypes = "id,column";
+      }
+
+      var result = { };
+      var allFields = getInheritedProperties( data );
+
+      for( var key in allFields ) {
+        var fieldProperties = {
+          "inapi" = true,
+          "fieldtype" = "column",
+          "dataType" = ""
+        };
+
+        structAppend( fieldProperties, allFields[ key ], true );
+
+        if ( listFindNoCase( "numeric,string,boolean", fieldProperties.fieldtype ) ) {
+          fieldProperties.fieldtype = "column";
+        }
+
+        if ( !fieldProperties.inapi ) {
+          continue;
+        }
+
+        if ( !listFindNoCase( allowedFieldTypes, fieldProperties.fieldtype ) ) {
+          continue;
+        }
+
+        if ( !structKeyExists( data, "get#fieldProperties.name#" ) ) {
+          continue;
+        }
+
+        var value = variables.utilityService.cfinvoke( data, "get#fieldProperties.name#" );
+
+        if( isNull( value ) ) {
+          continue;
+        }
+
+        if( fieldProperties.dataType == "json" ) {
+          try {
+            structAppend( result, useJsonService.deserialize( value ) );
+          } catch ( any e ) {
+          }
+          continue;
+        }
+
+
+        if( fieldProperties.fieldtype contains "to-many" ) {
+          basicsOnly = true; // next level only allow to-one
+        }
+
+        result[ fieldProperties.name ] = deOrm( value, nextLevel, maxLevel, basicsOnly );
+      }
+    } else if( isStruct( data ) ) {
+      var result = { };
+      for( var key in data ) {
+        var value = data[ key ];
+        result[ key ] = deOrm( value, nextLevel, maxLevel, basicsOnly );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+    * a struct containing this objects and its ancestors properties
+    */
+  public struct function getInheritedProperties( object ) {
+    var md = getMetaData( object );
+    var result = { };
+
+    while ( structKeyExists( md, "extends" ) ) {
+      if ( structKeyExists( md, "properties" ) && isArray( md.properties ) ) {
+        var numberOfProperties = arrayLen( md.properties );
+
+        for ( var i = 1; i <= numberOfProperties; i++ ) {
+          var property = md.properties[ i ];
+
+          if ( !structKeyExists( result, property.name ) ) {
+            result[ property.name ] = { };
+          }
+
+          if ( structKeyExists( property, "cfc" ) ) {
+            property.entityName = getEntityName( property.cfc );
+            property.tableName = getTableName( property.cfc );
+          }
+
+          structAppend( result[ property.name ], property, false );
+        }
+      }
+      md = md.extends;
     }
 
     return result;
@@ -344,6 +537,26 @@ component accessors=true {
     }
 
     return true;
+  }
+
+  public boolean function isEmptyValue( any value ) {
+    if ( isNull( value ) ) {
+      return true;
+    }
+
+    if ( isSimpleValue( value ) && !len( trim( value ) ) ) {
+      return true;
+    }
+
+    if ( isArray( value ) && arrayIsEmpty( value ) ) {
+      return true;
+    }
+
+    if ( isStruct( value ) && structIsEmpty( value ) ) {
+      return true;
+    }
+
+    return false;
   }
 
   // conversion / mapping functions
@@ -388,7 +601,7 @@ component accessors=true {
     return result;
   }
 
-  public any function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
+  public array function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
     if ( !isNull( filter ) && !structIsEmpty( filter ) ) {
       var filters = [ ];
       for ( var key in filter ) {
@@ -407,25 +620,34 @@ component accessors=true {
     return xmlSearch( data, xPathString );
   }
 
-  public string function xmlFromStruct( struct source, string prefix = "", string namespace = "" ) {
+  public string function xmlFromStruct( struct source, string prefix = "", string namespace ) {
     var result = "";
     var ns = len( trim( prefix ) ) ? "#prefix#:" : "";
-    var xmlns = len( trim( namespace ) ) ? ' xmlns="#namespace#"' : ""; // only on first element
+    var xmlns = !isNull( namespace ) && len( trim( namespace ) )
+      ? ' xmlns="#namespace#"'
+      : "";
 
     for ( var key in source ) {
-      var value = structKeyExists( source, key )
-        ? source[ key ]
-        : "";
+      if ( !structKeyExists( source, key ) ) {
+        result &= "<#ns##key##xmlns# />";
+        continue;
+      }
 
+      var value = source[ key ];
 
-      if ( isSimpleValue( value ) ) {
-        result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
-      } else if ( isStruct( value ) ) {
+      if ( isStruct( value ) ) {
         result &= "<#ns##key##xmlns#>" & xmlFromStruct( value, prefix ) & "</#ns##key#>";
+
       } else if ( isArray( value ) ) {
+        result &= "<#ns##key##xmlns#>";
         for ( var item in value ) {
-          result &= "<#ns##key##xmlns#>" & xmlFromStruct( item, prefix ) & "</#ns##key#>";
+          result &= xmlFromStruct( item, prefix );
         }
+        result &= "</#ns##key#>";
+
+      } else if ( isSimpleValue( value ) ) {
+        result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
+
       }
     }
 
@@ -451,14 +673,14 @@ component accessors=true {
    * Convert a CFML date object to an ISO 8601 formatted date string.
    * Output like this: 2014-07-08T12:05:25.8Z
    */
-  public string function convertToISO8601( required date datetime, boolean convertToUTC = true ) {
+  public string function convertToIso8601( required date datetime, boolean convertToUTC = true ) {
     if ( convertToUTC ) {
       datetime = dateConvert( "local2utc", datetime );
     }
     return ( dateFormat( datetime, "yyyy-mm-dd" ) & "T" & timeFormat( datetime, "HH:mm:ss" ) & ".0Z" );
   }
 
-  public string function convertToCFDatePart( required string part ) {
+  public string function convertToCfDatePart( required string part ) {
     var validDateParts = listToArray( "yyyy,q,m,d,w,ww,h,n,s" );
 
     if( arrayFindNoCase( validDateParts, part ) ) {
@@ -483,6 +705,11 @@ component accessors=true {
   public array function dataAsArray( data, xpath = "", filter = { }, map = { id = "id", name = "name" } ) {
     var filtered = xmlFilter( data, xpath, filter );
     return xmlToArrayOfStructs( filtered, map );
+  }
+
+  public boolean function isIso8601Date( required string value ) {
+    var regex = "^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$";
+    return reFind( regex, value );
   }
 
   /**
@@ -512,6 +739,32 @@ component accessors=true {
     return flattened;
   }
 
+  public any function structFindPath( required struct inputStruct, required string keyPath ) {
+    var keyPathAsArray = listToArray( keyPath, "." );
+    var pathLength = arrayLen( keyPathAsArray );
+    var counter = 0;
+
+    for ( var key in keyPathAsArray ) {
+      counter++;
+
+      if ( structKeyExists( inputStruct, key ) ) {
+        inputStruct = inputStruct[ key ];
+      } else if ( counter != pathLength ) {
+        throw(
+          "Key not found",
+          "dataService.structFindPath.keyNotFoundError",
+          "Key #key# of path #keyPath# not found in struct."
+        );
+      }
+
+      if ( counter == pathLength ) {
+        return inputStruct;
+      }
+    }
+
+    return;
+  }
+
   public struct function mapToTemplateFields( data, template ) {
     var flattenedData = flattenStruct( data );
     var result = { };
@@ -527,17 +780,13 @@ component accessors=true {
     return result;
   }
 
-  public array function queryToTree( required query inputQuery ) {
+  public array function queryToTree( required query inputQuery, numeric parentId=0 ) {
     var asArrayOfStructs = queryToArrayOfStructs( inputQuery );
-    var parents = { "0" = { "children" = [ ] } };
+    var parents = { '#arguments.parentId#' = { "children" = [ ] } };
 
     for ( var row in asArrayOfStructs ) {
-      parents[ row.menuId ] = {
-        "menuId" = row.menuId,
-        "name" = row.name,
-        "formatted" = variables.utilityService.variableFormat( row.name ),
-        "children" = [ ]
-      };
+      parents[ row.menuId ] = row;
+      parents[ row.menuId ].children = [ ];
     }
 
     for ( var row in asArrayOfStructs ) {
@@ -550,7 +799,7 @@ component accessors=true {
       arrayAppend( parent.children, parents[ row.menuId ] );
     }
 
-    return parents[ "0" ].children;
+    return parents[ arguments.parentId ].children;
   }
 
   /** Converts query to an array full of structs
@@ -559,14 +808,14 @@ component accessors=true {
     */
   public array function queryToArrayOfStructs( required query inputQuery ) {
     var result = [ ];
-    var cols = inputQuery.getMeta( ).getColumnLabels( );
+    var cols = getMetaData( inputQuery );
     var noOfCols = arrayLen( cols );
 
     for( var i = 1; i <= inputQuery.recordCount; i++ ) {
       var row = { };
       for( var j = 1; j <= noOfCols; j++ ) {
         var col = cols[ j ];
-        row[ col ] = inputQuery[ col ][ i ];
+        row[ col.name ] = inputQuery[ col.name ][ i ];
       }
       arrayAppend( result, row );
     }
@@ -624,7 +873,7 @@ component accessors=true {
     var result = [];
 
     for( var item in source ) {
-      arrayAppend( result, ". = '" & xmlFormat( trim( item ) ) & "'" );
+      arrayAppend( result, ". = '" & xmlFormat( trim( item ) ) ) & "'";
     }
 
     return arrayToList( result, " or " );

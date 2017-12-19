@@ -1,54 +1,112 @@
 component extends=framework.one {
-  param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
+  if ( !structKeyExists( variables, "framework" ) ) {
+    variables.framework = { };
+  }
+  variables.mstng = new base( variables.framework );
+
+  variables.cfg = {
+    "mediaRoot" = "D:/Accounts/E/E-Line Websolutions CM/files"
+  };
+
+  variables.mstng.mergeStructs( variables.mstng.readConfig( ), variables.cfg );
+  variables.cfg.useOrm = false;
+
+  variables.root = variables.mstng.getRoot( );
+
   param request.domainName=cgi.server_name;
+  param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
+  param request.version="?";
+  param request.context.startTime=getTickCount( );
+  param request.context.config=variables.cfg;
+  param request.webroot=variables.cfg.webroot;
+  param request.appSimpleName=listFirst( request.appName, " ,-_" );
+  param request.context.debug=variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
 
-  this.sessionManagement = true;
+  if ( structKeyExists( variables.cfg, "domainName" ) ) {
+    request.domainName = variables.cfg.domainName;
+  }
 
-  variables.root = this.mappings[ "/root" ] = getRoot( );
-  variables.framework = {
-    routesCaseSensitive = false,
-    generateSES = true,
-    SESOmitIndex = true,
-    diLocations = [ "/root/model/services", "/mustang/services" ],
-    diConfig = {
-      constants = {
-        root = variables.root,
-        ds = "e-line_cm",
-        navigationType = "per-level",
-        config = {
-          mediaRoot = fixPath( "D:\Accounts\E\E-Line Websolutions CM\files" ),
-          cacheFileExists = true,
-          defaultLanguage = "nl_NL",
-          useOrm = false,
-          logLevel = "error",
-          templates = [ ]
-        }
+  variables.mstng.cleanXHTMLQueryString( );
+  variables.live = variables.cfg.appIsLive;
+  variables.routes = [ ];
+  variables.mstng.mergeStructs( {
+    "routesCaseSensitive" = false,
+    "generateSES" = true,
+    "SESOmitIndex" = true,
+    "base" = "/root",
+    "diLocations" = [
+      "/mustang/services",
+      "/root/model/services"
+    ],
+    "diConfig" = {
+      "constants" = {
+        "root" = variables.root,
+        "config" = variables.cfg,
+        "ds" = "e-line_cm",
+        "navigationType" = "per-level"
+      },
+      "loadListener" = variables.mstng.loadListener
+    },
+    "environments" = {
+      "live" = {
+        "cacheFileExists" = true,
+        "password" = variables.cfg.reloadpw,
+        "trace" = variables.cfg.showDebug
+      },
+      "dev" = {
+        "trace" = variables.cfg.showDebug
       }
     },
-    base = "/root",
-    routes = [
+    "routes" = [
       { "/media/:file" = "/media/load/file/:file" },
       { "/forms/:action" = "/forms/:action" },
       { "/api/:action" = "/api/:action" },
       { "*" = "/main/default" }
     ]
-  };
+  }, variables.framework );
 
-  private void function setupRequest( ) {
+  this.mappings[ "/root" ] = request.root = variables.root;
+  this.sessionManagement = true;
+  this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
+
+  if ( isNull( request.appSimpleName ) ) {
+    request.appSimpleName = listFirst( request.appName, " ,-_" );
+  }
+
+  public string function getEnvironment( ) {
+    return variables.live ? "live" : "dev";
+  }
+
+  public void function setupApplication( ) {
+    frameworkTrace( "<b>webmanager</b>: setupApplication() called." );
+    structDelete( application, "cache" );
+  }
+
+  public void function setupRequest( ) {
     frameworkTrace( "<b>webmanager</b>: setupRequest() called." );
-    request.reset = isFrameworkReloadRequest( );
 
-    var bf = getBeanFactory( );
+    var reset = isFrameworkReloadRequest( );
 
-    variables.wm = bf.getBean( "webmanagerService" );
-    variables.util = bf.getBean( "utilityService" );
-    variables.i18n = bf.getBean( "translationService" );
+    if ( reset ) {
+      setupSession( );
+    }
 
+    var bf = getDefaultBeanFactory( );
+    var i18n = bf.getBean( "translationService" );
+    var util = bf.getBean( "utilityService" );
+    var wm = bf.getBean( "webmanagerService" );
+
+    request.reset = reset;
+    request.context.util = variables.util = util;
+    request.context.i18n = variables.i18n = i18n;
+
+    util.setCFSetting( "showdebugoutput", request.context.debug );
     util.limiter( );
+
     wm.relocateOnce( request.domainName );
 
-    if ( request.reset ) {
-      wm.clearCache();
+    if ( structKeyExists( url, "clear" ) ) {
+      wm.clearCache( );
       frameworkTrace( "<b>webmanager</b>: cache reset" );
     }
 
@@ -61,89 +119,17 @@ component extends=framework.one {
     }
   }
 
-  private void function setupApplication( ) {
-    frameworkTrace( "<b>webmanager</b>: setupApplication() called." );
-    structDelete( application, "cache" );
+  public void function onError( any exception, string event ) {
+    var args = arguments;
+    args.config = variables.cfg;
+    variables.mstng.handleExceptions( argumentCollection = args );
   }
 
-  private string function onMissingView( rc ) {
+  public string function onMissingView( struct rc ) {
     if ( getSection( ) == "main" ) {
       return view( "main/default" );
     }
 
     return "Missing view for: #rc.action#";
-  }
-
-  function onError() {
-    writeDump( arguments );abort;
-  }
-
-  private struct function readConfig( string site = cgi.server_name ) {
-    // cached:
-    if ( !structKeyExists( url, "reload" ) ) {
-      var config = cacheGet( "config-#this.name#" );
-
-      // found cached settings, only use it in live apps:
-      if ( !isNull( config ) &&
-          structKeyExists( config, "appIsLive" ) &&
-          isBoolean( config.appIsLive ) &&
-          config.appIsLive ) {
-        return config;
-      }
-    }
-
-    // not cached:
-    var defaultSettings = { "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name };
-
-    if ( fileExists( root & "/config/default.json" ) ) {
-      var defaultConfig = deserializeJSON( fileRead( root & "/config/default.json", "utf-8" ) );
-      mergeStructs( defaultConfig, defaultSettings );
-    }
-
-    if ( fileExists( root & "/config/" & site & ".json" ) ) {
-      var siteConfig = deserializeJSON( fileRead( root & "/config/" & site & ".json", "utf-8" ) );
-      mergeStructs( siteConfig, defaultSettings );
-    }
-
-    cachePut( "config-#this.name#", defaultSettings );
-
-    return defaultSettings;
-  }
-
-  private void function mergeStructs( required struct from, struct to = { } ) {
-    for ( var key in from ) {
-      if ( isStruct( from[ key ] ) ) {
-        if ( !structKeyExists( to, key ) ) {
-          to[ key ] = from[ key ];
-        } else if ( isStruct( to[ key ] ) ) {
-          mergeStructs( from[ key ], to[ key ] );
-        }
-      } else {
-        to[ key ] = from[ key ];
-      }
-    }
-    structAppend( from, to, false );
-  }
-
-  private void function addToConstants( required struct websiteSpecificConstants ) {
-    mergeStructs( websiteSpecificConstants, variables.framework.diConfig.constants );
-  }
-
-  private void function addMapping( required string name, required string absolutePath ) {
-    if ( left( name, 1 ) != "/" ) {
-      name = "/#name#";
-    }
-
-    this.mappings[ name ] = absolutePath;
-  }
-
-  private string function fixPath( string originalPath ) {
-    return listChangeDelims( originalPath, '/', '\/' );
-  }
-
-  private string function getRoot( ) {
-    var basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
-    var tmp = replace( basePath, "\", "/", "all" );
-    return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
   }
 }

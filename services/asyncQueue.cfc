@@ -2,10 +2,12 @@ component accessors=true {
   // Taken from http://www.bennadel.com/blog/2528-asynctaskqueue-cfc---running-low-priority-tasks-in-a-single-cfthread.htm
   // de-ben-ified by mjhagen.
 
-  property config;
+  property boolean runSingleThreaded;
+
   property logService;
-  property threadfixService;
+  property utilityService;
   property taskQueue;
+  property beanFactory;
 
   // constructor
 
@@ -18,17 +20,26 @@ component accessors=true {
     variables.lockName = getAsyncTaskLockName( );
     variables.lockTimeout = 30;
 
+    param variables.runSingleThreaded = false;
+
+    structAppend( variables, arguments, true );
+
+    abortQueue( );
+
     return this;
   }
 
   // public methods
 
   public component function getInstance( ) {
-    return init( );
+    return init( argumentCollection = arguments );
   }
 
   public void function addTask( required any taskMethod, any taskArguments = { } ) {
-    variables.logService.writeLogLevel( "Executing task (t. #variables.threadIndex#).", "asyncQueue" );
+    if ( variables.runSingleThreaded ) {
+      taskMethod( argumentCollection = taskArguments );
+      return;
+    }
 
     lock name=variables.lockName timeout=variables.lockTimeout {
       addNewTaskItem( taskMethod, taskArguments, variables.threadName );
@@ -39,7 +50,10 @@ component accessors=true {
 
       variables.isThreadRunning = true;
 
-      threadfixService.cacheScriptObjects( );
+      if ( !structKeyExists( server, "lucee" ) ) {
+        var threadfixService = variables.beanFactory.getBean( "threadfix" );
+        threadfixService.cacheScriptObjects( );
+      }
 
       thread action="run" name=variables.threadName priority="high" {
         do {
@@ -49,12 +63,15 @@ component accessors=true {
 
           while ( structKeyExists( local, "taskItem" ) ) {
             try {
-              variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) started.", "asyncQueue" );
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
-              variables.logService.writeLogLevel( "Task (t. #variables.threadIndex#) done.", "asyncQueue" );
             } catch ( any e ) {
-              variables.logService.writeLogLevel( "Error executing task (t. #variables.threadIndex#). (#e.message#, #e.detail#)", "asyncQueue", "error" );
-              variables.logService.dumpToFile( e );
+              var exception = duplicate( e );
+              variables.logService.writeLogLevel(
+                "Error executing task (t. #variables.threadIndex#). (#exception.message#, #exception.detail#)",
+                "asyncQueue",
+                "error"
+              );
+              variables.logService.dumpToFile( exception, true, true );
               rethrow;
             }
 
@@ -83,7 +100,6 @@ component accessors=true {
         try {
           thread action="terminate" name=queuedTasks.threadName;
         } catch ( any e ) {
-          variables.logService.dumpToFile( e );
         }
       }
       variables.taskQueue = [ ];
@@ -92,7 +108,11 @@ component accessors=true {
 
   // private methods
 
-  private void function addNewTaskItem( required any taskMethod, required any taskArguments, required string threadName ) {
+  private void function addNewTaskItem(
+    required any taskMethod,
+    required any taskArguments,
+    required string threadName
+  ) {
     if ( isArray( taskArguments ) ) {
       taskArguments = convertArgumentsArrayToCollection( taskArguments );
     }
@@ -136,8 +156,6 @@ component accessors=true {
       var taskItem = variables.taskQueue[ 1 ];
 
       arrayDeleteAt( variables.taskQueue, 1 );
-
-      variables.logService.writeLogLevel( "Selected task: #taskItem.taskMethod# for thread #taskItem.threadName#", "asyncQueue" );
 
       return taskItem;
     }

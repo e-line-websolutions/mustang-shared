@@ -1,23 +1,31 @@
 <cfcomponent output="false" accessors="true">
   <cfproperty name="emailService" />
   <cfproperty name="logService" />
+  <cfproperty name="config" />
+
+  <cfprocessingdirective pageEncoding="utf-8" />
 
   <cfscript>
-    public any function init( ) {
-      return this;
+  public any function init( ) {
+    structAppend( variables, arguments );
+    return this;
+  }
+
+  public boolean function isCaptchaValid( required string response ) {
+    if ( cgi.remote_addr == "127.0.0.1" ) {
+      return true;
     }
 
-    public boolean function isCaptchaValid( required string response ) {
-    if( !len(trim( arguments.response ))){
+    if ( !len( trim( response ) ) ) {
       return false;
       abort;
     }
 
-    var httpService = new http(method = "POST", url = "https://www.google.com/recaptcha/api/siteverify");
-    httpService.addParam(name = "secret", type = "formfield", value = config.captchaSecret );
-    httpService.addParam(name = "response", type = "formfield", value = arguments.response );
-    httpService.addParam(name = "remoteip", type = "formfield", value = cgi.remote_addr );
-    var result = httpService.send().getPrefix();
+    var httpService = new http( method = "POST", url = "https://www.google.com/recaptcha/api/siteverify" );
+    httpService.addParam( name = "secret", type = "formfield", value = config.captchaSecret );
+    httpService.addParam( name = "response", type = "formfield", value = response );
+    httpService.addParam( name = "remoteip", type = "formfield", value = cgi.remote_addr );
+    var result = httpService.send( ).getPrefix( );
     return deserializeJSON( result.filecontent ).success;
   }
 
@@ -36,8 +44,21 @@
     return stringToParse;
   }
 
+  public string function abbreviate( string input, numeric len ) {
+    var newString = REReplace( input, "<[^>]*>", " ", "ALL" );
+    var lastSpace = 0;
+    newString = REReplace( newString, " \s*", " ", "ALL" );
+    if ( len( newString ) gt len ) {
+      newString = left( newString, len - 2 );
+      lastSpace = find( " ", reverse( newString ) );
+      lastSpace = len( newString ) - lastSpace;
+      newString = left( newString, lastSpace ) & "  &##8230;";
+    }
+    return newString;
+  }
+
   public void function limiter( numeric duration = 5, numeric maxAttempts = 100, numeric timespan = 10 ) {
-    var cacheID = hash( "rate_limiter_" & CGI.REMOTE_ADDR );
+    var cacheID = "rate-limiter_" & hash( CGI.REMOTE_ADDR );
     var rate = cacheGet( cacheId );
     var cacheTime = createTimeSpan( 0, 0, 0, timespan );
 
@@ -46,10 +67,7 @@
         !structKeyExists( rate, "start" ) ||
         !structKeyExists( rate, "attempts" ) ) {
       // initialize limiter:
-      var rate = {
-        attempts = 0,
-        start = now( )
-      };
+      var rate = { attempts = 0, start = now( ) };
       cachePut( cacheID, rate, cacheTime );
       return;
     }
@@ -68,9 +86,10 @@
 
         context.getCFOutput( ).clear( );
 
-        logService.writeLogLevel(
-          file = "limiter",
-          text = "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#"
+        variables.logService.writeLogLevel(
+          "#cgi.remote_addr# #rate.attempts# #cgi.request_method# #cgi.SCRIPT_NAME# #cgi.QUERY_STRING# #cgi.http_user_agent# #rate.start#",
+          "mustang-limiter",
+          "debug"
         );
 
         // set cache timeout to duration, so user remains locked out for the duration:
@@ -95,7 +114,10 @@
         !listFindNoCase( type, "lc" ) &&
         !listFindNoCase( type, "num" ) &&
         !listFindNoCase( type, "oth" ) ) {
-      throw( type = "util.generatePassword", message = "generatePassword(): Type must be one or more of these: uc, lc, num, oth." );
+      throw(
+        type = "util.generatePassword",
+        message = "generatePassword(): Type must be one or more of these: uc, lc, num, oth."
+      );
     }
 
     var result = "";
@@ -111,7 +133,12 @@
       } else if ( randRange( 1, 4 ) == 3 && listFindNoCase( type, 'num' ) ) {
         tryChar = chr( randRange( 48, 57 ) );
       } else if ( randRange( 1, 4 ) == 4 && listFindNoCase( type, 'oth' ) ) {
-        var oth = [ chr( randRange( 33, 47 ) ), chr( randRange( 58, 64 ) ), chr( randRange( 91, 96 ) ), chr( randRange( 123, 126 ) ) ];
+        var oth = [
+          chr( randRange( 33, 47 ) ),
+          chr( randRange( 58, 64 ) ),
+          chr( randRange( 91, 96 ) ),
+          chr( randRange( 123, 126 ) )
+        ];
         tryChar = oth[ randRange( 1, 4 ) ];
       }
 
@@ -139,24 +166,15 @@
   }
 
   public string function variableFormat( inputString ) {
-    var result = "";
+    return lCase( reReplace( reReplace( trim( utf8ToAscii( inputString ) ), '[^\w -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
+  }
 
-    inputString = lCase( trim( inputString ) );
-    var len = len( trim( inputString ) );
+  public String function utf8ToAscii( required string input ) {
+    var normalizer = createObject( 'java', 'java.text.Normalizer' );
+    var normalizer_NFD =  createObject( 'java', 'java.text.Normalizer$Form' ).valueOf('NFD');
+    var normalizedInput = normalizer.normalize( input, normalizer_NFD );
 
-    for ( var i = 1; i <= len; i++ ) {
-      var char = mid( inputString, i, 1 );
-
-      if ( !( ( char >= 'a' && char <= 'z' ) || ( char >= 'A' && char <= 'Z' ) || isNumeric( char ) ) ) {
-        if ( char == ' ' || char == '_' || char == '-' ) {
-          result &= '-';
-        }
-      } else {
-        result &= char;
-      }
-    }
-
-    return result;
+    return normalizedInput.replaceAll( '\p{InCombiningDiacriticalMarks}+','' ).replaceAll( '[^\p{ASCII}]+', '' );
   }
 
   /**
@@ -269,15 +287,23 @@
   }
 
   public string function encryptForUrl( stringToEncrypt, encryptKey ) {
+    if ( isNull( encryptKey ) ) {
+      encryptKey = variables.config.encryptKey;
+    }
+
     return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey ) ) );
   }
 
   public string function decryptForUrl( stringToEncrypt, encryptKey ) {
+    if ( isNull( encryptKey ) ) {
+      encryptKey = variables.config.encryptKey;
+    }
+
     return decrypt( toString( toBinary( base64URLDecode( stringToEncrypt ) ) ), encryptKey );
   }
 
   public boolean function fileExistsUsingCache( required string absolutePath ) {
-    var cachedPaths = cacheGet( "cachedPaths-#request.appName#" );
+    var cachedPaths = cacheGet( "cachedPaths_#request.appName#" );
 
     if ( isNull( cachedPaths ) || request.reset ) {
       var cachedPaths = { };
@@ -285,7 +311,7 @@
 
     if ( !structKeyExists( cachedPaths, absolutePath ) ) {
       cachedPaths[ absolutePath ] = fileExists( absolutePath );
-      cachePut( "cachedPaths-#request.appName#", cachedPaths );
+      cachePut( "cachedPaths_#request.appName#", cachedPaths );
     }
 
     return cachedPaths[ absolutePath ];
@@ -308,11 +334,11 @@
   public string function updateLocale( string newLocale = "" ) {
     try {
       var result = setLocale( newLocale );
-      logService.writeLogLevel( text = "Locale changed to #newLocale#", file = request.appName );
+      variables.logService.writeLogLevel( text = "Locale changed to #newLocale#", file = request.appName );
       return result;
     } catch ( any e ) {
       var errorMessage = "Error setting locale to '#newLocale#'";
-      logService.writeLogLevel( text = errorMessage, file = request.appName );
+      variables.logService.writeLogLevel( text = errorMessage, file = request.appName );
       savecontent variable="local.messageBody" {
         writeDump( newLocale );
         writeDump( e );
@@ -322,12 +348,64 @@
     }
   }
 
-  public string function enterFormat( string source="" ) {
+  public string function enterFormat( string source = "" ) {
     return reReplace( source, '\n', '<br />', 'all' );
   }
 
   public string function fixPathInfo( string pathInfo = cgi.path_info ) {
     return replace( pathInfo, "index.cfm", "", "one" );
+  }
+
+  public string function cleanPath( input ) {
+    var result = [ ];
+
+    if ( server.os.name contains "windows" ) {
+      var driveLetter = listFirst( input, ":" );
+      input = listRest( input, ":" );
+    }
+
+    var path = listToArray( input, "/\" );
+
+    for ( var item in path ) {
+      switch ( item ) {
+        case ".":
+          continue;
+
+        case "..":
+          pathLength = arrayLen( result );
+          if ( pathLength > 0 ) {
+            arrayDeleteAt( result, pathLength );
+          }
+          continue;
+
+        default:
+          arrayAppend( result, item );
+
+      }
+    }
+
+    return ( isNull( driveLetter ) ? "" : driveLetter & ":" ) & "/" & arrayToList( result, "/" ) & "/";
+  }
+
+  public boolean function isValidEmail( string email ){
+    return reFindNoCase( "^[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,24}$", email );
+  }
+
+  /**
+   * From http://www.compoundtheory.com/how-to-tell-if-code-is-being-run-inside-a-cfthread-tag/
+   */
+  public boolean function amInCFThread( ) {
+    try {
+      var javaThread = createObject( "java", "java.lang.Thread" );
+
+      if ( javaThread.currentThread( ).getThreadGroup( ).getName( ) == "cfthread" ) {
+        return true;
+      }
+    } catch ( any e ) {
+      variables.logService.writeLogLevel( e.message, "utilityService" );
+    }
+
+    return false;
   }
 
   /**
@@ -345,7 +423,12 @@
    * @version 3, august 11, 2004
    * @version 4, may 5, 2017
    */
-  function activateUrl( required string input, string target = "", string paragraph = false, string replaceWith = "Info" ) {
+  function activateUrl(
+    required string input,
+    string target = "",
+    string paragraph = false,
+    string replaceWith = "Info"
+  ) {
     if ( isNull( input ) ) {
       return '';
     }
@@ -355,7 +438,12 @@
     var useReplaceWith = len ( replaceWith ) > 0;
 
     do {
-      var objMatch = reFindNoCase( "(((https?:|ftp:|gopher:)\/\/)|(www\.|ftp\.))[-[:alnum:]\?%,\.\/&##!;@:=\+~_]+[a-za-z0-9\/]", input, nextMatch, true );
+      var objMatch = reFindNoCase(
+        "(((https?:|ftp:|gopher:)\/\/)|(www\.|ftp\.))[-[:alnum:]\?%,\.\/&##!;@:=\+~_]+[a-za-z0-9\/]",
+        input,
+        nextMatch,
+        true
+      );
 
       if ( objMatch.pos[ 1 ] > nextMatch || objMatch.pos[ 1 ] == nextMatch ) {
         result = result & mid( input, nextMatch, objMatch.pos[ 1 ] - nextMatch );
@@ -392,7 +480,12 @@
       }
     } while ( nextMatch > 0 );
 
-    result = reReplace( result, "([[:alnum:]_\.\-]+@([[:alnum:]_\.\-]+\.)+[[:alpha:]]{2,4})", "<a href=""mailto:\1"">\1</a>", "all" );
+    result = reReplace(
+      result,
+      "([[:alnum:]_\.\-]+@([[:alnum:]_\.\-]+\.)+[[:alpha:]]{2,4})",
+      "<a href=""mailto:\1"">\1</a>",
+      "all"
+    );
 
     if ( paragraph ) {
       result = paragraphFormat( result );
@@ -411,7 +504,10 @@
 
     // Fire onSessionEnd
     var appEvents = application.getEventInvoker( );
-    var args = [ application, session ];
+    var args = [
+      application,
+      session
+    ];
 
     appEvents.onSessionEnd( args );
 
@@ -469,7 +565,7 @@
     <cfargument name="args" default="#{}#" />
     <cfinvoke component="#comp#" method="#func#" returnvariable="local.result">
       <cfloop collection="#args#" item="local.key">
-        <cfinvokeargument name="#key#" value="#args[key]#" />
+        <cfinvokeargument name="#key#" value="#args[ key ]#" />
       </cfloop>
     </cfinvoke>
     <cfif not isNull( result )>

@@ -1,26 +1,41 @@
 component accessors=true {
-  property dataService;
-
+  property config;
   property struct allOptions;
-  property struct sourceMapping;
-
+  property array optionEntities;
 
   // constructor
 
-  public component function init( ) {
+  public component function init( config ) {
+    structAppend( variables, arguments );
+
     variables.allOptions = { };
-    reloadOptions( );
+    variables.optionEntities = [ ];
+
+    param config.useOrm=true;
+
+    if ( config.useOrm ) {
+      var allEntities = ormGetSessionFactory( ).getAllClassMetadata( );
+
+      for( var key in allEntities ) {
+        var entity = allEntities[ key ];
+        if( entity.getMappedSuperclass( ) == "option" ) {
+          arrayAppend( variables.optionEntities, key );
+        }
+      }
+
+      reloadOptions( );
+    }
+
     return this;
   }
-
 
   // public functions
 
   public void function reloadOptions( ) {
-    var allOptions = variables.allOptions;
     var result = { };
+    var optionsInDb = __getOptionsFromDB( );
 
-    for( var option in __getOptionsFromDB( ) ) {
+    for( var option in optionsInDb ) {
       var key = option.get( 'key' );
       var value = option.get( 'value' );
 
@@ -35,43 +50,66 @@ component accessors=true {
   }
 
   public any function getOptionByName( required string entityName, required string optionName, boolean createIfMissing = false ) {
-    if( !len( trim( entityName ) ) ) {
-      throw( "Missing entity name", "optionService.getOptionByName" );
+    entityName = trim( entityName );
+
+    if( !len( entityName ) ) {
+      throw( "Missing entity name", "optionService.getOptionByName.missingEntityError" );
     }
 
-    if( !len( trim( optionName ) ) ) {
-      throw( "Missing option name for #entityName#", "optionService.getOptionByName" );
+    if( !arrayFindNoCase( variables.optionEntities, entityName ) ) {
+      return;
     }
 
-    var allOptions = variables.allOptions;
+    optionName = trim( optionName );
 
-    if( structKeyExists( allOptions, entityName ) ) {
-      var params = { "optionname" = trim( lCase( optionName ) ) };
+    if( !len( optionName ) ) {
+      throw( "Missing option name for #entityName#", "optionService.getOptionByName.missingOptionError" );
+    }
 
-      var hql = "SELECT t FROM #entityName# t WHERE LOWER( t.name ) = :optionname";
-      var options = { "ignorecase" = true };
-      var searchOptions = ORMExecuteQuery( hql, params, true, options );
+    lock name="#request.appName#-optionService-getOptionByName-#entityName#-#optionName#" timeout="10" type="exclusive" {
+      var searchOptions = __searchOptions( entityName, optionName );
 
       if( !isNull( searchOptions ) ) {
         return searchOptions;
       }
+
+      if( createIfMissing ) {
+        return __createNewOption( entityName, optionName );
+      }
     }
 
-    if( createIfMissing ) {
-      return __createNewOption( entityName, optionName );
-    }
-
-    return dataService.nil( );
+    return;
   }
-
 
   // private functions
 
-  private component function __createNewOption( required string entityName, required string optionName ) {
+  private any function __searchOptions( required string entityName, required string optionName ) {
+    var sql = '
+      FROM      option o
+      WHERE     o.class = :entityName
+        AND     LOWER( o.name ) = :optionName
+    ';
+
+    return ORMExecuteQuery(
+      sql,
+      { "entityName" = lCase( entityName ), "optionName" = lCase( optionName ) },
+      true,
+      { "ignorecase" = true }
+    );
+  }
+
+  private any function __createNewOption( required string entityName, required string optionName ) {
     optionName = trim( optionName );
 
+    if( !len( optionName ) ) {
+      return;
+    }
+
     var newOption = entityNew( entityName );
-    newOption.save( { "name" = optionName } );
+
+    transaction {
+      newOption.save( { "name" = optionName } );
+    }
 
     __addOptionToCache( entityName, optionName );
 
@@ -79,15 +117,11 @@ component accessors=true {
   }
 
   private void function __addOptionToCache( required string entityName, required string optionName ) {
-    var allOptions = variables.allOptions;
-
-    if( !structKeyExists( allOptions, entityName ) ) {
-      allOptions[ entityName ] = [ ];
+    if( !structKeyExists( variables.allOptions, entityName ) ) {
+      variables.allOptions[ entityName ] = [ ];
     }
 
-    arrayAppend( allOptions[ entityName ], optionName );
-
-    variables.allOptions = allOptions;
+    arrayAppend( variables.allOptions[ entityName ], optionName );
   }
 
   private array function __getOptionsFromDB( ) {

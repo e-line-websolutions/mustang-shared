@@ -1,9 +1,12 @@
 component accessors=true {
   property logService;
+  property utilityService;
   property struct imageSizes;
   property string sourceDir;
   property string destinationDir;
   property string hiresDir;
+
+  this.supportedImageFormats = "jpg,jpeg,gif,png";
 
   variables.imageSizes = {
     "large" = [ 1280, 1280 ],
@@ -24,13 +27,17 @@ component accessors=true {
   }
 
   public void function resizeFromSourceDir( required string imageName, required string size, numeric quality = 1 ) {
+    if ( skipResize( size, imageName ) ) {
+      return;
+    }
+
     var sourcePath = "#variables.sourceDir#/#imageName#";
 
-    if ( !isNull( variables.hiresDir ) && fileExists( "#variables.hiresDir#/2000_#imageName#" ) ) {
+    if ( !isNull( variables.hiresDir ) && utilityService.fileExistsUsingCache( "#variables.hiresDir#/2000_#imageName#" ) ) {
       sourcePath = "#variables.hiresDir#/2000_#imageName#";
     }
 
-    if ( !fileExists( sourcePath ) ) {
+    if ( !utilityService.fileExistsUsingCache( sourcePath ) ) {
       return;
     }
 
@@ -38,33 +45,54 @@ component accessors=true {
   }
 
   public void function resizeFromPath( any sourcePath, string imageName, required string size, numeric quality = 1 ) {
+    if ( skipResize( size, imageName ) ) {
+      return;
+    }
+
+    if ( !utilityService.fileExistsUsingCache( sourcePath ) ) {
+      return;
+    }
+
     resizeFromImage( imageNew( sourcePath ), imageName, size, quality );
   }
 
   public void function resizeFromBaos( any bytes, string imageName, required string size, numeric quality = 1 ) {
+    if ( skipResize( size, imageName ) ) {
+      return;
+    }
+
     var sourceImage = imageNew( baosToImage( bytes ) );
     resizeFromImage( sourceImage, imageName, size, quality );
   }
 
   public void function resizeFromImage( any sourceImage, string imageName, required string size, numeric quality = 1 ) {
-    setupSize( size );
-
-    var destinationPath = "#variables.destinationDir#/#size#-#imageName#";
-
-    if ( fileExists( destinationPath ) && !structKeyExists( url, "reload" ) ) {
-      logService.writeLogLevel( "SKIPPED: #variables.destinationDir#/#size#-#imageName# already exists.", "imageScaler" );
+    if ( skipResize( size, imageName ) ) {
       return;
     }
 
+    setupSize( size );
+
+    var destinationPath = "#variables.destinationDir#/#size#-#imageName#";
     var destinationWidth = variables.imageSizes[ size ][ 1 ];
     var destinationHeight = arrayIsDefined( variables.imageSizes[ size ], 2 ) ? variables.imageSizes[ size ][ 2 ] : destinationWidth;
+    var fileExtension = listLast( imageName, '.' );
 
     var resized = resize( sourceImage, destinationWidth, destinationHeight );
-    var compressedImage = compressImage( resized, quality );
+    var compressedImage = compressImage( resized, quality, fileExtension );
+
 
     fileWrite( destinationPath, compressedImage );
 
     logService.writeLogLevel( "SAVED: #variables.destinationDir#/#size#-#imageName#", "imageScaler" );
+  }
+
+  public boolean function skipResize( size, imageName ) {
+    if ( utilityService.fileExistsUsingCache( "#variables.destinationDir#/#size#-#imageName#" ) && !structKeyExists( url, "nuke" ) ) {
+      logService.writeLogLevel( "SKIPPED: #variables.destinationDir#/#size#-#imageName# already exists.", "imageScaler" );
+      return true;
+    }
+
+    return false;
   }
 
   private any function baosToImage( required any bytes ) {
@@ -98,23 +126,30 @@ component accessors=true {
     return resampleOp.init( dimensionConstrain.createMaxDimension( d.width, d.height ) ).filter( bufferedImage, nil( ) );
   }
 
-  private binary function compressImage( required alteredImage, numeric quality = 1 ) {
+  private binary function compressImage( required alteredImage, numeric quality = 1, string fileExtension = "jpg" ) {
+    if ( !listFindNoCase( this.supportedImageFormats, fileExtension ) ) {
+      throw( "Image format not supported.", "imageScalerService.compressImage.fileFormatError", "Supported formats are: #this.supportedImageFormats#" );
+    }
+
     var byteArrayOutputStream = createObject( "java", "java.io.ByteArrayOutputStream" ).init( );
     var imageOutputStream = createObject( "java", "javax.imageio.stream.MemoryCacheImageOutputStream" ).init( byteArrayOutputStream );
-
     var imageIO = createObject( "java", "javax.imageio.ImageIO" );
-    var JPEGWriter = imageIO.getImageWritersByFormatName( "jpg" ).next( );
-        JPEGWriter.setOutput( imageOutputStream );
-
-    var JPEGWriterParam = createObject( "java", "javax.imageio.plugins.jpeg.JPEGImageWriteParam" ).init( nil( ) );
-        JPEGWriterParam.setCompressionMode( JPEGWriterParam.MODE_EXPLICIT );
-        JPEGWriterParam.setCompressionQuality( quality );
+    var imageWriter = imageIO.getImageWritersByFormatName( fileExtension ).next( );
+        imageWriter.setOutput( imageOutputStream );
 
     var IIOImage = createObject( "java", "javax.imageio.IIOImage" );
     var outputImage = IIOImage.init( alteredImage, nil( ), nil( ) );
 
-    JPEGWriter.write( nil( ), outputImage, JPEGWriterParam );
-    JPEGWriter.dispose( );
+    if ( listFindNoCase( "jpg,jpeg", fileExtension ) ) {
+      var imageWriterParam = createObject( "java", "javax.imageio.plugins.jpeg.JPEGImageWriteParam" ).init( nil( ) );
+      imageWriterParam.setCompressionMode( imageWriterParam.MODE_EXPLICIT );
+      imageWriterParam.setCompressionQuality( quality );
+      imageWriter.write( nil( ), outputImage, imageWriterParam );
+    } else {
+      imageWriter.write( nil( ), outputImage, nil( ) );
+    }
+
+    imageWriter.dispose( );
 
     return byteArrayOutputStream.toByteArray( );
   }

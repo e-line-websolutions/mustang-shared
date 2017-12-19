@@ -1,16 +1,11 @@
 component accessors=true extends="mustang.services.asyncQueue" {
-  property progressService;
-  property logService;
-
   private void function initThreads( ) {
     application.threads = { };
   }
 
   private string function getThreadName( ) {
     var threadName = createUUID( );
-
     application.threads[ threadName ] = 1;
-
     return threadName;
   }
 

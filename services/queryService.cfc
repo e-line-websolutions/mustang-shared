@@ -1,26 +1,35 @@
 component accessors=true {
   property config;
   property ds;
-  property utilityService;
   property dataService;
   property logService;
+
   property string dbvendor;
+  property string dialect;
 
   public component function init( utilityService, config, ds ) {
     if ( isNull( ds ) && !isNull( config.datasource ) ) {
       ds = config.datasource;
     }
-    setupVendor( utilityService, ds );
+
+    if ( !isNull( ds ) ) {
+      setupVendor( utilityService, ds );
+    }
+
+    structAppend( variables, arguments );
+
+    variables.queryServiceLogId = 0;
+
     return this;
   }
 
   public array function toArray( required query inputQuery ) {
-    return dataService.queryToArrayOfStructs( inputQuery );
+    return variables.dataService.queryToArrayOfStructs( inputQuery );
   }
 
   /** Backports CF11's queryExecute() to CF9 & CF10
     *
-    * @sql_statement  The SQL statement to execute
+    * @sqlStatement  The SQL statement to execute
     * @queryParams    Array, or struct of query parameters
     * @queryOptions   Struct with query options (like datasource)
     *
@@ -28,112 +37,126 @@ component accessors=true {
     * @version  1, September 22, 2014
     * @version  2, December 29, 2015
     */
-  public any function execute( required string sql_statement, any queryParams={}, struct queryOptions={}) {
-    var timer = getTickCount( );
+  public any function execute( required string sqlStatement, any queryParams = { }, struct queryOptions = { } ) {
+    addDatasource( queryOptions );
 
-    if( structKeyExists( server, "railo" ) ||
-        structKeyExists( server, "lucee" ) || (
-          structKeyExists( server, "coldfusion" ) &&
-          int( listFirst( server.coldfusion.productVersion )) >= 11
-        )) {
-      var result = queryExecute( sql_statement, queryParams, queryOptions );
-      var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-      logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
-      return result;
+    variables.queryServiceLogId++;
+
+    var sqlToLog = left( reReplace( sqlStatement, "\s+", " ", "all" ), 1000 );
+    var localQueryOptions = duplicate( queryOptions );
+
+    if ( structKeyExists( localQueryOptions, "cachedWithin" ) &&
+         isNumeric( localQueryOptions.cachedWithin ) &&
+         val( localQueryOptions.cachedWithin ) > 0 ) {
+      var cacheId = buildCacheId( sqlStatement, queryParams );
+      var cacheFor = localQueryOptions.cachedWithin;
+      structDelete( localQueryOptions, "cachedWithin" );
+      var cachedQuery = cacheGet( cacheId );
+      if ( !isNull( cachedQuery ) ) {
+        return cachedQuery;
+      }
     }
 
-    // normalize query params:
-    var parameters = [];
-    if( isArray( queryParams )) {
-      for( var param in queryParams ) {
-        if( isNull( param )) {
-          arrayAppend( parameters, { "null" = true } );
-        } else if( isSimpleValue( param )) {
-          arrayAppend( parameters, { "value" = param });
-        } else {
-          arrayAppend( parameters, param );
+    try {
+      if( isModernCFML( ) ) {
+        structAppend( local, localQueryOptions );
+        var result = queryExecute( sqlStatement, queryParams, localQueryOptions );
+      } else {
+        // run and return query using query.cfc:
+        localQueryOptions.sql = sqlStatement;
+        if ( !isNull( cacheFor ) ) {
+          localQueryOptions.name = cacheId;
         }
+        localQueryOptions.parameters = normalizeParameters( queryParams );
+        var result = new query( argumentCollection = localQueryOptions ).execute( ).getResult( );
       }
-    } else if( isStruct( queryParams )) {
-      for( var key in queryParams ) {
-        if( isSimpleValue( queryParams[key])) {
-          arrayAppend( parameters, { "name" = key, "value" = queryParams[key]});
-        } else {
-          var parameter = { "name" = key };
-          structAppend( parameter, queryParams[key]);
-          arrayAppend( parameters, parameter );
-        }
+    } catch ( any e ) {
+      if ( !isNull( sqlToLog ) ) {
+        e.message &= " (SQL: #sqlToLog#)";
       }
-    } else {
-      throw "unexpected type for queryParams";
+      variables.logService.writeLogLevel( "#request.appName#: " & e.message, "queryService", "error" );
+      variables.logService.dumpToFile( [ sqlStatement, e ] );
+      rethrow;
     }
 
-    // run and return query using query.cfc:
-    var args = duplicate( queryOptions );
-        args[ "sql" ] = sql_statement;
-        args[ "name" ] = hash( sql_statement );// needed for cache
-        args[ "parameters" ] = parameters;
+    if ( isNull( result ) ) {
+      return;
+    }
 
-    var result = new query( argumentCollection = args ).execute().getResult();
-    var sqlToLog = left( reReplace( sql_statement, "\s+", " ", "all" ), 1000 );
-    logService.writeLogLevel( "#getTickCount( ) - timer#ms. #sqlToLog#", "queryService" );
+    if ( !isNull( cacheFor ) ) {
+      cachePut( cacheId, result, cacheFor );
+    }
+
     return result;
   }
 
   /** Courtesy of user 'Tomalak' from http://stackoverflow.com/questions/2653804/how-to-sort-an-array-of-structs-in-coldfusion#answer-2653972
     */
-  public array function arrayOfStructSort( required array base, string sortType="text", string sortOrder="ASC", string pathToSubElement="" ) {
-    var tmpStruct = {};
-    var returnVal = [];
+  public array function arrayOfStructSort(
+    required array base,
+    string sortType = "text",
+    string sortOrder = "ASC",
+    string pathToSubElement = ""
+  ) {
+    var tmpStruct = { };
+    var returnVal = [ ];
 
-    for( var i=1; i<=arrayLen( base ); i++ ) {
-      tmpStruct[i] = base[i];
+    for( var i = 1; i <= arrayLen( base ); i++ ) {
+      tmpStruct[ i ] = base[ i ];
     }
 
     var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
 
-    for( var i=1; i<=arrayLen( keys ); i++ ) {
-      returnVal[i] = tmpStruct[keys[i]];
+    for( var i = 1; i <= arrayLen( keys ); i++ ) {
+      returnVal[ i ] = tmpStruct[ keys[ i ] ];
     }
 
     return returnVal;
   }
 
-  public any function ormNativeQuery( string sql, struct where={}, struct options={}, array entities=[], unique=false ) {
-    var ormSession = ormGetSession();
+  public any function ormNativeQuery(
+    string sql,
+    struct where = { },
+    struct options = { },
+    array entities = [ ],
+    unique = false
+  ) {
+    var ormSession = ormGetSession( );
     var sqlQuery = ormSession.createSQLQuery( sql );
-    var paramMetadata = sqlQuery.getParameterMetadata();
+    var paramMetadata = sqlQuery.getParameterMetadata( );
 
     for( var key in where ) {
       var value = where[ key ];
 
-      if( isBoolean( value )) {
-        sqlQuery = sqlQuery.setBoolean( key, value );
-      } else if( isArray( value )) {
+      if( isArray( value ) ) {
         sqlQuery = sqlQuery.setParameterList( key, value );
-      } else if( isDate( value )) {
-        var asJavaDate = createObject( "java", "java.util.Date" ).init( value.getTime() );
+      } else if( isDate( value ) && !isNumeric( value ) ) {
+        var asJavaDate = createObject( "java", "java.util.Date" ).init( value.getTime( ) );
         sqlQuery = sqlQuery.setDate( key, asJavaDate );
-      } else if( isNull( value )) {
+      } else if( isNull( value ) ) {
         sqlQuery = sqlQuery.setParameter( key, javaCast( "null", 0 ) );
-      } else if( isSimpleValue( value )) {
-        sqlQuery = sqlQuery.setString( key, value );
+      } else if( isSimpleValue( value ) ) {
+        if ( !compareNoCase( "true", value ) || !compareNoCase( "false", value ) ) {
+          sqlQuery = sqlQuery.setBoolean( key, value );
+        } else {
+          sqlQuery = sqlQuery.setString( key, value );
+        }
       }
     }
 
     for( var key in options ) {
       if( key == "maxResults" ) {
-        sqlQuery = sqlQuery.setMaxResults( options[ key ]);
-        sqlQuery = sqlQuery.setFetchSize( options[ key ]);
+        sqlQuery = sqlQuery.setMaxResults( options[ key ] );
+        sqlQuery = sqlQuery.setFetchSize( options[ key ] );
       } else if( key == "offset" ) {
-        sqlQuery = sqlQuery.setFirstResult( options[ key ]);
-      } else if( key == "cacheable" && !arrayIsEmpty( entities )) {
+        sqlQuery = sqlQuery.setFirstResult( options[ key ] );
+      } else if( key == "cacheable" && !arrayIsEmpty( entities ) ) {
         sqlQuery = sqlQuery.setCacheable( true );
       }
     }
 
     for( var entity in entities ) {
-      if( isStruct( entity )) {
+      if( isStruct( entity ) ) {
         var key = structKeyArray( entity )[ 1 ];
         var value = entity[ key ];
         sqlQuery = sqlQuery.addEntity( key, value );
@@ -143,11 +166,11 @@ component accessors=true {
     }
 
     if( unique ) {
-      return sqlQuery.uniqueResult();
+      return sqlQuery.uniqueResult( );
     }
 
     try {
-      return sqlQuery.list();
+      return sqlQuery.list( );
     } catch ( any e ) {
       writeDump( sql );
       writeDump( sqlQuery );
@@ -158,14 +181,14 @@ component accessors=true {
 
   public string function buildQueryForEntity( entityName ) {
     var entity = entityNew( entityName );
-    var tableName = entity.getTableName();
+    var tableName = entity.getTableName( );
     var sqlEntities = [ entityName ];
     var metaDataTable = "mainEntity";
     var SQLSelect = " SELECT DISTINCT mainEntity.* ";
     var SQLFrom = " FROM #tableName# mainEntity ";
-    if( isInstanceOf( entity, "#config.root#.model.logged" )) {
-      var loggedObj = createObject( "#config.root#.model.logged" ).init();
-      metaDataTable = loggedObj.getTableName();
+    if( isInstanceOf( entity, "#config.root#.model.logged" ) ) {
+      var loggedObj = createObject( "#config.root#.model.logged" ).init( );
+      metaDataTable = loggedObj.getTableName( );
       SQLFrom &= " INNER JOIN #metaDataTable# ON mainEntity.id = #metaDataTable#.id ";
       SQLSelect &= ", #metaDataTable#.* ";
     }
@@ -174,15 +197,37 @@ component accessors=true {
     return SQLSelect & SQLFrom & SQLWhere & SQLOrder;
   }
 
+  public string function escapeField( required string input ) {
+    var result = "";
+    var inputAsArray = listToArray( input, "." );
+    var escapeChars = {
+      "PostgreSQL" = [
+        '"',
+        '"'
+      ],
+      "SQLServer" = [
+        '[',
+        ']'
+      ]
+    };
+
+    for ( var field in inputAsArray ) {
+      var escapedWord = "#escapeChars[ variables.dialect ][ 1 ]##field##escapeChars[ variables.dialect ][ 2 ]#";
+      result = listAppend( result, escapedWord, "." );
+    }
+
+    return result;
+  }
+
   private string function setupVendor( utilityService, ds ) {
     variables.dbvendor = "unknown";
 
     if ( isNull( ds ) ) {
       if( val( server.coldfusion.productversion ) < 10 ) {
-        var appMetadata = application.getApplicationSettings();
+        var appMetadata = application.getApplicationSettings( );
         ds = appMetadata.datasource;
       } else {
-        var appMetadata = getApplicationMetaData();
+        var appMetadata = getApplicationMetaData( );
         if( structKeyExists( appMetadata, "ormsettings" ) && structKeyExists( appMetadata.ormsettings, "datasource" ) ) {
           ds = appMetadata.ormsettings.datasource;
         } else if ( structKeyExists( appMetadata, "datasource" ) ) {
@@ -195,6 +240,74 @@ component accessors=true {
       var dbinfo = utilityService.getDbInfo( ds );
 
       variables.dbvendor = dbinfo.DATABASE_PRODUCTNAME;
+      variables.dialect = listFirst( dbinfo.DRIVER_NAME, " " );
     }
+  }
+
+  private string function buildCacheId( required string sqlStatement, required any queryParams ) {
+    var params = [ ];
+    var sortedKeys = structKeyArray( queryParams );
+    arraySort( sortedKeys, "textnocase" );
+    for ( var key in sortedKeys ) {
+      var value = queryParams[ key ];
+      if ( isStruct( value ) ) {
+        value = value.value;
+      }
+      if ( isSimpleValue( value ) ) {
+        arrayAppend( params, "#key#=#value#" );
+      }
+    }
+    return "query_" & hash( lcase( reReplace( sqlStatement, '\s+', ' ', 'all' ) ) & serializeJson( params ) );
+  }
+
+  private void function addDatasource( queryOptions ) {
+    if ( ( structKeyExists( queryOptions, "dbtype" ) && queryOptions.dbtype == "query" ) || structKeyExists(
+      queryOptions,
+      "datasource"
+    ) ) {
+      return;
+    }
+
+    if ( !isNull( variables.ds ) ) {
+      queryOptions.datasource = variables.ds;
+    }
+  }
+
+  private boolean function isModernCFML( ) {
+    return ( structKeyExists( server, "railo" ) ||
+             structKeyExists( server, "lucee" ) || (
+             structKeyExists( server, "coldfusion" ) &&
+               int( listFirst( server.coldfusion.productVersion ) ) >= 11
+             ) );
+  }
+
+  private array function normalizeParameters( required any queryParams ) {
+    var result = [ ];
+
+    if( isArray( queryParams ) ) {
+      for( var param in queryParams ) {
+        if( isNull( param ) ) {
+          arrayAppend( result, { "null" = true } );
+        } else if( isSimpleValue( param ) ) {
+          arrayAppend( result, { "value" = param } );
+        } else {
+          arrayAppend( result, param );
+        }
+      }
+    } else if( isStruct( queryParams ) ) {
+      for( var key in queryParams ) {
+        if( isSimpleValue( queryParams[ key ] ) ) {
+          arrayAppend( result, { "name" = key, "value" = queryParams[ key ] } );
+        } else {
+          var parameter = { "name" = key };
+          structAppend( parameter, queryParams[ key ] );
+          arrayAppend( result, parameter );
+        }
+      }
+    } else {
+      throw "unexpected type for queryParams";
+    }
+
+    return result;
   }
 }

@@ -1,0 +1,28 @@
+{
+  "appIsLive": true,
+  "contentSubsystems": "",
+  "datasource": "",
+  "debugEmail": "beta-errors@e-line.nl",
+  "debugIP": "127.0.0.1",
+  "defaultLanguage": "en_US",
+  "disableSecurity": false,
+  "dontSecureFQA": "",
+  "encryptKey": "Xeexnvtvtz7wbxu4v892gHjs9ecwL778C2h8MhM4DumnhDDYnqEycmc2erytpNXR",
+  "log": true,
+  "logLevel": "information",
+  "logNotes": false,
+  "nukeScript": "",
+  "ownerEmail": "administrator@e-line.nl",
+  "paths": {
+    "basecfc": "",
+    "errors": "C:/TEMP",
+    "fileUploads": ""
+  },
+  "reloadpw": "1",
+  "root": "root",
+  "secureDefaultSubsystem": true,
+  "securedSubsystems": "",
+  "showDebug": false,
+  "templates": [],
+  "useOrm": true
+}
