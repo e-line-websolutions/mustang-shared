@@ -462,7 +462,7 @@ component accessors=true {
   }
 
   public boolean function isLiveUrl( ) {
-    var nonLiveWords = listToArray( "dev,staging,home,local" );
+    var nonLiveWords = listToArray( "dev,staging,home,local,mac" );
 
     for ( var part in nonLiveWords ) {
       if ( listFindNoCase( cgi.server_name, part, "." ) ) {

@@ -601,7 +601,7 @@ component accessors=true {
     return result;
   }
 
-  public any function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
+  public array function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
     if ( !isNull( filter ) && !structIsEmpty( filter ) ) {
       var filters = [ ];
       for ( var key in filter ) {
@@ -808,14 +808,14 @@ component accessors=true {
     */
   public array function queryToArrayOfStructs( required query inputQuery ) {
     var result = [ ];
-    var cols = inputQuery.getMeta( ).getColumnLabels( );
+    var cols = getMetaData( inputQuery );
     var noOfCols = arrayLen( cols );
 
     for( var i = 1; i <= inputQuery.recordCount; i++ ) {
       var row = { };
       for( var j = 1; j <= noOfCols; j++ ) {
         var col = cols[ j ];
-        row[ col ] = inputQuery[ col ][ i ];
+        row[ col.name ] = inputQuery[ col.name ][ i ];
       }
       arrayAppend( result, row );
     }

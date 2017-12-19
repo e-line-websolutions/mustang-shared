@@ -388,7 +388,7 @@
   }
 
   public boolean function isValidEmail( string email ){
-    return REFindNoCase( '^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,24}$', email ) gte 1;
+    return reFindNoCase( "^[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,24}$", email );
   }
 
   /**
