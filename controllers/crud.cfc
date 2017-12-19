@@ -504,6 +504,7 @@ component accessors=true {
     var object = entityNew( variables.entity );
     var entityInstanceVars = object.getInstanceVariables( );
 
+    rc.subclasses = object.getSubClasses( );
     rc.canBeLogged = ( config.log && isInstanceOf( object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
 
     // load form properties
