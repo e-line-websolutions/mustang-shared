@@ -16,12 +16,18 @@ component accessors=true {
       var toEmail = isSimpleValue( to ) ? to : to.getEmail( );
       var sendTo = variables.config.appIsLive ? toEmail : variables.config.debugEmail;
 
-      if( !variables.utilityService.isValidEmail( from ) ) {
-        throw( "Invalid from address", "emailService.send.invalidEmailError", from );
+      var emailsFrom = listToArray( from );
+      for( emailFrom in emailsFrom ){
+        if( !variables.utilityService.isValidEmail( emailFrom ) ) {
+          throw( "Invalid to address", "emailService.send.invalidEmailError", emailFrom );
+        }
       }
 
-      if( !variables.utilityService.isValidEmail( sendTo ) ) {
-        throw( "Invalid to address", "emailService.send.invalidEmailError", sendTo );
+      var emailsTo = listToArray( sendTo );
+      for( emailTo in emailsTo ){
+        if( !variables.utilityService.isValidEmail( emailTo ) ) {
+          throw( "Invalid to address", "emailService.send.invalidEmailError", emailTo );
+        }
       }
 
       var message = new mail( );
