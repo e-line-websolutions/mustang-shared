@@ -780,7 +780,7 @@ component accessors=true {
     return result;
   }
 
-  public array function queryToTree( required query inputQuery, numeric parentId=0 ) {
+  public array function queryToTree( required query inputQuery, numeric parentId = 0 ) {
     var asArrayOfStructs = queryToArrayOfStructs( inputQuery );
     var parents = { '#arguments.parentId#' = { "children" = [ ] } };
 
@@ -818,6 +818,27 @@ component accessors=true {
         row[ col.name ] = inputQuery[ col.name ][ i ];
       }
       arrayAppend( result, row );
+    }
+
+    return result;
+  }
+
+  public array function reMatchGroups( required string text, required string pattern, string scope = "all" ) {
+    var jPattern = createObject( "java", "java.util.regex.Pattern" ).Compile( javaCast( "string", pattern ) );
+    var matcher = jPattern.Matcher( javaCast( "string", text ) );
+    var result = [ ];
+
+    while( matcher.Find( ) ) {
+      var groups = [ ];
+      for ( var groupIndex = 0; groupIndex <= matcher.GroupCount( ); groupIndex++ ) {
+        arrayAppend( groups, matcher.Group( javaCast( "int", groupIndex ) ) );
+      }
+
+      arrayAppend( result, groups );
+
+      if ( scope == "one" ) {
+        break;
+      }
     }
 
     return result;
