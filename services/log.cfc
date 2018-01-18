@@ -70,12 +70,7 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile(
-    any data,
-    boolean force = false,
-    boolean saveStacktrace = false,
-    string level = "error"
-  ) {
+  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false, string level = "error" ) {
     if ( !variables.config.showDebug && !force ) {
       return;
     }

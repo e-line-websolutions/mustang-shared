@@ -135,8 +135,7 @@ component {
       try {
         var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
         rollbar.reportMessage( exception.message, "critical", exception );
-      } catch ( any e ) {
-      }
+      } catch ( any e ) { }
     }
 
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError ) {
@@ -147,10 +146,11 @@ component {
           .setContentType( "text/plain" );
       }
 
-      writeOutput( exception.message );
+      writeOutput( "Error: " & exception.message );
 
       if ( showDebugError ) {
-        writeOutput( chr( 13 ) & chr( 13 ) & exception.stackTrace );
+        writeOutput( chr( 13 ) & chr( 13 ) & "Detail: " & exception.detail );
+        writeOutput( chr( 13 ) & chr( 13 ) & "Stacktrace: " & exception.stackTrace );
       }
 
       abort;
