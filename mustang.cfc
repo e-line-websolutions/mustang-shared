@@ -151,7 +151,7 @@ component extends=framework.one {
       }
     }
 
-    logService.writeLogLevel( "Application initialized", request.appName );
+    logService.writeLogLevel( "Application initialized", request.appName, "information" );
   }
 
   public void function setupRequest( ) {

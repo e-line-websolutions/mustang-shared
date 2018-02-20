@@ -25,7 +25,7 @@ component {
       "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name
     };
 
-    var mustangSharedRoot = getDirectoryFromPath( getCurrentTemplatePath( ) );
+    var mustangSharedRoot = getMustangRoot( );
 
     var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & "/config/global.json", "utf-8" ) );
     mergeStructs( globalConfig, defaultSettings );
@@ -67,6 +67,10 @@ component {
   public string function getRoot( string basePath = variables.basePath ) {
     var tmp = fixPath( basePath );
     return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
+  }
+
+  public string function getMustangRoot( ) {
+    return getDirectoryFromPath( getCurrentTemplatePath( ) );
   }
 
   public void function cleanXHTMLQueryString( ) {
