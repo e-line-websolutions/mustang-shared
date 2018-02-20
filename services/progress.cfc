@@ -98,7 +98,7 @@ component accessors=true {
     return result;
   }
 
-  public void function setStatus( required string status ) {
+  public void function setStatus( required string status, boolean writeToLog = true ) {
     if ( !variables.enabled ) {
       return;
     }
@@ -110,7 +110,9 @@ component accessors=true {
       if ( !variables.utilityService.amInCFThread( ) ) {
         getPageContext( ).getOut( ).flush( );
       }
-    } else {
+    }
+
+    if ( writeToLog ) {
       variables.logService.writeLogLevel( "#variables.name# - " & variables.status, "progressService", "information" );
     }
   }

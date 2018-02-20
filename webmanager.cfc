@@ -69,6 +69,14 @@ component extends=framework.one {
   this.sessionManagement = true;
   this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
 
+  mustangRoot = variables.mstng.getMustangRoot( );
+
+  this.javaSettings.loadPaths = [
+    mustangRoot & "/lib/json/gson-2.8.jar"
+  ];
+
+  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & "/lib/unirest", false, "path", "*.jar" ) );
+
   if ( isNull( request.appSimpleName ) ) {
     request.appSimpleName = listFirst( request.appName, " ,-_" );
   }
