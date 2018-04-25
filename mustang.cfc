@@ -131,7 +131,7 @@ component extends=framework.one {
 
         var hbmxmlFiles = directoryList( modelPath, true, "path", "*.hbmxml" );
 
-        if ( arrayLen( hbmxmlFiles ) ) {
+        if ( !arrayIsEmpty( hbmxmlFiles ) ) {
           if ( !directoryExists( variables.root & "documentation" ) ) {
             directoryCreate( variables.root & "documentation" );
           }
