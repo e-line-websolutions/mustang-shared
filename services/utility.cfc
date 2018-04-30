@@ -166,7 +166,8 @@
   }
 
   public string function variableFormat( inputString ) {
-    return lCase( reReplace( reReplace( trim( utf8ToAscii( inputString ) ), '[^\w -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
+    return lCase( reReplace( reReplace( trim( inputString), '[^0-9A-Za-z -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
+    //return lCase( reReplace( reReplace( trim( utf8ToAscii( inputString ) ), '[^\w -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
   }
 
   public String function utf8ToAscii( required string input ) {
