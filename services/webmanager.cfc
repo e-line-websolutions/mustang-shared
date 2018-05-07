@@ -716,7 +716,13 @@ component accessors=true {
     return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
   }
 
-  private array function getFullNavigation( ) {
+  public array function getCompleteNavigation(){
+    return getFullNavigation( true );
+  }
+
+  public array function getFullNavigation( includeHidden = false ) {
+    var hiddenNav = includeHidden ? "" : "AND     LEFT( tbl_assetContent.assetcontent_sTitleText, 1 ) <> '_'";
+
     var sql = "
       SELECT    tbl_assetMeta.assetmeta_x_nBwsID AS websiteId,
                 mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId,
@@ -736,7 +742,7 @@ component accessors=true {
         AND     tbl_assetMeta.assetmeta_x_nStatusID = 100
         AND     tbl_assetMeta.assetmeta_x_nTypeID = 2
         AND     tbl_assetMeta.assetmeta_x_nBmID = 14
-        AND     LEFT( tbl_assetContent.assetcontent_sTitleText, 1 ) <> '_'
+        #hiddenNav#
 
       ORDER BY  parentSortKey, parentId, sortKey, menuId
     ";
