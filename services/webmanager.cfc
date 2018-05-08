@@ -720,7 +720,7 @@ component accessors=true {
     return getFullNavigation( true );
   }
 
-  public array function getFullNavigation( includeHidden = false ) {
+  public array function getFullNavigation( numeric websiteId = variables.websiteId, boolean includeHidden = false ) {
     var hiddenNav = includeHidden ? "" : "AND     LEFT( tbl_assetContent.assetcontent_sTitleText, 1 ) <> '_'";
 
     var sql = "
