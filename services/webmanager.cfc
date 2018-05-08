@@ -717,7 +717,7 @@ component accessors=true {
   }
 
   public array function getCompleteNavigation(){
-    return getFullNavigation( true );
+    return getFullNavigation( includeHidden = true );
   }
 
   public array function getFullNavigation( numeric websiteId = variables.websiteId, boolean includeHidden = false ) {
