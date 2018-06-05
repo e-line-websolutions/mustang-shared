@@ -52,8 +52,8 @@ component accessors=true {
   public any function getOptionByName( required string entityName, required string optionName, boolean createIfMissing = false ) {
     entityName = trim( entityName );
 
-    if( !len( entityName ) ) {
-      throw( "Missing entity name", "optionService.getOptionByName.missingEntityError" );
+    if( !len( entityName ) || entityName == "ignore" ) {
+      return;
     }
 
     if( !arrayFindNoCase( variables.optionEntities, entityName ) ) {
@@ -63,8 +63,10 @@ component accessors=true {
     optionName = trim( optionName );
 
     if( !len( optionName ) ) {
-      throw( "Missing option name for #entityName#", "optionService.getOptionByName.missingOptionError" );
+      return;
     }
+
+    logService.writeLogLevel( "optionService.getOptionByName( #entityName#, #optionName# ) called" );
 
     lock name="#request.appName#-optionService-getOptionByName-#entityName#-#optionName#" timeout="10" type="exclusive" {
       var searchOptions = __searchOptions( entityName, optionName );
