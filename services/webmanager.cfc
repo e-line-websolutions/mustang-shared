@@ -72,6 +72,7 @@ component accessors=true {
     pageData[ "currentMenuItem" ] = getCurrentMenuItem( seoPathArray );
     pageData[ "pageTitle" ] = getPageTitle( seoPathArray );
     pageData[ "websiteDetails" ] = getWebsiteDetails( );
+    pageData[ "currentBaseMenuItemId" ] = -1;
 
     switch ( variables.navigationType ) {
       case "full":
@@ -87,6 +88,10 @@ component accessors=true {
     for ( var i = 1; i <= pathLength; i++ ) {
       var seoPathArrayAtCurrentLevel = variables.utilityService.arrayTrim( seoPathArray, i );
       var currentMenuId = getMenuIdFromPath( seoPathArrayAtCurrentLevel );
+
+      if ( i <= 2 ) {
+        pageData[ "currentBaseMenuItemId" ] = currentMenuId;
+      }
 
       if ( i == pathLength ) {
         pageData.articles = getArticles( currentMenuId );
