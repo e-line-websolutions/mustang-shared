@@ -5,6 +5,10 @@ component accessors=true {
   property queryService;
   property fw;
 
+  public component function init( ds ) {
+    return this;
+  }
+
   public array function getModuleContent( required array moduleConfig ) {
     switch ( moduleConfig[ 1 ] ) {
       case "sOutputFormat=asList" :
@@ -12,7 +16,7 @@ component accessors=true {
           groupId = moduleConfig[ 2 ],
           whereConfig = moduleConfig[ 3 ]
         };
-        return getDocuments( argumentCollection = args );
+        return callDocDb( argumentCollection = args );
 
       default :
         throw(
@@ -24,26 +28,26 @@ component accessors=true {
   }
 
   public any function getDocumentById( required numeric documentId ) {
-    var result = getDocuments( documentId = documentId );
-
+    var result = callDocDb( argumentCollection = arguments );
     if ( arrayLen( result ) == 1 ) {
       return result[ 1 ];
     }
   }
 
   public array function getDocumentsByGroupId( required numeric groupId ) {
-    return getDocuments( groupId = groupId );
+    return callDocDb( argumentCollection = arguments );
   }
 
   public array function searchDocuments( required string whereConfig ) {
-    return getDocuments( whereConfig = whereConfig );
+    return callDocDb( argumentCollection = arguments );
+  }
+
+  public array function getDocumentByName( required string documentName ) {
+    return callDocDb( argumentCollection = arguments );
   }
 
   public array function getDocuments( numeric documentId, numeric groupId, array whereConfig ) {
-    var docdb = { };
-    var input = arguments;
-    include "/mustang/lib/webmanager/modules/documentcatalogue/docdb_load_documents.cfm";
-    return queryService.toArray( qry_select_document );
+    return callDocDb( argumentCollection = arguments );
   }
 
   public any function getFields( required numeric groupId, string fieldIds = "" ) {
@@ -113,5 +117,12 @@ component accessors=true {
     var args = duplicate( arguments );
     args.documentId = 0;
     return updateDocument( argumentCollection = args );
+  }
+
+  private array function callDocDb( ) {
+    var docdb = { };
+    var input = arguments;
+    include "/mustang/lib/webmanager/modules/documentcatalogue/docdb_load_documents.cfm";
+    return queryService.toArray( qry_select_document );
   }
 }
