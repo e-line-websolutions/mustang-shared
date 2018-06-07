@@ -10,6 +10,7 @@
   param input.whereConfig=[];
   param input.queryname='qry_select_document';
   param input.search='';
+  param input.documentName='';
   param input.qOwnQry='';
   param input.bCountClicks=false;
   param input.bBackwardsCompatible=true;
@@ -354,7 +355,7 @@
               INNER JOIN  tbl_savedData ON  tbl_savedData.savedData_x_nProductID = tbl_product.product_nID
             </cfif>
 
-  WHERE     tbl_product.product_nBwsID = #val( listFirst( input.nBwsID, "';+" ) )#
+  WHERE     tbl_product.product_nBwsID = #val( trim( listFirst( input.nBwsID, "';+--" ) ) )#
 
             <cfif input.nOrderBy neq -1>
               AND tbl_savedData.savedData_x_nEigenschapID = #listFirst( input.nOrderBy, "';+" )#
@@ -395,6 +396,12 @@
               <cfloop list="#trim( input.search )#" delimiters=" " index="docdb.word">
                 AND tbl_product.Product_sNaam like '%#docdb.word#%'
               </cfloop>
+            </cfif>
+
+            <!--- [mjh] select by exact match on name field: --->
+            <cfif isDefined( "input.documentName" ) and len( trim( input.documentName ) )>
+              <cfset docdb.bDontDisplay = false>
+              AND tbl_product.Product_sNaam = '#input.documentName#'
             </cfif>
 
             <!--- [mjh] If a group id has been given, use it to select the products: --->
