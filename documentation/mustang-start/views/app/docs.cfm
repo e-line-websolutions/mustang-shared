@@ -1,0 +1,1 @@
+Docs generated into <cfoutput>#rc.docsPath#</cfoutput>

@@ -1,0 +1,1 @@
+<cfoutput>#redirect( '.login' )#</cfoutput>

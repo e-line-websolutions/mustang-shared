@@ -1,0 +1,11 @@
+{
+  "appIsLive": false,
+  "loglevel": "fatal",
+  "debugEmail": "administrator@e-line.nl",
+  "debugIP": "127.0.0.1,95.97.10.147",
+  "defaultLanguage": "en_US",
+  "encryptKey": "tc4VnkmNAb78tawcGEGFwyMhvqv93Wf76LTzMyLtvwq8eyxsxb6ueXqhJmAWfMmA",
+  "nukescript": "../populate.sql",
+  "securedSubsystems": "adminapi,api",
+  "showDebug": false
+}
