@@ -112,7 +112,7 @@ component accessors=true {
   }
 
   public string function hashPassword( required string password ) {
-    var minSpeed = 250;
+    var minSpeed = 100;
     var cost = 4;
     do {
       var salt = variables.bcrypt.gensalt( cost );
