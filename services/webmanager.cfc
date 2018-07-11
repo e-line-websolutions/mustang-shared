@@ -577,7 +577,7 @@ component accessors=true {
     return getMenuIdFromPath( path );
   }
 
-  private numeric function getMenuIdFromPath( required any path ) {
+  public numeric function getMenuIdFromPath( required any path ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: getMenuIdFromPath() called." );
     var pathArray = isArray( path ) ? path : listToArray( path, "/" );
     var pathLength = arrayLen( pathArray );
