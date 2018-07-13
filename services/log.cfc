@@ -70,7 +70,9 @@ component accessors=true {
     return false;
   }
 
-  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false, string level = "error" ) {
+  public void function dumpToFile( any data, boolean force = false, boolean saveStacktrace = false, string level = "error", string title = "" ) {
+    param arguments.title = "";
+
     if ( !variables.config.showDebug && !force ) {
       return;
     }
@@ -94,29 +96,35 @@ component accessors=true {
       if ( !variables.utilityService.amInCFThread( ) ) {
         var threadData = { data = asStruct, args = arguments };
         thread name="debugWritingThread_#createUUID( )#" threadData = threadData {
-          writeToFile( threadData.data, threadData.args.level );
+          writeToFile( data = threadData.data, fileNamePrefix = threadData.args.level, title = threadData.args.title );
         }
         return;
       }
 
-      writeToFile( asStruct, level );
+      writeToFile( data = asStruct, fileNamePrefix = level, title = title );
     } catch ( any e ) {
       writeLogLevel( "Error writing data to file", "logService", "error" );
       try {
-        writeToFile( duplicate( e ) );
+        writeToFile( data = duplicate( e ), title = title );
       } catch ( any e ) {
         writeLogLevel( e.message, "logService", "fatal" );
       }
     }
   }
 
-  private void function writeToFile( any data, fileNamePrefix = "error" ) {
+  private void function writeToFile( any data, string fileNamePrefix = "error", string title = "" ) {
     param variables.config.paths.errors="C:/TEMP";
 
     variables.utilityService.setCFSetting( "requestTimeout", 600 );
 
-    savecontent variable="local.debug" {
+    var debug = "";
+
+    savecontent variable="debug" {
       writeDump( data );
+    }
+
+    if ( len( title ) ) {
+      debug = '<h1>' & title & '</h1>' & debug;
     }
 
     fileWrite( "#variables.config.paths.errors#/#fileNamePrefix#-#createUUID( )#.html", debug );

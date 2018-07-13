@@ -25,6 +25,7 @@ component accessors=true {
     structAppend( variables, arguments, true );
 
     param config.showDebug=false;
+    param config.redirectToMainUrl=true;
 
     variables.supportedLocales = {
       "nl" = "nl_NL",
@@ -345,7 +346,7 @@ component accessors=true {
   public void function relocateOnce( string domainname = "" ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
 
-    if ( domainname == "" || !isLiveUrl( ) ) {
+    if ( domainname == "" || !isLiveUrl( ) || !config.redirectToMainUrl ) {
       return;
     }
 

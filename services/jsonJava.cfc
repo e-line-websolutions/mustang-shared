@@ -19,6 +19,10 @@ component accessors=true {
     return variables.gson.toJsonTree( source ).toString( );
   }
 
+  public any function jsonFileToCf( required string path ) {
+    return this.deserialize( fileRead( path, "utf-8" ) );
+  }
+
   public any function deserialize( required string source ) {
     source = lTrim( source );
 
