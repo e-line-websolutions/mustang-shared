@@ -10,13 +10,15 @@ component {
 
   public struct function readConfig( string site = cgi.server_name ) {
     if ( !structKeyExists( url, "reload" ) ) {
-      var cachedConfig = cacheGet( "config_#variables.name#" );
+      lock name="lock_mustang_#variables.name#_config_read" timeout="3" type="readonly" {
+        var cachedConfig = cacheGet( "config_#variables.name#" );
 
-      if ( !isNull( cachedConfig ) ) {
-        param cachedConfig.appIsLive=true;
+        if ( !isNull( cachedConfig ) ) {
+          param cachedConfig.appIsLive=true;
 
-        if ( cachedConfig.appIsLive ) {
-          return cachedConfig;
+          if ( cachedConfig.appIsLive ) {
+            return cachedConfig;
+          }
         }
       }
     }
@@ -40,7 +42,9 @@ component {
       mergeStructs( siteConfig, defaultSettings );
     }
 
-    cachePut( "config_#variables.name#", defaultSettings );
+    lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {
+      cachePut( "config_#variables.name#", defaultSettings );
+    }
 
     return defaultSettings;
   }

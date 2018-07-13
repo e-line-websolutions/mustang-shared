@@ -1,5 +1,6 @@
 component accessors=true {
   property config;
+  property logService;
   property struct allOptions;
   property array optionEntities;
 
