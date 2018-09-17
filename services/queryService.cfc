@@ -84,7 +84,7 @@ component accessors=true {
     }
 
     if ( !isNull( cacheFor ) ) {
-      cachePut( cacheId, result, cacheFor );
+      cachePut( cacheId, result, cacheFor, createTimeSpan( 0, 1, 0, 0 ) );
     }
 
     return result;
