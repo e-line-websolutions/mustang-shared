@@ -1,6 +1,7 @@
 component accessors=true {
   property config;
   property utilityService;
+  property logService;
 
   property string filePath;
   property string fileName;
@@ -21,7 +22,7 @@ component accessors=true {
       }
 
       try {
-        var uploadState = fileUpload( variables.config.paths.fileUploads & "/" & destination & "/excelfile-#createUuid()#.tmp", uploadField, "", "MakeUnique" );
+        var uploadState = fileUpload( variables.config.paths.fileUploads & "/" & destination & "/file-#createUuid()#.tmp", uploadField, "", "MakeUnique" );
         variables.filePath = uploadState.serverDirectory & "/" & uploadState.serverFile;
         variables.originalFileName = uploadState.clientFile;
         variables.fileName = uploadState.serverFile;
@@ -84,7 +85,7 @@ component accessors=true {
 
     if ( isNull( result ) ) {
       var result = fileExists( filePath );
-      cachePut( cacheKey, result );
+      cachePut( cacheKey, result, createTimeSpan( 7, 0, 0, 0 ), createTimeSpan( 1, 0, 0, 0 ) );
     }
 
     return result;

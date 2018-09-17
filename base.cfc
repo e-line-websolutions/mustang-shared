@@ -146,7 +146,7 @@ component {
       } catch ( any e ) { }
     }
 
-    if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError ) {
+    if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError || config.showDebug ) {
       if ( structKeyExists( server, "lucee" ) ) {
         cfcontent( type = "text/plain" );
       } else {
@@ -164,14 +164,22 @@ component {
       abort;
     }
 
+    var errorDump = "";
+    savecontent variable="errorDump" {
+      writeDump( exception );
+      writeDump( cgi );
+    }
+
+    fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
+
     if ( fileExists( variables.root & "/webroot/error.html" ) ) {
-      include "/root/webroot/error.html";
+      include "/#config.root#/webroot/error.html";
       writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
       abort;
     }
 
     if ( fileExists( variables.root & "/www/error.html" ) ) {
-      include "/root/www/error.html";
+      include "/#config.root#/www/error.html";
       writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
       abort;
     }

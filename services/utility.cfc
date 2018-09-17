@@ -98,10 +98,10 @@
       }
 
       // Update attempts:
-      cachePut( cacheID, rate, cacheTime );
+      cachePut( cacheID, rate, cacheTime, createTimeSpan( 0, 1, 0, 0 ) );
     } else {
       // Reset attempts:
-      cachePut( cacheID, rate, cacheTime );
+      cachePut( cacheID, rate, cacheTime, createTimeSpan( 0, 1, 0, 0 ) );
     }
   }
 
@@ -312,7 +312,7 @@
 
     if ( !structKeyExists( cachedPaths, absolutePath ) ) {
       cachedPaths[ absolutePath ] = fileExists( absolutePath );
-      cachePut( "cachedPaths_#request.appName#", cachedPaths );
+      cachePut( "cachedPaths_#request.appName#", cachedPaths, createTimeSpan( 7, 0, 0, 0 ), createTimeSpan( 1, 0, 0, 0 ) );
     }
 
     return cachedPaths[ absolutePath ];
@@ -424,7 +424,7 @@
    * @version 3, august 11, 2004
    * @version 4, may 5, 2017
    */
-  function activateUrl(
+  public string function activateUrl(
     required string input,
     string target = "",
     string paragraph = false,
@@ -518,6 +518,23 @@
     // Clean up the session
     var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
     sessionTracker.cleanUp( application.applicationName, sessionId );
+  }
+
+  public numeric function currencyToNumeric( required string input, string currencySymbol = chr( 8364 ) ) {
+    var oldLocale = setLocale( 'Dutch (Standard)' );
+
+    input = trim( replace( input, chr( 8364 ), '' ) );
+    if ( len( input ) ) {
+      input = lsParseNumber( input );
+    }
+
+    setLocale( oldLocale );
+
+    if ( !isNumeric( input ) ) {
+      return 0;
+    }
+
+    return input;
   }
   </cfscript>
 
