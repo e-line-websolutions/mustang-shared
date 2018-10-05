@@ -617,6 +617,10 @@ component accessors=true {
       xPathString &= "[" & arrayToList( filters, " and " ) & "]";
     }
 
+    if ( !isXml( data ) || xPathString == '' ) {
+      return [];
+    }
+
     return xmlSearch( data, xPathString );
   }
 
