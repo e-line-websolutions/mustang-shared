@@ -93,10 +93,10 @@ component accessors=true {
     }
 
     var tempAuth = {
-      isLoggedIn = true,
-      user = userAsStruct,
-      userid = user.getID( ),
-      role = securityRole
+      "isLoggedIn" = true,
+      "user" = userAsStruct,
+      "userid" = user.getID( ),
+      "role" = securityRole
     };
 
     if ( isAdmin( securityRole.name ) ) {
@@ -276,7 +276,7 @@ component accessors=true {
     return {
       "isLoggedIn" = false,
       "user" = { },
-      "role" = { },
+      "role" = { "name" = "none" },
       "userid" = '',
       "canAccessAdmin" = false
     };
