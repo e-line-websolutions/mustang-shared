@@ -1,8 +1,8 @@
 component {
   variables.tokenName = "access_token";
 
-  public boolean function hasValidOauthAccessToken( ) {
-    var storedOauth = getOauth( );
+  public boolean function hasValidOauthAccessToken( string app = "default" ) {
+    var storedOauth = getOauth( app );
 
     if ( structIsEmpty( storedOauth ) ) {
       return false;
@@ -12,27 +12,29 @@ component {
       return false;
     }
 
-    if ( dateDiff( "s", storedOauth.store_date, now( ) ) > getOauthKey( "store_date" ) ) {
+    if ( dateDiff( "s", storedOauth.store_date, now( ) ) > getOauthKey( "store_date", app ) ) {
       return false;
     }
 
     return true;
   }
 
-  public void function storeOauth( oauth ) {
+  public void function storeOauth( oauth, string app = "default" ) {
     oauth.store_date = now( );
-    application.oauth = oauth;
+    application[app] = {
+      oauth = oauth
+    };
   }
 
-  public struct function getOauth( ) {
-    if ( !structKeyExists( application, "oauth" ) ) {
+  public struct function getOauth( string app = "default" ) {
+    if ( !structKeyExists( application, app ) || !structKeyExists( application[app], "oauth" ) ) {
       return { };
     }
-    return application.oauth;
+    return application[app].oauth;
   }
 
-  public any function getOauthKey( key ) {
-    var tmp = getOauth( );
+  public any function getOauthKey( key, string app = "default" ) {
+    var tmp = getOauth( app );
 
     if ( !structKeyExists( tmp, key ) ) {
       return "";
