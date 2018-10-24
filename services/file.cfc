@@ -96,30 +96,36 @@ component accessors=true {
     fileWrite( location , binarycode );
   }
 
-  private string function getMimetype( required string filePath ) {
-    switch( listLast( filePath, '.' ) ) {
+  public string function getMimetype( required string filePath ) {
+    switch ( listLast( filePath, '.' ) ) {
       case 'jpg' :
       case 'jpe' :
       case 'jpeg' :
-        return "image/jpeg";
+        return 'image/jpeg';
       case 'gif' :
-        return "image/gif";
+        return 'image/gif';
       case 'png' :
-        return "image/png";
+        return 'image/png';
       case 'pdf' :
-        return "application/pdf";
+        return 'application/pdf';
       case 'doc' :
-        return "application/msword";
+        return 'application/msword';
       case 'zip' :
-        return "application/zip";
+        return 'application/zip';
       case 'rar' :
-        return "application/x-rar-compressed";
+        return 'application/x-rar-compressed';
       case 'swf' :
-        return "application/x-shockwave-flash";
+        return 'application/x-shockwave-flash';
       case 'svg' :
-        return "image/svg+xml";
+        return 'image/svg+xml';
+      case 'xls' :
+        return 'application/vnd.ms-excel';
+      case 'xlsx' :
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'xlsm' :
+        return 'application/vnd.ms-excel.sheet.macroEnabled.12';
     }
 
-    return "application/octet-stream";
+    return 'application/octet-stream';
   }
 }
