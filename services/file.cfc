@@ -96,8 +96,8 @@ component accessors=true {
     fileWrite( location , binarycode );
   }
 
-  public string function getMimetype( required string filePath ) {
-    switch ( listLast( filePath, '.' ) ) {
+  public string function getMimetype( string filePath = variables.originalFileName ) {
+    switch ( getFiletype( filePath ) ) {
       case 'jpg' :
       case 'jpe' :
       case 'jpeg' :
@@ -127,5 +127,9 @@ component accessors=true {
     }
 
     return 'application/octet-stream';
+  }
+
+  public string function getFiletype( string filePath = variables.originalFileName ) {
+    return listLast( filePath, '.' );
   }
 }
