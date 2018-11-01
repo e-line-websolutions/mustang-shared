@@ -213,7 +213,12 @@ component accessors=true {
       }
     }
 
-    var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
+    try {
+      var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
+    } catch ( any e ) {
+      return base;
+    }
+
     var keysLength = arrayLen( keys );
     var returnVal = [ ];
 
@@ -621,7 +626,15 @@ component accessors=true {
       return [];
     }
 
-    return xmlSearch( data, xPathString );
+    try {
+      return xmlSearch( data, xPathString );
+    } catch ( any e ) {
+      variables.logService.dumpToFile( {
+        data = data,
+        xPathString = xPathString,
+        e = e
+      }, true );
+    }
   }
 
   public string function xmlFromStruct( struct source, string prefix = "", string namespace ) {
