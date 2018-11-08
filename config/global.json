@@ -15,7 +15,7 @@
   "ownerEmail": "administrator@e-line.nl",
   "paths": {
     "basecfc": "",
-    "errors": "C:/TEMP",
+    "errors": "D:/mustang-errors",
     "fileUploads": ""
   },
   "reloadpw": "1",

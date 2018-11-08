@@ -100,14 +100,16 @@ component accessors=true {
   ) {
     var tmpStruct = { };
     var returnVal = [ ];
+    var baseArrayLen = arrayLen( base );
 
-    for( var i = 1; i <= arrayLen( base ); i++ ) {
+    for( var i = 1; i <= baseArrayLen; i++ ) {
       tmpStruct[ i ] = base[ i ];
     }
 
     var keys = structSort( tmpStruct, sortType, sortOrder, pathToSubElement );
 
-    for( var i = 1; i <= arrayLen( keys ); i++ ) {
+    var keysArrayLen = arrayLen( keys );
+    for( var i = 1; i <= keysArrayLen; i++ ) {
       returnVal[ i ] = tmpStruct[ keys[ i ] ];
     }
 
