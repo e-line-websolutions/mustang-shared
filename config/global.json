@@ -24,5 +24,6 @@
   "securedSubsystems": "",
   "showDebug": false,
   "templates": [],
-  "useOrm": true
+  "useOrm": true,
+  "useHttps": false
 }

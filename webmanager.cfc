@@ -90,38 +90,41 @@ component extends=framework.one {
     structDelete( application, "cache" );
   }
 
-  public void function setupRequest( ) {
-    frameworkTrace( "<b>webmanager</b>: setupRequest() called." );
+  public void function setupRequest() {
+    frameworkTrace( '<b>webmanager</b>: setupRequest() called.' );
 
-    var reset = isFrameworkReloadRequest( );
+    var reset = isFrameworkReloadRequest();
 
     if ( reset ) {
-      setupSession( );
+      setupSession();
     }
 
-    var bf = getDefaultBeanFactory( );
-    var i18n = bf.getBean( "translationService" );
-    var util = bf.getBean( "utilityService" );
-    var wm = bf.getBean( "webmanagerService" );
+    var bf = getDefaultBeanFactory();
+    var i18n = bf.getBean( 'translationService' );
+    var util = bf.getBean( 'utilityService' );
+    var wm = bf.getBean( 'webmanagerService' );
 
     request.reset = reset;
     request.context.util = variables.util = util;
     request.context.i18n = variables.i18n = i18n;
 
-    util.setCFSetting( "showdebugoutput", request.context.debug );
-    util.limiter( );
+    util.setCFSetting( 'showdebugoutput', request.context.debug );
+    util.limiter();
 
     wm.relocateOnce( request.domainName );
 
-    if ( structKeyExists( url, "clear" ) ) {
-      wm.clearCache( );
-      frameworkTrace( "<b>webmanager</b>: cache reset" );
+    if ( structKeyExists( url, 'clear' ) ) {
+      wm.clearCache();
+      frameworkTrace( '<b>webmanager</b>: cache reset' );
     }
 
-    if ( getSection( ) == "main" ) {
-      var seoPathArray = wm.seoPathAsArray( );
+    wm.robotstxt();
+    wm.sitemap();
+
+    if ( getSection() == 'main' ) {
+      var seoPathArray = wm.seoPathAsArray();
       i18n.changeLanguage( wm.getLanguageFromPath( seoPathArray ) );
-      controller( "main.setupLevel#arrayLen( seoPathArray )#" );
+      controller( 'main.setupLevel#arrayLen( seoPathArray )#' );
       request.action = request.context.action = wm.getActionFromPath( seoPathArray );
       setView( request.action );
     }

@@ -8,6 +8,7 @@ component accessors=true {
   property queryService;
   property utilityService;
 
+  property ds;
   property config;
   property datasource;
   property fw;
@@ -484,6 +485,33 @@ component accessors=true {
     }
 
     return true;
+  }
+
+  public void function sitemap() {
+    if ( cgi.path_info contains 'sitemap.xml' ) {
+      include '/mustang/lib/webmanager/includes/createsitemap.cfm';
+      abort;
+    }
+  }
+
+  public void function robotstxt() {
+    if ( cgi.path_info contains 'robots.txt' ) {
+      utilityService.cfheader( statuscode = 200, statustext = 'OK' );
+      utilityService.cfcontent( reset = true, type = 'text/plain' );
+      writeOutput( 'User-Agent: *' & chr( 10 ) &
+        'Allow: /' & chr( 10 ) &
+        'Disallow: /css/' & chr( 10 ) &
+        'Disallow: /scripts/' & chr( 10 ) &
+        'Disallow: /modules/' & chr( 10 ) &
+        'Disallow: /nl/extranet/' & chr( 10 ) &
+        'Disallow: /extranet/' & chr( 10 ) &
+        'Disallow: /nl/login/' & chr( 10 ) &
+        'Disallow: /login/' & chr( 10 ) &
+        'Disallow: /nl/_login/' & chr( 10 ) &
+        'Disallow: /_login/' & chr( 10 ) &
+        'Sitemap: http#variables.config.useHttps?'s':''#://#cgi.server_name#/sitemap.xml' );
+      abort;
+    }
   }
 
   // PRIVATE
