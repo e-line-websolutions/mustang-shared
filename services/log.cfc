@@ -18,7 +18,7 @@ component accessors=true {
   public string function reportError( message, file = request.appName, sendMail = true ) {
     writeLogLevel( message, file, "error" );
 
-    if ( sendMail ) {
+    if ( sendMail && variables.config.appIsLive ) {
       var sendTo = variables.contactService.getByUsername( "admin" );
       if ( !isNull( sendTo ) ) {
         variables.emailService.send( variables.config.debugEmail, sendTo, "Error in #request.appName#", message );
