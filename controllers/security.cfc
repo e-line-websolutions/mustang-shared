@@ -220,7 +220,7 @@ component accessors=true {
 
     // we're not logged in, try a few options:
     if ( !rc.auth.isLoggedIn ) {
-      if ( variables.framework.getSubsystem( ) == "api" || listFirst( cgi.PATH_INFO, "/" ) == "api" ) {
+      if (( variables.framework.getSubsystem( ) == "api" || listFirst( cgi.PATH_INFO, "/" ) == "api" ) && !structKeyExists( rc, "authhash" )) {
         // API basic auth login:
         var HTTPRequestData = GetHTTPRequestData( );
 
