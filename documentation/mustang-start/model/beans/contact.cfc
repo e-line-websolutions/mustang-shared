@@ -1,7 +1,7 @@
 component extends="root.model.beans.logged"
           persistent=true
           joinColumn="id"
-           defaultSort="lastname,email" {
+          defaultSort="lastname,email" {
   property name="username" length="64" inform=true orderinform=1 editable=true;
   property name="password" length="60" type="string";
   property name="firstname" length="32" inform=true orderinform=2 editable=true;

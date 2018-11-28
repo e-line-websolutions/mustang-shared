@@ -157,14 +157,15 @@ component {
       writeOutput( "Error: " & exception.message );
 
       if ( showDebugError ) {
-        writeOutput( chr( 13 ) & chr( 13 ) & "Detail: " & exception.detail );
-        writeOutput( chr( 13 ) & chr( 13 ) & "Stacktrace: " & exception.stackTrace );
+        writeOutput( chr( 13 ) & chr( 10 ) & "Detail: " & exception.detail );
+        writeOutput( chr( 13 ) & chr( 10 ) & "Stacktrace: " & exception.stackTrace );
       }
 
       abort;
     }
 
     var errorDump = "";
+
     savecontent variable="errorDump" {
       writeDump( exception );
       writeDump( cgi );
