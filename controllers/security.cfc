@@ -100,8 +100,6 @@ component accessors=true {
 
     request.context.config.log = false;
 
-    user.enableDebug( );
-
     transaction {
       user.save( updateUserWith );
     }
