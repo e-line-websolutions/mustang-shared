@@ -12,7 +12,7 @@ component extends="basecfc.base"
   property name="delete" ORMType="boolean" default="FALSE" inform="true" orderinform="5" editable="true" ininline="true" orderininline="5";
   property name="execute" ORMType="boolean" default="FALSE" inform="true" orderinform="6" editable="true" ininline="true" orderininline="6";
 
-  property name="securityrole" fieldtype="many-to-one" cfc="root.model.beans.securityrole" FKColumn="securityroleid";
+  property name="securityrole" fieldtype="many-to-one" cfc="root.model.beans.securityrole" FKColumn="securityroleid" inform=true editable="true";
 
   function getName() {
     return getSection();
