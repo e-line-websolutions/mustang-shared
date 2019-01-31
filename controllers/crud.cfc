@@ -9,7 +9,10 @@ component accessors=true {
   property utilityService;
 
   public any function init( fw ) {
+    fw.frameworkTrace( 'mustang-shared.crud.init() called' );
+
     variables.framework = fw;
+    variables.ormEntities = structKeyArray( ormGetSessionFactory().getAllClassMetadata() );
 
     param variables.listitems="";
     param variables.listactions=".new";
@@ -22,12 +25,12 @@ component accessors=true {
     param variables.entity=fw.getSection( );
     param array variables.submitButtons=[ ];
 
-    variables.ormEntities=structKeyArray( ORMGetSessionFactory( ).getAllClassMetadata( ) );
-
     return this;
   }
 
   public void function before( required struct rc ) {
+    framework.frameworkTrace( 'mustang-shared.crud.before() called' );
+
     if ( !rc.auth.isLoggedIn ) {
       return;
     }
@@ -84,6 +87,8 @@ component accessors=true {
   }
 
   public void function after( required struct rc ) {
+    framework.frameworkTrace( 'mustang-shared.crud.after() called' );
+
     param rc.useAsViewEntity=variables.entity;
 
     if ( rc.useAsViewEntity != variables.entity ) {
@@ -104,6 +109,8 @@ component accessors=true {
   }
 
   public void function default( required struct rc ) {
+    framework.frameworkTrace( 'mustang-shared.crud.default() called' );
+
     if ( !rc.auth.isLoggedIn ) {
       return;
     }

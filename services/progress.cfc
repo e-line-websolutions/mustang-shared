@@ -106,7 +106,8 @@ component accessors=true {
     variables.status = status;
 
     if ( variables.outputToBuffer ) {
-      writeOutput( variables.status & "<br>" );
+      writeToLog = false;
+      writeOutput( ' - ' & variables.status & "<br>" );
       if ( !variables.utilityService.amInCFThread( ) ) {
         getPageContext( ).getOut( ).flush( );
       }

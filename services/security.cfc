@@ -48,6 +48,8 @@ component accessors=true {
   }
 
   public void function createSession( ) {
+    logService.writeLogLevel( "createSession() called", "securityService", "debug" );
+
     var tmpSession = {
       "can" = { },
       "auth" = getEmptyAuth( )
