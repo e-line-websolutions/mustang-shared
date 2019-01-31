@@ -170,13 +170,32 @@ component accessors=true {
     return false;
   }
 
-  public any function keyValuePairFind( any data, string key, string value, string scope = "one" ) {
-    var itemsWithKey = structFindKey( { data = data }, key, "all" );
-    var result = [ ];
+  public any function keyValuePairFind( any data, string key, string value, string scope = 'one', string part = 'full' ) {
+    var itemsWithKey = structFindKey( { 'data' = data }, key, 'all' );
+    var result = [];
 
     for ( var item in itemsWithKey ) {
-      if ( item.value == value ) {
-        if ( scope == "one" ) {
+      var match = false;
+
+      switch ( part ) {
+        case 'left':
+          match = left( item.value, len( value ) ) == value;
+          break;
+
+        case 'middle':
+          match = item.value contains value;
+          break;
+
+        case 'right':
+          match = right( item.value, len( value ) ) == value;
+          break;
+
+        default:
+          match = item.value == value;
+      }
+
+      if ( match ) {
+        if ( scope == 'one' ) {
           return item.owner;
         }
         arrayAppend( result, item.owner );
@@ -663,7 +682,11 @@ component accessors=true {
         result &= "</#ns##key#>";
 
       } else if ( isSimpleValue( value ) ) {
-        result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
+        if ( left( value, 4 ) == 'raw:' ) {
+          result &= "<#ns##key##xmlns#>#listRest( value, ':' )#</#ns##key#>";
+        } else {
+          result &= "<#ns##key##xmlns#>#xmlFormat( value )#</#ns##key#>";
+        }
 
       }
     }
