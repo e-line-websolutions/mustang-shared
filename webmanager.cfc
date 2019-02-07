@@ -1,93 +1,88 @@
 component extends=framework.one {
-  if ( !structKeyExists( variables, "framework" ) ) {
-    variables.framework = { };
+  if ( !structKeyExists( variables, 'framework' ) ) {
+    variables.framework = {};
   }
+
   variables.mstng = new base( variables.framework );
-
-  variables.cfg = {
-    "mediaRoot" = "D:/Accounts/E/E-Line Websolutions CM/files"
-  };
-
-  variables.mstng.mergeStructs( variables.mstng.readConfig( ), variables.cfg );
+  variables.cfg = { 'mediaRoot' = 'D:/Accounts/E/E-Line Websolutions CM/files' };
+  variables.mstng.mergeStructs( variables.mstng.readConfig(), variables.cfg );
   variables.cfg.useOrm = false;
-
-  variables.root = variables.mstng.getRoot( );
+  variables.root = variables.mstng.getRoot();
 
   param request.domainName=cgi.server_name;
-  param request.appName="Nameless-Webmanager-Site-#createUuid( )#";
+  param request.appName="Nameless-Webmanager-Site-#request.domainName#";
   param request.version="?";
-  param request.context.startTime=getTickCount( );
+  param request.context.startTime=getTickCount();
   param request.context.config=variables.cfg;
   param request.webroot=variables.cfg.webroot;
   param request.appSimpleName=listFirst( request.appName, " ,-_" );
   param request.context.debug=variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
 
-  if ( structKeyExists( variables.cfg, "domainName" ) ) {
+  if ( structKeyExists( variables.cfg, 'domainName' ) ) {
     request.domainName = variables.cfg.domainName;
   }
 
-  variables.mstng.cleanXHTMLQueryString( );
+  variables.mstng.cleanXHTMLQueryString();
   variables.live = variables.cfg.appIsLive;
-  variables.routes = [ ];
-  variables.mstng.mergeStructs( {
-    "routesCaseSensitive" = false,
-    "generateSES" = true,
-    "SESOmitIndex" = true,
-    "base" = "/root",
-    "diLocations" = [
-      "/mustang/services",
-      "/root/model/services"
-    ],
-    "diConfig" = {
-      "constants" = {
-        "root" = variables.root,
-        "config" = variables.cfg,
-        "ds" = "e-line_cm",
-        "navigationType" = "per-level"
+  variables.routes = [];
+  variables.mstng.mergeStructs(
+    {
+      'routesCaseSensitive' = false,
+      'generateSES' = true,
+      'SESOmitIndex' = true,
+      'base' = '/root',
+      'diLocations' = [
+        '/mustang/services',
+        '/root/model/services'
+      ],
+      'diConfig' = {
+        'constants' = {
+          'root' = variables.root,
+          'config' = variables.cfg,
+          'ds' = 'e-line_cm',
+          'navigationType' = 'per-level'
+        },
+        'loadListener' = variables.mstng.loadListener
       },
-      "loadListener" = variables.mstng.loadListener
-    },
-    "environments" = {
-      "live" = {
-        "cacheFileExists" = true,
-        "password" = variables.cfg.reloadpw,
-        "trace" = variables.cfg.showDebug
+      'environments' = {
+        'live' = {
+          'cacheFileExists' = true,
+          'password' = variables.cfg.reloadpw,
+          'trace' = variables.cfg.showDebug
+        },
+        'dev' = { 'trace' = variables.cfg.showDebug }
       },
-      "dev" = {
-        "trace" = variables.cfg.showDebug
-      }
+      'routes' = [
+        { '/media/:file' = '/media/load/file/:file' },
+        { '/forms/:action' = '/forms/:action' },
+        { '/api/:action' = '/api/:action' },
+        { '*' = '/main/default' }
+      ]
     },
-    "routes" = [
-      { "/media/:file" = "/media/load/file/:file" },
-      { "/forms/:action" = "/forms/:action" },
-      { "/api/:action" = "/api/:action" },
-      { "*" = "/main/default" }
-    ]
-  }, variables.framework );
+    variables.framework
+  );
 
-  this.mappings[ "/root" ] = request.root = variables.root;
+  this.name = request.appName;
+  this.mappings[ '/root' ] = request.root = variables.root;
   this.sessionManagement = true;
-  this.sessionTimeout = createTimeSpan( 0, 2, 0, 0 );
+  this.sessionTimeout = createTimespan( 0, 2, 0, 0 );
 
-  mustangRoot = variables.mstng.getMustangRoot( );
+  mustangRoot = variables.mstng.getMustangRoot();
 
-  this.javaSettings.loadPaths = [
-    mustangRoot & "/lib/json/gson-2.8.jar"
-  ];
-
-  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & "/lib/unirest", false, "path", "*.jar" ) );
+  this.javaSettings.loadPaths = [ mustangRoot & '/lib/json/gson-2.8.jar' ];
+  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & '/lib/unirest', false, 'path', '*.jar' ) );
 
   if ( isNull( request.appSimpleName ) ) {
-    request.appSimpleName = listFirst( request.appName, " ,-_" );
+    request.appSimpleName = listFirst( request.appName, ' ,-_' );
   }
 
-  public string function getEnvironment( ) {
-    return variables.live ? "live" : "dev";
+  public string function getEnvironment() {
+    return variables.live ? 'live' : 'dev';
   }
 
-  public void function setupApplication( ) {
-    frameworkTrace( "<b>webmanager</b>: setupApplication() called." );
-    structDelete( application, "cache" );
+  public void function setupApplication() {
+    frameworkTrace( '<b>webmanager</b>: setupApplication() called.' );
+    structDelete( application, 'cache' );
   }
 
   public void function setupRequest() {
@@ -137,10 +132,14 @@ component extends=framework.one {
   }
 
   public string function onMissingView( struct rc ) {
-    if ( getSection( ) == "main" ) {
-      return view( "main/default" );
+    if ( getSection() == 'main' ) {
+      return view( 'main/default' );
     }
 
-    return "Missing view for: #rc.action#";
+    return 'Missing view for: #rc.action#';
+  }
+
+  public any function getHttpRequestHeaders() {
+    return request._fw1.headers;
   }
 }
