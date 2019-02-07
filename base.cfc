@@ -2,16 +2,16 @@ component {
   public component function init( fw1Config ) {
     variables.basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
     variables.root = getRoot( );
-    variables.name = hash( variables.basePath );
+    variables.name = hash( variables.basePath & cgi.server_name );
     variables.framework = fw1Config;
 
     return this;
   }
 
   public struct function readConfig( string site = cgi.server_name ) {
-    if ( !structKeyExists( url, "reload" ) ) {
+    if ( !structKeyExists( url, 'reload' ) ) {
       lock name="lock_mustang_#variables.name#_config_read" timeout="3" type="readonly" {
-        var cachedConfig = cacheGet( "config_#variables.name#" );
+        var cachedConfig = cacheGet( 'config_#variables.name#' );
 
         if ( !isNull( cachedConfig ) ) {
           param cachedConfig.appIsLive=true;
@@ -23,30 +23,34 @@ component {
       }
     }
 
-    var defaultSettings = {
-      "webroot" = ( cgi.https == 'on' ? 'https' : 'http' ) & "://" & cgi.server_name
-    };
+    var result = { 'webroot' = ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.server_name };
 
-    var mustangSharedRoot = getMustangRoot( );
+    var mustangSharedRoot = getMustangRoot();
 
-    var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & "/config/global.json", "utf-8" ) );
-    mergeStructs( globalConfig, defaultSettings );
+    var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & '/config/global.json', 'utf-8' ) );
+    mergeStructs( globalConfig, result );
 
-    if ( fileExists( variables.root & "/config/default.json" ) ) {
-      var defaultConfig = deserializeJSON( fileRead( variables.root & "/config/default.json", "utf-8" ) );
-      mergeStructs( defaultConfig, defaultSettings );
+    if ( fileExists( variables.root & '/config/default.json' ) ) {
+      var defaultConfig = deserializeJSON( fileRead( variables.root & '/config/default.json', 'utf-8' ) );
+      mergeStructs( defaultConfig, result );
     }
 
-    if ( fileExists( variables.root & "/config/" & site & ".json" ) ) {
-      var siteConfig = deserializeJSON( fileRead( variables.root & "/config/" & site & ".json", "utf-8" ) );
-      mergeStructs( siteConfig, defaultSettings );
+    if ( fileExists( variables.root & '/config/' & site & '.json' ) ) {
+      var siteConfig = deserializeJSON( fileRead( variables.root & '/config/' & site & '.json', 'utf-8' ) );
+
+      if ( structKeyExists( siteConfig, 'include' ) ) {
+        var includeConfig = deserializeJSON( fileRead( variables.root & '/config/#siteConfig.include#', 'utf-8' ) );
+        mergeStructs( includeConfig, result );
+      }
+
+      mergeStructs( siteConfig, result );
     }
 
     lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {
-      cachePut( "config_#variables.name#", defaultSettings );
+      cachePut( 'config_#variables.name#', result );
     }
 
-    return defaultSettings;
+    return result;
   }
 
   public void function mergeStructs( required struct from, struct to = { } ) {
