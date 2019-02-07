@@ -344,41 +344,35 @@ component accessors=true {
     return "";
   }
 
-  public void function relocateOnce( string domainname = "" ) {
-    variables.fw.frameworkTrace( "<b>webmanager</b>: relocateOnce() called." );
+  public void function relocateOnce( string domainname = '' ) {
+    variables.fw.frameworkTrace( '<b>webmanager</b>: relocateOnce() called.' );
 
-    if ( domainname == "" || !isLiveUrl( ) || !config.redirectToMainUrl ) {
+    if ( domainname == '' || domainname == cgi.server_name || !isLiveUrl() || !config.redirectToMainUrl ) {
+      variables.fw.frameworkTrace( '<b>webmanager</b>: relocateOnce() aborted.' );
       return;
     }
 
-    var relocateTo = (
-        cgi.server_port_secure == 1
-          ? 'https'
-          : 'http'
-      ) &
-      '://' & domainname &
-      cgi.path_info & (
-        cgi.script_name == "/index.cfm"
-          ? len( cgi.path_info )
-              ? ''
-              : '/'
-          : cgi.script_name
-      ) & (
-        len( trim( cgi.query_string )) > 0
-          ? '?' & cgi.query_string
-          : ''
-      );
+    var protocol = 'http' & ( isHttps() ? 's' : '' ) & '://';
+    var path = cgi.path_info & ( cgi.script_name == '/index.cfm' ? len( cgi.path_info ) ? '' : '/' : cgi.script_name );
+    var querystring = ( len( trim( cgi.query_string ) ) ? '?' & cgi.query_string : '' );
+    var relocateTo = replace( protocol & domainname & path & querystring, '/index.cfm', '/', 'one' );
 
-    relocateTo = replace( relocateTo, '/index.cfm', '/', 'one' );
-
-    if( cgi.server_name != domainname ) {
-      location( relocateTo, false, 301 );
-    }
+    location( relocateTo, false, 301 );
   }
 
   public array function seoPathAsArray( ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: seoPathAsArray() called." );
+
     var seoPath = variables.utilityService.fixPathInfo( );
+
+    if ( structKeyExists( variables.config, 'rootWebmanagerPath' ) ) {
+      if ( isRoot() ) {
+        seoPath = variables.config.rootWebmanagerPath;
+      } else {
+        seoPath = variables.config.rootWebmanagerPath & seoPath;
+      }
+    }
+
     var tmp = listToArray( seoPath, "/" );
     var seoPathArray = [ ];
 
@@ -394,40 +388,33 @@ component accessors=true {
   }
 
   public void function serveMedia( required struct requestContext ) {
-    variables.fw.frameworkTrace( "<b>webmanager</b>: serveMedia() called." );
+    variables.fw.frameworkTrace( '<b>webmanager</b>: serveMedia() called.' );
     param requestContext.file="";
     param requestContext.s="m";
 
-    if( !variables.utilityService.fileExistsUsingCache(
-      "#variables.config.mediaRoot#/sites/site#variables.websiteId#/images/#requestContext.file#"
-    ) ) {
-      throw( "File does not exist", "webmanagerService.serveMedia.fileNotFoundError" );
+    if ( !variables.utilityService.fileExistsUsingCache( '#variables.config.mediaRoot#/sites/site#variables.websiteId#/images/#requestContext.file#' ) ) {
+      throw( 'File does not exist', 'webmanagerService.serveMedia.fileNotFoundError' );
     }
 
     var fileExtension = listLast( requestContext.file, '.' );
 
-    if( listFind( variables.resizeBeforeServe, fileExtension ) ) {
-      if ( !variables.utilityService.fileExistsUsingCache(
-        "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#"
-      ) ) {
-        variables.imageScalerService.setDestinationDir( "#variables.root#/www/inc/img/resized" );
+    if ( listFind( variables.resizeBeforeServe, fileExtension ) ) {
+      if ( !variables.utilityService.fileExistsUsingCache( '#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#' ) ) {
+        variables.imageScalerService.setDestinationDir( '#variables.root#/www/inc/img/resized' );
         variables.imageScalerService.resizeFromPath(
-          variables.config.mediaRoot & "/sites/site#variables.websiteId#/images/#requestContext.file#",
+          variables.config.mediaRoot & '/sites/site#variables.websiteId#/images/#requestContext.file#',
           requestContext.file,
           requestContext.s
         );
-        variables.utilityService.cfheader( name = "Last-Modified", value = "#getHttpTimeString( now( ) )#" );
+        variables.utilityService.cfheader( name = 'Last-Modified', value = '#getHTTPTimeString( now() )#' );
       }
-      var fileToServe = "#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#";
-    }else{
-      var fileToServe = variables.config.mediaRoot & "/sites/site#variables.websiteId#/images/#requestContext.file#";
+      var fileToServe = '#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#';
+    } else {
+      var fileToServe = variables.config.mediaRoot & '/sites/site#variables.websiteId#/images/#requestContext.file#';
     }
 
-    variables.utilityService.cfheader( name = "Expires", value = "#getHttpTimeString( dateAdd( 'ww', 1, now( ) ) )#" );
-    variables.utilityService.cfheader(
-      name = "Last-Modified",
-      value = "#getHttpTimeString( dateAdd( 'ww', -1, now( ) ) )#"
-    );
+    variables.utilityService.cfheader( name = 'Expires', value = '#getHTTPTimeString( dateAdd( 'ww', 1, now() ) )#' );
+    variables.utilityService.cfheader( name = 'Last-Modified', value = '#getHTTPTimeString( dateAdd( 'ww', -1, now() ) )#' );
     variables.fileService.writeToBrowser( fileToServe );
   }
 
@@ -549,6 +536,7 @@ component accessors=true {
 
   private string function getBasePath( required array seoPathArray ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: getBasePath() called." );
+
     if ( seoPathArray[ 1 ] != variables.defaultLanguage ) {
       return "/#seoPathArray[ 1 ]#";
     }
@@ -570,6 +558,7 @@ component accessors=true {
 
   private string function getCurrentBaseMenuItem( required array seoPathArray ) {
     variables.fw.frameworkTrace( "<b>webmanager</b>: getCurrentBaseMenuItem() called." );
+
     if ( arrayLen( seoPathArray ) > 1 ) {
       return seoPathArray[ 2 ];
     }
@@ -831,7 +820,32 @@ component accessors=true {
     return variables.supportedLocales[ webmanagerLanguage ];
   }
 
+  private boolean function isLocale( required string possibleLocale ) {
+    return structKeyExists( variables.supportedLocales, possibleLocale );
+  }
+
   private string function asFw1Item( required string unformattedItem ) {
     return replace( reReplace( listFirst( unformattedItem ), "^[-_]", "", "one" ), '-', '_', 'all' );
+  }
+
+  private boolean function isRoot() {
+    var pathLength = listLen( cgi.path_info, '/' );
+    if ( pathLength == 0 ) {
+      return true;
+    } else if ( pathLength == 1 ) {
+      return isLocale( listFirst( cgi.path_info, '/' ) );
+    }
+
+    return false;
+  }
+
+  private boolean function isHttps() {
+    var httpHeaders = fw.getHttpRequestHeaders();
+
+    if ( structKeyExists( httpHeaders, 'X-Forwarded-Proto' ) ) {
+      return httpHeaders[ 'X-Forwarded-Proto' ] == 'https' ? true : false;
+    }
+
+    return cgi.server_port_secure == 1;
   }
 }
