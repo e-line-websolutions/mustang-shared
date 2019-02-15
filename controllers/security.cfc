@@ -25,7 +25,6 @@ component accessors=true {
     param rc.dontRedirect=false;
 
     var updateUserWith = { "lastLoginDate" = now( ) };
-
     // Check credentials:
     if ( structKeyExists( rc, "authhash" ) && len( trim( rc.authhash ) ) ) {
       variables.logService.writeLogLevel( "trying authhash", request.appName );
@@ -33,14 +32,13 @@ component accessors=true {
       var decryptedHash = decrypt( variables.utilityService.base64urlDecode( rc.authhash ), variables.config.encryptKey );
       if( isJson( decryptedHash )){
         var hashStruct = deserializeJSON(  decryptedHash );
-
         if( isStruct( hashStruct ) && structKeyExists( hashStruct, "path" )){
           var cgi_path = cgi.path_info;
-          if( left( cgi.path_info, 1 ) eq "/" ){
-            cgi_path = replace( cgi_path, "/", "", "ONCE" );
+          if( right( cgi.path_info, 1 ) eq "/" ){
+            cgi_path = left( cgi_path, len( cgi_path )-1 );
           }
 
-          if( !findNoCase( hashStruct.path, framework.buildUrl( action = cgi_path ) ) ){
+          if( !findNoCase( cgi_path, hashStruct.path ) ){
             rc.alert = { "class" = "danger", "text" = "user-not-found" };
             variables.logService.writeLogLevel( text = "authhash path failure", type = "warning", file = request.appName );
             doLogout( rc );
