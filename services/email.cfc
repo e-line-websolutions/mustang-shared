@@ -10,7 +10,7 @@ component accessors=true {
     required  string  body,
               string  type = "html",
               string  bcc,
-              struct  attachement
+              any  attachement
   ) {
     try {
       var toEmail = isSimpleValue( to ) ? to : to.getEmail( );
@@ -42,8 +42,21 @@ component accessors=true {
         message.setBcc( bcc );
       }
 
-      if ( !isNull( attachement ) && structKeyExists( attachement, 'file' ) && structKeyExists( attachement, 'type' ) && structKeyExists( attachement, 'remove' ) ) {
-        message.addParam( file  = attachement.file, type = attachement.type, remove = attachement.remove );
+      if( !isNull( attachement ) ){
+        if( isStruct( attachement )){
+          var attachements = [attachement];
+        }
+
+        if( isArray( attachement )){
+          var attachements = attachement;
+        }
+
+
+        for( var att in attachements ){
+          if ( structKeyExists( att, 'file' ) && structKeyExists( att, 'type' ) && structKeyExists( att, 'remove' ) ) {
+            message.addParam( file  = att.file, type = att.type, remove = att.remove );
+          }
+        }
       }
 
       message.send( );
