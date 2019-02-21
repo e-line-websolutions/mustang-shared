@@ -12,7 +12,7 @@ component accessors=true {
       ds = config.datasource;
     }
 
-    if ( !isNull( ds ) ) {
+    if ( !isNull( ds ) && len(trim( ds )) ) {
       setupVendor( utilityService, ds );
     }
 
