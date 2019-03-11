@@ -122,6 +122,7 @@ component extends=framework.one {
       controller( 'main.setupLevel#arrayLen( seoPathArray )#' );
       request.action = request.context.action = wm.getActionFromPath( seoPathArray );
       setView( request.action );
+      wm.logVisit( request.action );
     }
   }
 
