@@ -653,6 +653,7 @@ component accessors=true {
         xPathString = xPathString,
         e = e
       }, true );
+      rethrow;
     }
   }
 
