@@ -113,15 +113,6 @@ component accessors=true {
     structAppend( requestContext, pageData );
   }
 
-  public void function clearCache() {
-    createObject( 'java', 'coldfusion.server.ServiceFactory' ).getDataSourceService().purgeQueryCache();
-    var allCacheIds = cacheGetAllIds();
-    if ( !arrayIsEmpty( allCacheIds ) ) {
-      cacheRemove( arrayToList( allCacheIds ) );
-    }
-    variables.logService.writeLogLevel( 'Caches cleared' );
-  }
-
   public string function getActionFromPath( array seoPathArray ) {
     if ( isNull( seoPathArray ) ) {
       seoPathArray = seoPathAsArray();

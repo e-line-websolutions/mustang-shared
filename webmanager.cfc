@@ -109,7 +109,7 @@ component extends=framework.one {
     wm.relocateOnce( request.domainName );
 
     if ( structKeyExists( url, 'clear' ) ) {
-      wm.clearCache();
+      variables.mstng.clearCache();
       frameworkTrace( '<b>webmanager</b>: cache reset' );
     }
 

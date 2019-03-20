@@ -162,6 +162,11 @@ component extends=framework.one {
   public void function setupRequest() {
     frameworkTrace( '<b>mustang</b>: setupRequest() called.' );
 
+    if ( structKeyExists( url, 'clear' ) ) {
+      variables.mstng.clearCache();
+      frameworkTrace( '<b>mustang</b>: cache reset' );
+    }
+
     var reset = isFrameworkReloadRequest();
 
     if ( reset ) {
