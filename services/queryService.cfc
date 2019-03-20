@@ -264,10 +264,7 @@ component accessors=true {
   }
 
   private void function addDatasource( queryOptions ) {
-    if ( ( structKeyExists( queryOptions, "dbtype" ) && queryOptions.dbtype == "query" ) || structKeyExists(
-      queryOptions,
-      "datasource"
-    ) ) {
+    if ( ( structKeyExists( queryOptions, 'dbtype' ) && queryOptions.dbtype == 'query' ) || structKeyExists( queryOptions, 'datasource' ) ) {
       return;
     }
 

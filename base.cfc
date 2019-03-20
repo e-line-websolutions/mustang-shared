@@ -189,4 +189,15 @@ component {
       abort;
     }
   }
+
+  public void function clearCache() {
+    // clear query cache:
+    createObject( 'java', 'coldfusion.server.ServiceFactory' ).getDataSourceService().purgeQueryCache();
+
+    // clear ehcache:
+    var allCacheIds = cacheGetAllIds();
+    if ( !arrayIsEmpty( allCacheIds ) ) {
+      cacheRemove( arrayToList( allCacheIds ) );
+    }
+  }
 }
