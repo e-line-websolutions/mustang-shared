@@ -1,0 +1,16 @@
+{
+  "appIsLive": true,
+  "logLevel": "information",
+  "showDebug": false,
+  "defaultLanguage": "nl_NL",
+  "captchaSecret": "",
+  "debugEmail": "administrator@e-line.nl",
+  "debugIp": "77.249.189.121,127.0.0.1,95.97.10.147",
+  "encryptKey": "",
+  "ownerEmail": "administrator+cava@e-line.nl",
+  "useSsl": false,
+  "templates": [
+    "templates.article",
+    "templates.list"
+  ]
+}

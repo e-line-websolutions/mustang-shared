@@ -107,14 +107,14 @@ component accessors=true {
 
     if ( variables.outputToBuffer ) {
       writeToLog = false;
-      writeOutput( ' - ' & variables.status & "<br>" );
-      if ( !variables.utilityService.amInCFThread( ) ) {
-        getPageContext( ).getOut( ).flush( );
+      writeOutput( ' - ' & variables.status & '<br>' );
+      if ( !variables.utilityService.amInCFThread() ) {
+        getPageContext().getOut().flush();
       }
     }
 
     if ( writeToLog ) {
-      variables.logService.writeLogLevel( "#variables.name# - " & variables.status, "progressService", "information" );
+      variables.logService.writeLogLevel( variables.name & ' - ' & variables.status, 'progressService' );
     }
   }
 
