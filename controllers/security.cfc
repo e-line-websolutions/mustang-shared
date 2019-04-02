@@ -11,6 +11,8 @@ component accessors=true {
   property logService;
   property utilityService;
 
+  public void function before( required struct rc ) {}
+
   public void function login( required struct rc ) {
     variables.framework.setLayout( "security" );
 
