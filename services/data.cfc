@@ -161,6 +161,10 @@ component accessors=true {
     return isValid( "guid", __formatAsGUID( text ) );
   }
 
+  public string function createFormattedUUID() {
+    return __formatAsGUID( createUUID() );
+  }
+
   public boolean function arrayOfStructsContains( string needle, array haystack, string key ) {
     for ( var str in haystack ) {
       if ( str[ key ] == needle ) {
@@ -899,7 +903,7 @@ component accessors=true {
     massagedText = insert( '-', massagedText, 12 );
     massagedText = insert( '-', massagedText, 8 );
 
-    return massagedText;
+    return lCase( massagedText );
   }
 
   private boolean function __isValidDate( required potentialDate ) {

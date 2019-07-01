@@ -155,7 +155,7 @@
     return result;
   }
 
-  public string function capFirst( required word ) {
+  public string function capFirst( required string word ) {
     word = trim( word );
 
     if ( len( word ) <= 1 ) {
@@ -295,12 +295,12 @@
     return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey ) ) );
   }
 
-  public string function decryptForUrl( stringToEncrypt, encryptKey ) {
+  public string function decryptForUrl( stringToDecrypt, encryptKey ) {
     if ( isNull( encryptKey ) ) {
       encryptKey = variables.config.encryptKey;
     }
 
-    return decrypt( toString( toBinary( base64URLDecode( stringToEncrypt ) ) ), encryptKey );
+    return decrypt( toString( toBinary( base64URLDecode( stringToDecrypt ) ) ), encryptKey );
   }
 
   public boolean function fileExistsUsingCache( required string absolutePath ) {
