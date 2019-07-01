@@ -171,7 +171,10 @@ component {
     var errorDump = "";
 
     savecontent variable="errorDump" {
-      writeDump( exception );
+      writeOutput( "Error: " & exception.message );
+      writeOutput( "<br />Detail: " & exception.detail );
+      writeOutput( "<br />Stacktrace: <pre>" & exception.stackTrace & "</pre>" );
+
       writeDump( cgi );
     }
 

@@ -6,7 +6,9 @@ component extends=framework.one {
   variables.mstng = new base( variables.framework );
   variables.cfg = { 'mediaRoot' = 'D:/Accounts/E/E-Line Websolutions CM/files' };
   variables.mstng.mergeStructs( variables.mstng.readConfig(), variables.cfg );
+
   variables.cfg.useOrm = false;
+
   variables.root = variables.mstng.getRoot();
 
   param request.domainName=cgi.server_name;
