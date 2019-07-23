@@ -180,16 +180,19 @@ component {
 
     fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
 
-    if ( fileExists( variables.root & "/webroot/error.html" ) ) {
-      include "/#config.root#/webroot/error.html";
-      writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
-      abort;
-    }
+    var webroots = [ 'webroot', 'www' ];
+    var fallbackErrorFile = 'error.html';
 
-    if ( fileExists( variables.root & "/www/error.html" ) ) {
-      include "/#config.root#/www/error.html";
-      writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
-      abort;
+    for ( webroot in webroots ) {
+      if ( fileExists( variables.root & "/#webroot#/error-#exception.errorCode#.html" ) ) {
+        include "/#config.root#/#webroot#/error-#exception.errorCode#.html";
+        writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+        abort;
+      } else if ( fileExists( variables.root & "/#webroot#/error.html" ) ) {
+        include "/#config.root#/#webroot#/error.html";
+        writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+        abort;
+      }
     }
   }
 
