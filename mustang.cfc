@@ -2,7 +2,7 @@ component extends=framework.one {
   if ( !structKeyExists( variables, 'framework' ) ) {
     variables.framework = {};
   }
-  variables.mstng = new base( variables.framework );
+  variables.mstng = new mustang.base( variables.framework );
   variables.cfg = variables.mstng.readConfig();
   variables.root = variables.mstng.getRoot();
 
@@ -220,7 +220,7 @@ component extends=framework.one {
         listOfResources = listAppend( listOfResources, reverse( listRest( reverse( fileName ), '.' ) ) );
       }
 
-      var resources = variables.routes;
+      var resources = []; // variables.routes;
 
       resources.addAll( [
         { '^/api/auth/:item' = '/api:auth/:item/' },

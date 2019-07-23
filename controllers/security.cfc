@@ -151,7 +151,6 @@ component accessors=true {
   }
 
   public void function doLogout( required struct rc ) {
-
     // reset session
     variables.securityService.invalidateSession( );
 
