@@ -111,6 +111,8 @@ component accessors=true {
     }
 
     structAppend( session.auth, tempAuth, true );
+
+    sessionRotate();
   }
 
   public string function hashPassword( required string password ) {
