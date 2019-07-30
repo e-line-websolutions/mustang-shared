@@ -127,18 +127,19 @@ component {
     }
 
     param exception.message="Uncaught Error";
+    param exception.statusCode=500;
     param exception.detail="";
 
     var pc = getPageContext( );
 
     if ( structKeyExists( server, "lucee" ) ) {
       cfcontent( reset = true );
-      cfheader( statusCode = 500, statusText = exception.message );
+      cfheader( statusCode = exception.statusCode, statusText = exception.message );
     } else {
       pc.getCfoutput( ).clearAll( );
       pc.getResponse( )
         .getResponse( )
-        .setStatus( 500, exception.message );
+        .setStatus( exception.statusCode, exception.message );
     }
 
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );
