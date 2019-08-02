@@ -127,19 +127,25 @@ component {
     }
 
     param exception.message="Uncaught Error";
-    param exception.statusCode=500;
+    param exception.errorCode=500;
     param exception.detail="";
+
+    exception.errorCode = val( exception.errorCode );
+
+    if ( exception.errorCode == 0 ) {
+      exception.errorCode = 500;
+    }
 
     var pc = getPageContext( );
 
     if ( structKeyExists( server, "lucee" ) ) {
       cfcontent( reset = true );
-      cfheader( statusCode = exception.statusCode, statusText = exception.message );
+      cfheader( statusCode = exception.errorCode, statusText = exception.message );
     } else {
       pc.getCfoutput( ).clearAll( );
       pc.getResponse( )
         .getResponse( )
-        .setStatus( exception.statusCode, exception.message );
+        .setStatus( exception.errorCode, exception.message );
     }
 
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );

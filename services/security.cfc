@@ -88,26 +88,30 @@ component accessors=true {
     createSession( );
 
     var userAsStruct = dataService.processEntity( user, 0, 1, false );
-    var securityRole = dataService.processEntity( user.getSecurityRole( ), 0, 1, false );
-
-    if ( isNull( securityRole ) || structIsEmpty( securityRole ) || !structKeyExists( securityRole, "name" ) ) {
-      throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
-    }
 
     var tempAuth = {
       "isLoggedIn" = true,
-      "user" = userAsStruct,
-      "userid" = user.getID( ),
-      "role" = securityRole
+      "user" = dataService.processEntity( user, 0, 1, false ),
+      "userid" = user.getID( )
     };
 
-    if ( isAdmin( securityRole.name ) ) {
-      tempAuth.role.can = yesWeCan;
-      tempAuth.canAccessAdmin = true;
-    } else {
-      cachePermissions( securityRole.permissions );
-      tempAuth.role.can = can;
-      tempAuth.canAccessAdmin = false;
+    if ( structKeyExists( user, 'getSecurityRole' ) ) {
+      var securityRole = dataService.processEntity( user.getSecurityRole( ), 0, 1, false );
+
+      if ( isNull( securityRole ) || structIsEmpty( securityRole ) || !structKeyExists( securityRole, "name" ) ) {
+        throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
+      }
+
+      tempAuth[ "role" ] = securityRole;
+
+      if ( isAdmin( securityRole.name ) ) {
+        tempAuth.role.can = yesWeCan;
+        tempAuth.canAccessAdmin = true;
+      } else {
+        cachePermissions( securityRole.permissions );
+        tempAuth.role.can = can;
+        tempAuth.canAccessAdmin = false;
+      }
     }
 
     structAppend( session.auth, tempAuth, true );
