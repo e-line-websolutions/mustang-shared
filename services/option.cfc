@@ -9,22 +9,27 @@ component accessors=true {
   public component function init( config ) {
     structAppend( variables, arguments );
 
-    variables.allOptions = { };
-    variables.optionEntities = [ ];
+    variables.allOptions = {};
+    variables.optionEntities = [];
 
-    param config.useOrm=true;
+    param config.useOrm = true;
 
     if ( config.useOrm ) {
-      var allEntities = ormGetSessionFactory( ).getAllClassMetadata( );
-
-      for( var key in allEntities ) {
+      try {
+        var allEntities = ormGetSession().getSessionFactory().getAllClassMetadata();
+      } catch ( any e ) {
+        var allEntities = ormGetSessionFactory().getAllClassMetadata();
+      }
+      for ( var key in allEntities ) {
         var entity = allEntities[ key ];
-        if( entity.getMappedSuperclass( ) == "option" ) {
+        if ( entity.getMappedSuperclass() == 'option' ) {
           arrayAppend( variables.optionEntities, key );
         }
       }
 
-      reloadOptions( );
+      if ( !arrayIsEmpty( variables.optionEntities ) ) {
+        reloadOptions();
+      }
     }
 
     return this;
@@ -128,6 +133,10 @@ component accessors=true {
   }
 
   private array function __getOptionsFromDB( ) {
-    return ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
+    transaction {
+      var result = ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
+    }
+
+    return result;
   }
 }
