@@ -90,6 +90,7 @@ component extends=framework.one {
     frameworkTrace( '<b>mustang</b>: setupApplication() called.' );
 
     var bf = getBeanFactory();
+
     var logService = bf.getBean( 'logService' );
 
     if ( structKeyExists( url, 'nuke' ) ) {
@@ -144,7 +145,6 @@ component extends=framework.one {
 
   public void function setupSession() {
     frameworkTrace( '<b>mustang</b>: setupSession() called.' );
-
     structDelete( session, 'progress' );
     session.connectionStorage = {};
   }
@@ -167,9 +167,9 @@ component extends=framework.one {
       frameworkTrace( '<b>mustang</b>: cache reset' );
     }
 
-    var reset = isFrameworkReloadRequest();
+    request.reset = isFrameworkReloadRequest();
 
-    if ( reset ) {
+    if ( request.reset ) {
       setupSession();
     }
 
@@ -177,7 +177,6 @@ component extends=framework.one {
     var i18n = bf.getBean( 'translationService' );
     var util = bf.getBean( 'utilityService' );
 
-    request.reset = reset;
     request.context.util = variables.util = util;
     request.context.i18n = variables.i18n = i18n;
 
@@ -220,7 +219,7 @@ component extends=framework.one {
         listOfResources = listAppend( listOfResources, reverse( listRest( reverse( fileName ), '.' ) ) );
       }
 
-      var resources = []; // variables.routes;
+      var resources = variables.routes;
 
       resources.addAll( [
         { '^/api/auth/:item' = '/api:auth/:item/' },
