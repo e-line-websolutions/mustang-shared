@@ -145,7 +145,7 @@ component {
       pc.getCfoutput( ).clearAll( );
       pc.getResponse( )
         .getResponse( )
-        .setStatus( exception.errorCode, exception.message );
+        .setStatus( val( exception.errorCode ) == 0 ? 500 : exception.errorCode, exception.message );
     }
 
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );
@@ -166,9 +166,9 @@ component {
       }
 
       writeOutput( "Error: " & exception.message );
+      writeOutput( chr( 13 ) & chr( 10 ) & "Detail: " & exception.detail );
 
       if ( showDebugError ) {
-        writeOutput( chr( 13 ) & chr( 10 ) & "Detail: " & exception.detail );
         writeOutput( chr( 13 ) & chr( 10 ) & "Stacktrace: " & exception.stackTrace );
       }
 
