@@ -3,10 +3,13 @@ component accessors=true {
   property dataService;
   property logService;
   property utilityService;
+  property javaloaderService;
 
   property any bcrypt;
 
-  public component function init( root, config ) {
+  public component function init( root, config, javaloaderService ) {
+    structAppend( variables, arguments );
+
     var bCryptPath = replace( getDirectoryFromPath( getCurrentTemplatePath( ) ), "\", "/", "all" ) & "../lib/bcrypt";
 
     if ( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ) ) ) {
@@ -272,11 +275,12 @@ component accessors=true {
   }
 
   private any function getBCrypt( required string pathToBcrypt ) {
+    var minMaxVersion = [ 7, 8 ];
     var system = createObject( "java", "java.lang.System" );
-    var javaVersion = listGetAt( system.getProperty( "java.version" ), 2, "." );
-    var bCryptLocation = directoryList( pathToBcrypt & "/" & javaVersion, false, "path", "*.jar" );
-    var jl = new javaloader.javaloader( bCryptLocation );
-
+    var currentJavaVersion = listGetAt( system.getProperty( "java.version" ), 2, "." );
+    var supportedJavaVersion = max( minMaxVersion[ 1 ], min( minMaxVersion[ 2 ], currentJavaVersion ) );
+    var bCryptLocation = directoryList( pathToBcrypt & "/" & supportedJavaVersion, false, "path", "*.jar" );
+    var jl = javaloaderService.new( bCryptLocation );
     return jl.create( "org.mindrot.jbcrypt.BCrypt" );
   }
 
