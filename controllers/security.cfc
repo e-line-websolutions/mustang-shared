@@ -186,7 +186,9 @@ component accessors=true {
     variables.logService.writeLogLevel( logMessage );
 
     if ( variables.framework.getSubsystem( ) == "api" || listFirst( cgi.PATH_INFO, "/" ) == "api" ) {
-      variables.framework.redirect( ":api" );
+      cfcontent( reset = true );
+      var statusCode = rc.alert.class == 'danger' ? 401 : 200;
+      variables.framework.renderData().type( 'json' ).data( rc.alert ).statusCode( statusCode );
       variables.framework.abortController( );
     }
 

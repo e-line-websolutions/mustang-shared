@@ -177,6 +177,8 @@ component accessors=true {
                                              string section="",
                                              string fqa="",
                                              string defaultSubsystem="" ) {
+    logService.writeLogLevel( text = fqa, level = 'information' );
+
     if ( listFindNoCase( variables.config.dontSecureFQA, fqa ) ) {
       return true;
     }
