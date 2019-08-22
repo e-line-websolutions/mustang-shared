@@ -24,7 +24,6 @@ component accessors=true {
     param rc.username="";
     param rc.password="";
     param rc.authhash="";
-    param rc.dontRedirect=false;
 
     var updateUserWith = { "lastLoginDate" = now( ) };
     // Check credentials:
@@ -58,7 +57,8 @@ component accessors=true {
         doLogout( rc );
       }
 
-      rc.dontRedirect = true;
+      param rc.dontRedirect=true;
+
       variables.logService.writeLogLevel( text = "authhash success", type = "information", file = request.appName );
     } else {
       // CHECK USERNAME:
@@ -132,6 +132,8 @@ component accessors=true {
     );
 
     rc.auth = variables.securityService.getAuth( );
+
+    param rc.dontRedirect=false;
 
     if ( !rc.dontRedirect ) {
       var loginscript = "";
