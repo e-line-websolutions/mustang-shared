@@ -176,9 +176,11 @@ component extends=framework.one {
     var bf = getBeanFactory();
     var i18n = bf.getBean( 'translationService' );
     var util = bf.getBean( 'utilityService' );
+    var sec = bf.getBean( 'securityService' );
 
     request.context.util = variables.util = util;
     request.context.i18n = variables.i18n = i18n;
+    request.context.sec = variables.sec = sec;
 
     util.setCFSetting( 'showdebugoutput', request.context.debug );
     util.limiter();
