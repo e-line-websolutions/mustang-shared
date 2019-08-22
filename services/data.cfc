@@ -889,6 +889,27 @@ component accessors=true {
     return result;
   }
 
+  public array function getSortedStructKeys( required struct input ) {
+    var result = structKeyArray( input );
+
+    // sorts both numbers and text:
+    arraySort( result, function( current, next ) {
+      var n_current = val( current );
+      var n_next = val( next );
+
+      // returns -1 or 1 if both are numeric, returns the result of compare() if not:
+      return n_current < n_next
+        ? -1
+        : n_current > n_next
+          ? 1
+          : n_current == n_next
+            ? compare( current, next )
+            : 0;
+    } );
+
+    return result;
+  }
+
   // private functions
 
   private string function __formatAsGUID( required string text ) {
