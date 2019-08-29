@@ -282,12 +282,9 @@ component accessors=true {
 
   // convenience functions
 
-  public any function processEntity( any data,
-                                 numeric level = 0,
-                                 numeric maxLevel = 1,
-                                 boolean basicsOnly = false ) {
-    if( level == 0 ) {
-      variables.utilityService.setCFSetting( "requesttimeout", 10 );
+  public any function processEntity( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false, array path = [] ) {
+    if ( level == 0 ) {
+      variables.utilityService.setCFSetting( 'requesttimeout', 10 );
     }
 
     var useJsonService = variables.jsonService;
@@ -299,69 +296,72 @@ component accessors=true {
     level = max( 0, level );
     maxLevel = min( 5, maxLevel );
 
-    if( isNull( data ) || (
-          maxLevel > 0 &&
-          level > maxLevel &&
-          !isSimpleValue( data )
-        )) {
+    if ( isNull( data ) || (
+      maxLevel > 0 &&
+      level > maxLevel &&
+      !isSimpleValue( data )
+    ) ) {
       return;
     }
 
     var nextLevel = level + 1;
     var maxArrayItt = 100;
-    var result = "";
+    var result = '';
 
     // data parsing:
-    if( isSimpleValue( data )) {
+    if ( isSimpleValue( data ) ) {
       var result = data;
-
-    } else if( isArray( data )) {
+    } else if ( isArray( data ) ) {
       var result = [];
       var itemCounter = 0;
-      for( var el in data ) {
-        if( ++itemCounter > maxArrayItt ) {
-          arrayAppend( result, "capped at #maxArrayItt# results" );
+      for ( var el in data ) {
+        if ( ++itemCounter > maxArrayItt ) {
+          arrayAppend( result, 'capped at #maxArrayItt# results' );
           break;
         } else {
-          var newData = this.processEntity( el, level, maxLevel, basicsOnly );
-          if( !isNull( newData )) {
+          var newData = this.processEntity( el, level, maxLevel, basicsOnly, path );
+          if ( !isNull( newData ) ) {
             arrayAppend( result, newData );
           }
         }
       }
-
-    } else if( isObject( data )) {
-      if( !isInstanceOf( data, "basecfc.base" )) {
-        if( level == 0 ) {
-          throw( "Doesn't work on non-basecfc objects" );
+    } else if ( isObject( data ) ) {
+      if ( !isInstanceOf( data, 'basecfc.base' ) ) {
+        if ( level == 0 ) {
+          throw( 'Doesn''t work on non-basecfc objects' );
         }
         return;
       }
 
-      var allowedFieldTypes = "id,column,many-to-one,one-to-many,many-to-many"; // level 0 only
+      var allowedFieldTypes = 'id,column,many-to-one,one-to-many,many-to-many'; // level 0 only
 
-      if( level > 1 || basicsOnly ) {
-        allowedFieldTypes = "id,column,many-to-one";
+      if ( level > 1 || basicsOnly ) {
+        allowedFieldTypes = 'id,column,many-to-one';
       }
 
-      if( level >= maxLevel && !maxLevel == 0 ) {
-        allowedFieldTypes = "id,column";
+      if ( level >= maxLevel && !maxLevel == 0 ) {
+        allowedFieldTypes = 'id,column';
       }
 
-      var result = { };
+      var result = {};
       var allFields = data.getInstanceVariables().properties;
 
-      for( var key in allFields ) {
+      for ( var key in allFields ) {
         var fieldProperties = {
-          "inapi" = true,
-          "fieldtype" = "column",
-          "dataType" = ""
+          'inapi' = true,
+          'fieldtype' = 'column',
+          'dataType' = ''
         };
 
         structAppend( fieldProperties, allFields[ key ], true );
 
-        if ( listFindNoCase( "numeric,string,boolean", fieldProperties.fieldtype ) ) {
-          fieldProperties.fieldtype = "column";
+        if ( listFindNoCase( 'numeric,string,boolean', fieldProperties.fieldtype ) ) {
+          fieldProperties.fieldtype = 'column';
+        }
+
+        // only return data in keys along a provided path (in array form: ['path','to','element']):
+        if ( arrayIsDefined( path, level+1 ) && path[ level+1 ] != key ) {
+          continue;
         }
 
         if ( !fieldProperties.inapi ) {
@@ -372,43 +372,46 @@ component accessors=true {
           continue;
         }
 
-        if ( !structKeyExists( data, "get#fieldProperties.name#" ) ) {
+        if ( !structKeyExists( data, 'get#fieldProperties.name#' ) ) {
           continue;
         }
 
-        var value = variables.utilityService.cfinvoke( data, "get#fieldProperties.name#" );
+        var value = variables.utilityService.cfinvoke( data, 'get#fieldProperties.name#' );
 
-        if( isNull( value )) {
+        if ( isNull( value ) ) {
           continue;
         }
 
-        if( fieldProperties.dataType == "json" ) {
+        if ( fieldProperties.dataType == 'json' ) {
           try {
             structAppend( result, useJsonService.deserialize( value ) );
           } catch ( any e ) {
-            variables.logService.dumpToFile( { "dataService.processEntity()" = {
-              "Exception" = e,
-              "Data" = value,
-              "Property" = fieldProperties
-            } }, true );
+            variables.logService.dumpToFile(
+              {
+                'dataService.processEntity()' = {
+                  'Exception' = e,
+                  'Data' = value,
+                  'Property' = fieldProperties
+                }
+              },
+              true
+            );
           }
           continue;
         }
 
-        if( fieldProperties.fieldtype contains "to-many" ) {
+        if ( fieldProperties.fieldtype contains 'to-many' ) {
           basicsOnly = true; // next level only allow to-one
         }
 
-        result[ fieldProperties.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
+        result[ fieldProperties.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path );
       }
-
-    } else if( isStruct( data )) {
-      var result = { };
-      for( var key in data ) {
+    } else if ( isStruct( data ) ) {
+      var result = {};
+      for ( var key in data ) {
         var value = data[ key ];
-        result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly );
+        result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path );
       }
-
     }
 
     return result;
@@ -906,6 +909,39 @@ component accessors=true {
             ? compare( current, next )
             : 0;
     } );
+
+    return result;
+  }
+
+  /**
+   * returns a value by providing a dotted path:
+   *  path = 'path.to.element'
+   *  results in path.getTo().getElement()
+   */
+  public any function getByPath( required component obj, required string path, any searchedOn ) {
+    path = listToArray( path, '.' );
+    var pathLength = arrayLen( path );
+    var startingPoint = 1;
+
+    for ( var point in path ) {
+      if ( isInstanceOf( obj, point ) ) {
+        arrayDeleteAt( path, startingPoint++ );
+        break;
+      }
+    }
+
+    var result = '';
+    var foundData = processEntity( obj, 0, 5, false, path );
+
+    structFindKey( foundData, path[ arrayLen( path ) ], 'all' ).each(function(e){
+      result = listAppend( result, e.value );
+    });
+
+    if ( result == '' ) {
+      return searchedOn;
+      // writeDump( path );
+      // writeDump( foundData );
+    }
 
     return result;
   }
