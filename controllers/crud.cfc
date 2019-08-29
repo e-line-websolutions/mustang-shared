@@ -587,60 +587,54 @@ component accessors=true {
   }
 
   public void function delete( required struct rc ) {
-    param rc.useAsViewEntity=variables.entity;
+    param rc.useAsViewEntity = variables.entity;
+    param rc.returnto = "#rc.useAsViewEntity#.default";
+    param rc.dontredirect = false;
 
-    if ( !securityService.can( "delete", variables.framework.getSection( ) ) ) {
-      rc.alert = {
-        "class" = "danger",
-        "text" = "privileges-error"
-      };
-      variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
+    if ( !securityService.can( 'delete', variables.framework.getSection() ) ) {
+      rc.alert = { 'class' = 'danger', 'text' = 'privileges-error' };
+      variables.framework.redirect( rc.useAsViewEntity & '.default', 'alert' );
     }
 
-    url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
+    url[ '#variables.entity#id' ] = rc[ '#variables.entity#id' ];
 
     variables.crudService.deleteEntity( variables.entity );
 
-    variables.framework.redirect( rc.useAsViewEntity & ".default" );
+    if ( !rc.dontredirect ) {
+      rc.alert = { 'class' = 'danger', 'text' = '#variables.entity#-has-been-deleted' };
+      variables.framework.redirect( rc.returnto, 'alert' );
+    }
   }
 
   public void function restore( required struct rc ) {
-    param rc.useAsViewEntity=variables.entity;
+    param rc.useAsViewEntity = variables.entity;
 
-    url[ "#variables.entity#id" ] = rc[ "#variables.entity#id" ];
+    url[ '#variables.entity#id' ] = rc[ '#variables.entity#id' ];
 
     variables.crudService.restoreEntity( variables.entity );
-
-    variables.framework.redirect( rc.useAsViewEntity & ".view", "#variables.entity#id" );
+    variables.framework.redirect( rc.useAsViewEntity & '.view', '#variables.entity#id' );
   }
 
   public void function save( required struct rc ) {
-    param rc.useAsViewEntity=variables.entity;
+    param rc.useAsViewEntity = variables.entity;
+    param rc.returnto = "#rc.useAsViewEntity#.default";
+    param rc.dontredirect = false;
 
     if ( structCount( form ) == 0 ) {
-      rc.alert = {
-        "class" = "danger",
-        "text" = "global-form-error"
-      };
-      variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
+      rc.alert = { 'class' = 'danger', 'text' = 'global-form-error' };
+      variables.framework.redirect( rc.useAsViewEntity & '.default', 'alert' );
     }
 
-    if ( !securityService.can( "change", variables.framework.getSection( ) ) ) {
-      rc.alert = {
-        "class" = "danger",
-        "text" = "privileges-error"
-      };
-      variables.framework.redirect( rc.useAsViewEntity & ".default", "alert" );
+    if ( !securityService.can( 'change', variables.framework.getSection() ) ) {
+      rc.alert = { 'class' = 'danger', 'text' = 'privileges-error' };
+      variables.framework.redirect( rc.useAsViewEntity & '.default', 'alert' );
     }
 
     rc.savedEntity = variables.crudService.saveEntity( variables.entity );
 
-    if ( !( structKeyExists( rc, "dontredirect" ) && rc.dontredirect ) ) {
-      if ( structKeyExists( rc, "returnto" ) ) {
-        variables.framework.redirect( rc.returnto );
-      } else {
-        variables.framework.redirect( rc.useAsViewEntity & ".default" );
-      }
+
+    if ( !rc.dontredirect ) {
+      variables.framework.redirect( rc.returnto );
     }
   }
 }
