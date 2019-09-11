@@ -170,7 +170,12 @@
     //return lCase( reReplace( reReplace( trim( utf8ToAscii( inputString ) ), '[^\w -]', '', 'ALL' ), '[ -]', '-', 'ALL' ) );
   }
 
-  public String function utf8ToAscii( required string input ) {
+  public string function unichr( required int input ) {
+    // chr but for unicode ( 128514 -> emoji )
+    return createObject( 'java', 'java.lang.String' ).init( createObject( 'java', 'java.lang.Character' ).toChars( input ) );
+  }
+
+  public string function utf8ToAscii( required string input ) {
     var normalizer = createObject( 'java', 'java.text.Normalizer' );
     var normalizer_NFD =  createObject( 'java', 'java.text.Normalizer$Form' ).valueOf('NFD');
     var normalizedInput = normalizer.normalize( input, normalizer_NFD );
@@ -318,18 +323,33 @@
     return cachedPaths[ absolutePath ];
   }
 
-  public struct function mergeStructs( required struct from, struct to = { } ) {
-    // also append nested struct keys:
-    for ( var key in to ) {
-      if ( isStruct( to[ key ] ) && structKeyExists( from, key ) ) {
-        structAppend( to[ key ], from[ key ] );
+  public any function mergeStructs( required struct from, struct to = { }, boolean recursive = false ) {
+    if ( recursive ) {
+      for ( var key in from ) {
+        if ( isStruct( from[ key ] ) ) {
+          if ( !structKeyExists( to, key ) ) {
+            to[ key ] = from[ key ];
+          } else if ( isStruct( to[ key ] ) ) {
+            mergeStructs( from[ key ], to[ key ], recursive );
+          }
+        } else {
+          to[ key ] = from[ key ];
+        }
       }
+      structAppend( from, to, false );
+    } else {
+      // also append nested struct keys:
+      for ( var key in to ) {
+        if ( isStruct( to[ key ] ) && structKeyExists( from, key ) ) {
+          structAppend( to[ key ], from[ key ] );
+        }
+      }
+
+      // copy the other keys:
+      structAppend( to, from );
+
+      return to;
     }
-
-    // copy the other keys:
-    structAppend( to, from );
-
-    return to;
   }
 
   public string function updateLocale( string newLocale = "" ) {

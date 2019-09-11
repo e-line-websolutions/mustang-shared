@@ -95,14 +95,22 @@ component extends=framework.one {
 
     if ( structKeyExists( url, 'nuke' ) ) {
       // empty caches:
+      var t = getTickCount();
       structDelete( application, 'cache' );
       structDelete( application, 'threads' );
       cacheRemove( arrayToList( cacheGetAllIds() ) );
-      logService.writeLogLevel( 'NUKE: Caches purged', request.appName );
+
+      logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): Caches purged', request.appName );
 
       // rebuild ORM:
       if ( variables.cfg.useOrm ) {
+        var t = getTickCount();
+
         ormEvictQueries();
+
+        logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM Caches purged', request.appName );
+
+        var t = getTickCount();
 
         var modelPath = this.ormSettings.CFCLocation;
 
@@ -111,16 +119,24 @@ component extends=framework.one {
         }
 
         var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml' );
+
         for ( var filepath in hbmxmlFiles ) {
           fileDelete( filepath );
         }
-        logService.writeLogLevel( 'NUKE: HBMXML files deleted', request.appName );
+
+        logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): HBMXML files deleted', request.appName );
+
+        var t = getTickCount();
 
         ormReload();
+
+        logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM reloaded', request.appName );
 
         var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml' );
 
         if ( !arrayIsEmpty( hbmxmlFiles ) ) {
+          var t = getTickCount();
+
           if ( !directoryExists( variables.root & 'documentation' ) ) {
             directoryCreate( variables.root & 'documentation' );
           }
@@ -129,14 +145,18 @@ component extends=framework.one {
             directoryCreate( variables.root & 'documentation/hbmxml' );
           }
 
+          logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): moving HBMXML files to documentation location (if present)', request.appName );
+
+          var t = getTickCount();
+
           for ( var filepath in hbmxmlFiles ) {
             var fileName = getFileFromPath( filepath );
             var destination = variables.root & 'documentation/hbmxml/' & fileName;
             fileMove( filepath, destination );
           }
-        }
 
-        logService.writeLogLevel( 'NUKE: ORM reloaded', request.appName );
+          logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): HBMXML files moved.', request.appName );
+        }
       }
     }
 
