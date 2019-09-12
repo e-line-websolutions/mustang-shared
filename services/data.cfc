@@ -939,8 +939,6 @@ component accessors=true {
 
     if ( result == '' ) {
       return searchedOn;
-      // writeDump( path );
-      // writeDump( foundData );
     }
 
     return result;
