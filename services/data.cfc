@@ -926,8 +926,10 @@ component accessors=true {
 
   /**
    * returns a value by providing a dotted path:
-   *  path = 'path.to.element'
-   *  results in path.getTo().getElement()
+   *   path = 'path.to.element'
+   *   results in path.getTo().getElement()
+   *   as long as it matches whatever is given in searchedOn
+   *     example: searchedOn = '> 100'
    */
   public any function getByPath( required component obj, required any path, any searchedOn ) {
     if ( isSimpleValue( path ) ) {
@@ -966,6 +968,10 @@ component accessors=true {
       } else if ( isObject( next ) ) {
         return next.getName();
       } else if ( isSimpleValue( next ) ) {
+        if ( listLen( searchedOn, ';' ) == 2 ) {
+          searchedOn = listChangeDelims(searchedOn, '-', ';');
+        }
+
         if ( listLen( searchedOn, '-' ) == 2 ) {
           var lower = val( trim( listFirst( searchedOn, '-' ) ) );
           var higher = val( trim( listLast( searchedOn, '-' ) ) );
@@ -986,12 +992,7 @@ component accessors=true {
               return next;
             }
           } catch ( any e ) {
-            writeDump( searchedOn );
-            writeDump( next );
-            writeDump( comperator );
-            writeDump( compareTo );
-            writeDump( e );
-            abort;
+            return searchedOn;
           }
         }
       }
