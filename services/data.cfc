@@ -913,35 +913,89 @@ component accessors=true {
     return result;
   }
 
+  public boolean function numericalCompare( required numeric left, required string comperator, required numeric right ) {
+    switch ( comperator ) {
+      case '>': return left > right;
+      case '<': return left < right;
+      case '>=': return left >= right;
+      case '<=': return left <= right;
+      case '==': return left == right;
+    }
+    return false;
+  }
+
   /**
    * returns a value by providing a dotted path:
    *  path = 'path.to.element'
    *  results in path.getTo().getElement()
    */
-  public any function getByPath( required component obj, required string path, any searchedOn ) {
-    path = listToArray( path, '.' );
-    var pathLength = arrayLen( path );
-    var startingPoint = 1;
+  public any function getByPath( required component obj, required any path, any searchedOn ) {
+    if ( isSimpleValue( path ) ) {
+      path = listToArray( path, '.' );
 
-    for ( var point in path ) {
-      if ( isInstanceOf( obj, point ) ) {
-        arrayDeleteAt( path, startingPoint++ );
-        break;
+      var pathLength = arrayLen( path );
+      var startingPoint = 1;
+
+      for ( var point in path ) {
+        if ( isInstanceOf( obj, point ) ) {
+          arrayDeleteAt( path, startingPoint++ );
+          break;
+        }
       }
     }
 
-    var result = '';
-    var foundData = processEntity( obj, 0, 5, false, path );
-
-    structFindKey( foundData, path[ arrayLen( path ) ], 'all' ).each(function(e){
-      result = listAppend( result, e.value );
-    });
-
-    if ( result == '' ) {
-      return searchedOn;
+    if ( arrayLen( path ) == 0 ) {
+      return '';
     }
 
-    return result;
+    for ( var step in path ) {
+      var next = evaluate( 'obj.get#step#()' );
+
+      if ( isNull( next ) ) {
+        continue;
+      }
+
+      if ( isArray( next ) ) {
+        var nextsteps = [];
+        for ( var nextstep in next ) {
+          arrayDeleteAt( path, 1 );
+          if ( arrayLen( path ) ) {
+            return getByPath( nextstep, path, searchedOn );
+          }
+        }
+      } else if ( isObject( next ) ) {
+        return next.getName();
+      } else if ( isSimpleValue( next ) ) {
+        if ( listLen( searchedOn, '-' ) == 2 ) {
+          var lower = val( trim( listFirst( searchedOn, '-' ) ) );
+          var higher = val( trim( listLast( searchedOn, '-' ) ) );
+          if ( next >= lower && next <= higher ) {
+            return next;
+          }
+        } else {
+          var compareTo = searchedOn;
+          var comperator = '==';
+
+          if ( listFind( '<,>', left( searchedOn, 1 ) ) ) {
+            comperator = left( searchedOn, 1 );
+            compareTo = listRest( searchedOn, ' ' );
+          }
+
+          try {
+            if ( numericalCompare( next, comperator, compareTo ) ) {
+              return next;
+            }
+          } catch ( any e ) {
+            writeDump( searchedOn );
+            writeDump( next );
+            writeDump( comperator );
+            writeDump( compareTo );
+            writeDump( e );
+            abort;
+          }
+        }
+      }
+    }
   }
 
   // private functions
