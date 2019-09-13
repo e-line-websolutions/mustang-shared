@@ -60,7 +60,7 @@ function createModal( id, size ) {
     size = '';
   }
 
-  return '<div class="modal fade" data-id="' + id + '">' + '<div class="modal-dialog ' + size + '">' + '<div class="modal-content">' + '</div>' + '</div>';
+  return '<div class="modal fade" data-id=" tabindex="-1"' + id + '">' + '<div class="modal-dialog ' + size + '">' + '<div class="modal-content">' + '</div>' + '</div>';
 };
 
 function removeModal( $modal ) {
