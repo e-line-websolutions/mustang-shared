@@ -132,4 +132,9 @@ component accessors=true {
   public string function getFiletype( string filePath = variables.originalFileName ) {
     return listLast( filePath, '.' );
   }
+
+  public string function getDigest( fileObj, string digestAlgorithms = 'SHA-256' ) {
+    var digest = createObject( 'java', 'java.security.MessageDigest' ).getInstance( digestAlgorithms );
+    return toBase64( digest.digest( fileObj ) );
+  }
 }
