@@ -292,20 +292,12 @@
     return charsetEncode( bytes, "utf-8" );
   }
 
-  public string function encryptForUrl( stringToEncrypt, encryptKey ) {
-    if ( isNull( encryptKey ) ) {
-      encryptKey = variables.config.encryptKey;
-    }
-
-    return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey ) ) );
+  public string function encryptForUrl( stringToEncrypt, encryptKey = variables.config.encryptKey, algorithm = 'CFMX_COMPAT' ) {
+    return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey, algorithm ) ) );
   }
 
-  public string function decryptForUrl( stringToDecrypt, encryptKey ) {
-    if ( isNull( encryptKey ) ) {
-      encryptKey = variables.config.encryptKey;
-    }
-
-    return decrypt( toString( toBinary( base64URLDecode( stringToDecrypt ) ) ), encryptKey );
+  public string function decryptForUrl( stringToDecrypt, encryptKey = variables.config.encryptKey, algorithm = 'CFMX_COMPAT' ) {
+    return decrypt( toString( toBinary( base64URLDecode( stringToDecrypt ) ) ), encryptKey, algorithm );
   }
 
   public boolean function fileExistsUsingCache( required string absolutePath ) {

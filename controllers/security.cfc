@@ -5,7 +5,7 @@ component accessors=true {
   property contactService;
   property contentService;
   property dataService;
-  property mailService;
+  property emailService;
   property optionService;
   property securityService;
   property logService;
@@ -284,8 +284,12 @@ component accessors=true {
         var authhash = toBase64( encrypt( user.getID( ), variables.config.encryptKey ) );
         var activationEmails = variables.contentService.getByFQA( "mail.activation" );
 
-        if ( arrayLen( activationEmails ) gt 0 ) {
+        if ( ( isArray( activationEmails ) && arrayLen( activationEmails ) ) ) {
           var emailText = activationEmails[ 1 ];
+        }
+
+        if ( !isNull( activationEmails ) && !isArray( activationEmails ) ) {
+          var emailText = activationEmails;
         }
 
         if ( isNull( emailText ) ) {
@@ -294,13 +298,16 @@ component accessors=true {
           throw( logMessage );
         }
 
-        variables.mailService.send(
-          variables.config.ownerEmail,
-          user,
-          emailText.getTitle( ),
-          variables.utilityService.parseStringVariables(
-            emailText.getBody( ),
-            { link = variables.framework.buildURL( action = 'profile.password', queryString = { "authhash" = authhash } ) }
+        variables.emailService.send(
+          from = variables.config.ownerEmail,
+          to = user,
+          subject = emailText.getTitle(),
+          body = variables.utilityService.parseStringVariables(
+            emailText.getBody(),
+            {
+              link = variables.framework.buildURL( action = 'profile.password', queryString = { 'authhash' = authhash } ),
+              fullname = user.getFullname()
+            }
           )
         );
 

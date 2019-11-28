@@ -4,6 +4,9 @@ component extends="baseService" {
   }
 
   public any function getByEmail( required string email, boolean deleted = false ) {
-    return entityLoad( getEntityName(), { email = email, deleted = deleted }, true );
+    var entities = entityLoad( getEntityName(), { email = email, deleted = deleted } );
+    if ( !arrayIsEmpty( entities ) ) {
+      return entities[ 1 ];
+    }
   }
 }

@@ -1,7 +1,6 @@
 component accessors=true {
   property config;
   property logService;
-  property struct allOptions;
   property array optionEntities;
 
   // constructor
@@ -9,7 +8,6 @@ component accessors=true {
   public component function init( config ) {
     structAppend( variables, arguments );
 
-    variables.allOptions = {};
     variables.optionEntities = [];
 
     param config.useOrm = true;
@@ -51,14 +49,13 @@ component accessors=true {
 
       arrayAppend( result[ key ], value );
     }
-
-    variables.allOptions = result;
   }
 
   public any function getOptionByName( required string entityName, required string optionName, boolean createIfMissing = false ) {
     entityName = trim( entityName );
+    optionName = trim( optionName );
 
-    if( !len( entityName ) || entityName == "ignore" ) {
+    if( !len( entityName ) || !len( optionName ) || entityName == "ignore" ) {
       return;
     }
 
@@ -66,22 +63,16 @@ component accessors=true {
       return;
     }
 
-    optionName = trim( optionName );
+    if ( !createIfMissing ) {
+      return __searchOptions( entityName, optionName );
+    } else {
+      lock name="#request.appName#-optionService-getOptionByName-#entityName#-#optionName#" timeout="10" type="exclusive" {
+        var searchOptions = __searchOptions( entityName, optionName );
 
-    if( !len( optionName ) ) {
-      return;
-    }
+        if( !isNull( searchOptions ) ) {
+          return searchOptions;
+        }
 
-    logService.writeLogLevel( "optionService.getOptionByName( #entityName#, #optionName# ) called" );
-
-    lock name="#request.appName#-optionService-getOptionByName-#entityName#-#optionName#" timeout="10" type="exclusive" {
-      var searchOptions = __searchOptions( entityName, optionName );
-
-      if( !isNull( searchOptions ) ) {
-        return searchOptions;
-      }
-
-      if( createIfMissing ) {
         return __createNewOption( entityName, optionName );
       }
     }
@@ -92,17 +83,17 @@ component accessors=true {
   // private functions
 
   private any function __searchOptions( required string entityName, required string optionName ) {
-    var sql = '
+    var hql = '
       FROM      option o
       WHERE     o.class = :entityName
         AND     LOWER( o.name ) = :optionName
     ';
 
-    return ORMExecuteQuery(
-      sql,
-      { "entityName" = lCase( entityName ), "optionName" = lCase( optionName ) },
+    return ormExecuteQuery(
+      hql,
+      { 'entityName' = lCase( entityName ), 'optionName' = lCase( optionName ) },
       true,
-      { "ignorecase" = true }
+      { 'cacheable' = true }
     );
   }
 
@@ -119,24 +110,15 @@ component accessors=true {
       newOption.save( { "name" = optionName } );
     }
 
-    __addOptionToCache( entityName, optionName );
-
     return newOption;
   }
 
-  private void function __addOptionToCache( required string entityName, required string optionName ) {
-    if( !structKeyExists( variables.allOptions, entityName ) ) {
-      variables.allOptions[ entityName ] = [ ];
-    }
-
-    arrayAppend( variables.allOptions[ entityName ], optionName );
-  }
-
   private array function __getOptionsFromDB( ) {
-    transaction {
-      var result = ORMExecuteQuery( "SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> ''" );
-    }
-
-    return result;
+    var hql = '
+      SELECT new map( type( o ) AS key, o.name AS value )
+      FROM option o
+      WHERE o.deleted = false AND o.name <> ''''
+    ';
+    return ormExecuteQuery( hql, {}, false, { 'cacheable' = true } );
   }
 }

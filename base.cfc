@@ -130,22 +130,23 @@ component {
     param exception.errorCode=500;
     param exception.detail="";
 
-    exception.errorCode = val( exception.errorCode );
+    var errorCode = duplicate( exception.errorCode );
 
-    if ( exception.errorCode == 0 ) {
-      exception.errorCode = 500;
+    if ( !isNumeric( errorCode ) ) {
+      exception.message &= ' (code: #errorCode#)';
+      errorCode = 500;
     }
 
     var pc = getPageContext( );
 
     if ( structKeyExists( server, "lucee" ) ) {
       cfcontent( reset = true );
-      cfheader( statusCode = exception.errorCode, statusText = exception.message );
+      cfheader( statusCode = errorCode, statusText = exception.message );
     } else {
       pc.getCfoutput( ).clearAll( );
       pc.getResponse( )
         .getResponse( )
-        .setStatus( val( exception.errorCode ) == 0 ? 500 : exception.errorCode, exception.message );
+        .setStatus( errorCode, exception.message );
     }
 
     var showDebugError = listFind( config.debugIP, cgi.remote_addr );
@@ -191,8 +192,8 @@ component {
     var fallbackErrorFile = 'error.html';
 
     for ( webroot in webroots ) {
-      if ( fileExists( variables.root & "/#webroot#/error-#exception.errorCode#.html" ) ) {
-        include "/#config.root#/#webroot#/error-#exception.errorCode#.html";
+      if ( fileExists( variables.root & "/#webroot#/error-#errorCode#.html" ) ) {
+        include "/#config.root#/#webroot#/error-#errorCode#.html";
         writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
         abort;
       } else if ( fileExists( variables.root & "/#webroot#/error.html" ) ) {
