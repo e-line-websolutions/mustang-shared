@@ -318,6 +318,8 @@
   public any function mergeStructs( required struct from, struct to = { }, boolean recursive = false ) {
     if ( recursive ) {
       for ( var key in from ) {
+        if ( !structKeyExists( from, key ) ) continue;
+
         if ( isStruct( from[ key ] ) ) {
           if ( !structKeyExists( to, key ) ) {
             to[ key ] = from[ key ];
