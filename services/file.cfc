@@ -130,6 +130,8 @@ component accessors=true {
   public string function getDigest( fileObj, string digestAlgorithms = 'SHA-256' ) {
     var digest = createObject( 'java', 'java.security.MessageDigest' ).getInstance( digestAlgorithms );
     return toBase64( digest.digest( fileObj ) );
+  }
+  
   public string function encodeFileToBase64Binary( fileObject ) {
     var fileUtils = createObject( 'java', 'org.apache.commons.io.FileUtils' );
     var base64Encoder = createObject( 'java', 'java.util.Base64' ).getEncoder();
