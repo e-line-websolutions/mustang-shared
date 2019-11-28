@@ -9,9 +9,10 @@ component accessors=true {
   property numeric fileSize;
   property any fileContent;
 
-  public file function init( ) {
-    variables.jFileInputStream = createObject( "java", "java.io.FileInputStream" );
-    variables.jFile = createObject( "java", "java.io.File" );
+  public file function init( root, logService, javaloaderService ) {
+    variables.jFileInputStream = createObject( 'java', 'java.io.FileInputStream' );
+    variables.jFile = createObject( 'java', 'java.io.File' );
+    variables.jl = javaloaderService.new( [ expandPath( "/mustang/lib/tika/tika-eval-1.22.jar" ) ] );
     return this;
   }
 
@@ -96,34 +97,27 @@ component accessors=true {
     fileWrite( location , binarycode );
   }
 
+  public string function getMimetypeFromBinaryFile( binaryFileData ) {
+    return jl.create( 'org.apache.tika.Tika' ).detect( binaryFileData );
+  }
+
   public string function getMimetype( string filePath = variables.originalFileName ) {
     switch ( getFiletype( filePath ) ) {
       case 'jpg' :
       case 'jpe' :
-      case 'jpeg' :
-        return 'image/jpeg';
-      case 'gif' :
-        return 'image/gif';
-      case 'png' :
-        return 'image/png';
-      case 'pdf' :
-        return 'application/pdf';
-      case 'doc' :
-        return 'application/msword';
-      case 'zip' :
-        return 'application/zip';
-      case 'rar' :
-        return 'application/x-rar-compressed';
-      case 'swf' :
-        return 'application/x-shockwave-flash';
-      case 'svg' :
-        return 'image/svg+xml';
-      case 'xls' :
-        return 'application/vnd.ms-excel';
-      case 'xlsx' :
-        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      case 'xlsm' :
-        return 'application/vnd.ms-excel.sheet.macroEnabled.12';
+      case 'jpeg' : return 'image/jpeg';
+      case 'gif'  : return 'image/gif';
+      case 'png'  : return 'image/png';
+      case 'pdf'  : return 'application/pdf';
+      case 'doc'  : return 'application/msword';
+      case 'docx' : return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'zip'  : return 'application/zip';
+      case 'rar'  : return 'application/x-rar-compressed';
+      case 'swf'  : return 'application/x-shockwave-flash';
+      case 'svg'  : return 'image/svg+xml';
+      case 'xls'  : return 'application/vnd.ms-excel';
+      case 'xlsx' : return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'xlsm' : return 'application/vnd.ms-excel.sheet.macroEnabled.12';
     }
 
     return 'application/octet-stream';
@@ -136,5 +130,9 @@ component accessors=true {
   public string function getDigest( fileObj, string digestAlgorithms = 'SHA-256' ) {
     var digest = createObject( 'java', 'java.security.MessageDigest' ).getInstance( digestAlgorithms );
     return toBase64( digest.digest( fileObj ) );
+  public string function encodeFileToBase64Binary( fileObject ) {
+    var fileUtils = createObject( 'java', 'org.apache.commons.io.FileUtils' );
+    var base64Encoder = createObject( 'java', 'java.util.Base64' ).getEncoder();
+    return base64Encoder.encodeToString( fileUtils.readFileToByteArray( fileObject ) );
   }
 }
