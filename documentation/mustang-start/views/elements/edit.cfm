@@ -47,29 +47,29 @@
   </cfif>
 
       <div class="tab-pane active" id="form-#local.entity#">
-        <div class="container-fluid">
-          <div class="clearfix" style="margin-bottom: 15px">
-            <small class="text-muted font-weight-bold text-xs-right pull-right">#i18n.translate( local.entity )#</small>
-            <cfset numberOfSubclasses = arrayLen( rc.subclasses ) />
-            <cfif local.editable and numberOfSubclasses gt 1>
-              <div class="dropdown mainSubclassSelector">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false">#i18n.translate( 'subclass' )#</button>
-                <div class="dropdown-menu">
-                  <cfloop from="2" to="#numberOfSubclasses#" index="i">
-                    <cfset subclass = rc.subclasses[ i ] />
-                    <cfset params = { } />
-                    <cfif structKeyExists( local, "#local.entity#id" )>
-                      <cfset params[ "#local.entity#id" ] = local[ "#local.entity#id" ] />
-                    </cfif>
-                    <a class="dropdown-item" href="#buildUrl( action = '#subclass#.#getItem( )#', queryString = params )#">#i18n.translate( subclass )#</a>
-                  </cfloop>
-                </div>
+        <div class="clearfix" style="margin-bottom: 15px">
+          <small class="text-muted font-weight-bold text-xs-right pull-right">#i18n.translate( local.entity )#</small>
+          <cfset numberOfSubclasses = arrayLen( rc.subclasses ) />
+          <cfif local.editable and numberOfSubclasses gt 1>
+            <div class="dropdown mainSubclassSelector">
+              <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false">#i18n.translate( 'subclass' )#</button>
+              <div class="dropdown-menu">
+                <cfloop from="2" to="#numberOfSubclasses#" index="i">
+                  <cfset subclass = rc.subclasses[ i ] />
+                  <cfset params = { } />
+                  <cfif structKeyExists( local, "#local.entity#id" )>
+                    <cfset params[ "#local.entity#id" ] = local[ "#local.entity#id" ] />
+                  </cfif>
+                  <a class="dropdown-item" href="#buildUrl( action = '#subclass#.#getItem( )#', queryString = params )#">#i18n.translate( subclass )#</a>
+                </cfloop>
               </div>
-            </cfif>
-          </div>
+            </div>
+          </cfif>
+        </div>
 
+        <div class="container-fluid">
           <cfif not local.inline>
             <form
               <cfif local.modal>

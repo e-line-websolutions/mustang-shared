@@ -485,23 +485,23 @@ component accessors=true {
   }
 
   public void function edit( required struct rc ) {
-    param rc.modal=false;
-    param rc.editable=true;
-    param rc.inline=false;
-    param rc.formprepend="";
-    param rc.formappend="";
-    param rc.namePrepend="";
-    param rc.tabs=[];
+    param rc.modal = false;
+    param rc.editable = true;
+    param rc.inline = false;
+    param rc.formprepend = "";
+    param rc.formappend = "";
+    param rc.namePrepend = "";
+    param rc.tabs = [];
 
     rc.submitButtons = variables.submitButtons;
-    rc.fallbackView = ":elements/edit";
+    rc.fallbackView = ':elements/edit';
 
     if ( rc.modal ) {
       request.layout = false;
-      rc.fallbackView = ":elements/modaledit";
+      rc.fallbackView = ':elements/modaledit';
 
       if ( rc.inline ) {
-        rc.fallbackView = ":elements/inlineedit";
+        rc.fallbackView = ':elements/inlineedit';
       }
     }
 
@@ -509,32 +509,31 @@ component accessors=true {
 
     // is this a loggable object?
     var object = entityNew( variables.entity );
-    var entityInstanceVars = object.getInstanceVariables( );
-
-    rc.subclasses = object.getSubClasses( );
-    rc.canBeLogged = ( config.log && isInstanceOf( object, "#config.root#.model.logged" ) && rc.entity != "logentry" );
+    var entityInstanceVars = object.getInstanceVariables();
+    rc.subclasses = object.getSubClasses();
+    rc.canBeLogged = ( config.log && isInstanceOf( object, '#config.root#.model.logged' ) && rc.entity != 'logentry' );
 
     // load form properties
     rc.properties = entityInstanceVars.properties;
 
-    var propertiesInForm = [ ];
+    var propertiesInForm = [];
 
     for ( var key in rc.properties ) {
-      if ( structKeyExists( rc.properties[ key ], "inform" ) ) {
+      if ( structKeyExists( rc.properties[ key ], 'inform' ) ) {
         arrayAppend( propertiesInForm, rc.properties[ key ] );
       }
     }
 
-    rc.hideDelete = structKeyExists( entityInstanceVars.settings, "hideDelete" );
+    rc.hideDelete = structKeyExists( entityInstanceVars.settings, 'hideDelete' );
 
-    if ( structKeyExists( rc, "#rc.entity#id" ) && !len( trim( rc[ "#rc.entity#id" ] ) ) ) {
-      structDelete( rc, "#rc.entity#id" );
+    if ( structKeyExists( rc, '#rc.entity#id' ) && !len( trim( rc[ '#rc.entity#id' ] ) ) ) {
+      structDelete( rc, '#rc.entity#id' );
     }
 
-    if ( structKeyExists( rc, "#rc.entity#id" ) ) {
-      rc.data = entityLoadByPK( rc.entity, rc[ "#rc.entity#id" ] );
+    if ( structKeyExists( rc, '#rc.entity#id' ) ) {
+      rc.data = entityLoadByPK( rc.entity, rc[ '#rc.entity#id' ] );
 
-      if ( !isDefined( "rc.data" ) ) {
+      if ( !isDefined( 'rc.data' ) ) {
         variables.framework.redirect( rc.entity );
       }
     }
@@ -545,26 +544,26 @@ component accessors=true {
 
     // prep the form fields and sort them in the right order
     var indexNr = 0;
-    var columnsInForm = [ ];
+    var columnsInForm = [];
     var numberOfPropertiesInForm = arrayLen( propertiesInForm ) + 10;
 
     for ( var property in propertiesInForm ) {
-      if ( structKeyExists( property, "orderinform" ) && isNumeric( property.orderinform ) ) {
+      if ( structKeyExists( property, 'orderinform' ) && isNumeric( property.orderinform ) ) {
         indexNr = property.orderinform;
       } else {
         indexNr = numberOfPropertiesInForm++;
       }
 
       columnsInForm[ indexNr ] = duplicate( property );
-      columnsInForm[ indexNr ].saved = "";
+      columnsInForm[ indexNr ].saved = '';
 
-      var savedValue = evaluate( "rc.data.get#property.name#()" );
+      var savedValue = evaluate( 'rc.data.get#property.name#()' );
 
       if ( !isNull( savedValue ) ) {
         if ( isArray( savedValue ) ) {
-          var savedValueList = "";
+          var savedValueList = '';
           for ( var individualValue in savedValue ) {
-            savedValueList = listAppend( savedValueList, individualValue.getID( ) );
+            savedValueList = listAppend( savedValueList, individualValue.getID() );
           }
           savedValue = savedValueList;
         }
@@ -574,12 +573,14 @@ component accessors=true {
       }
     }
 
-    rc.columns = [ ];
+    rc.columns = [];
 
     for ( var columnInForm in columnsInForm ) {
       if ( !isNull( columnInForm ) ) {
         if ( !isNull( columnInForm.entityname ) ) {
-          columnInForm.subclasses = createObject( "java", "java.util.Arrays" ).asList( entityNew( columnInForm.entityname ).getSubClasses( ) );
+          columnInForm.subclasses = createObject( 'java', 'java.util.Arrays' ).asList(
+            entityNew( columnInForm.entityname ).getSubClasses()
+          );
         }
         arrayAppend( rc.columns, columnInForm );
       }
