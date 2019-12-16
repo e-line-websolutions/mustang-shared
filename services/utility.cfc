@@ -35,7 +35,9 @@
     }
 
     for ( var key in stringVariables ) {
-      if ( isNull( stringVariables[ key ] ) || !isSimpleValue( stringVariables[ key ] ) ) {
+      if ( !structKeyExists( stringVariables, key ) ||
+           isNull( stringVariables[ key ] ) ||
+           !isSimpleValue( stringVariables[ key ] ) ) {
         continue;
       }
       stringToParse = replaceNoCase( stringToParse, '###key###', stringVariables[ key ], 'all' );

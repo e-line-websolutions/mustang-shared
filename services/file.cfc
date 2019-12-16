@@ -137,4 +137,19 @@ component accessors=true {
     var base64Encoder = createObject( 'java', 'java.util.Base64' ).getEncoder();
     return base64Encoder.encodeToString( fileUtils.readFileToByteArray( fileObject ) );
   }
+
+  public string function fsPathFormat( required string input, string sub = ' ', string replaceSpace = ' ', boolean toLowercase = false ) {
+    var illegalChars = listToArray( '<,>,:,",/,\,|,?,*' );
+
+    if ( sub.len() > 1 ) throw( 'substitute with a single char only' );
+    if ( illegalChars.find( sub ) ) throw( 'invalid substitute char' );
+
+    illegalChars.each( function( char ) {
+      input = replace( input, char, sub, 'all' );
+    } );
+
+    input = replace( trim( input ), ' ', replaceSpace, 'all' );
+
+    return toLowercase ? lCase( input ) : input;
+  }
 }
