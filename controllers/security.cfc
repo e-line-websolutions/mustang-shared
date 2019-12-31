@@ -17,14 +17,14 @@ component accessors=true {
   public void function login( required struct rc ) {
     variables.framework.setLayout( 'security' );
 
-    param rc.username = "";
-    param rc.password = "";
+    param rc.username="";
+    param rc.password="";
   }
 
   public void function doLogin( required struct rc ) {
-    param rc.username = "";
-    param rc.password = "";
-    param rc.authhash = "";
+    param rc.username="";
+    param rc.password="";
+    param rc.authhash="";
 
     var updateUserWith = { 'lastLoginDate' = now() };
     // Check credentials:
@@ -270,6 +270,8 @@ component accessors=true {
   }
 
   public void function doRetrieve( required struct rc ) {
+    param rc.returnToSection='security';
+
     if ( structKeyExists( rc, 'email' ) && len( trim( rc.email ) ) ) {
       var user = variables.contactService.getByEmail( rc.email );
 
@@ -277,15 +279,13 @@ component accessors=true {
         var authhash = toBase64( encrypt( user.getID(), variables.config.encryptKey ) );
         var activationEmails = variables.contentService.getByFQA( 'mail.activation' );
 
-        if ( ( isArray( activationEmails ) && arrayLen( activationEmails ) ) ) {
+        if ( isObject( activationEmails ) ) {
+          var emailText = activationEmails;
+        } else if ( ( isArray( activationEmails ) && !arrayIsEmpty( activationEmails ) ) ) {
           var emailText = activationEmails[ 1 ];
         }
 
-        if ( !isNull( activationEmails ) && !isArray( activationEmails ) ) {
-          var emailText = activationEmails;
-        }
-
-        if ( isNull( emailText ) ) {
+        if ( isNull( emailText ) || isNull( emailText.getFullyqualifiedaction() ) ) {
           var logMessage = 'missing activation email text, add text with fqa: ''mail.activation''';
           variables.logService.writeLogLevel( text = logMessage, type = 'warning', file = request.appName );
           throw( logMessage );
@@ -306,11 +306,11 @@ component accessors=true {
 
         rc.alert = { 'class' = 'success', 'text' = 'email-sent' };
         variables.logService.writeLogLevel( text = 'retrieve password email sent', type = 'information', file = request.appName );
-        variables.framework.redirect( ':security.login', 'alert' );
+        variables.framework.redirect( ':#rc.returnToSection#.login', 'alert' );
       } else {
         rc.alert = { 'class' = 'danger', 'text' = 'email-not-found' };
         variables.logService.writeLogLevel( text = 'retrieve password email not found', type = 'warning', file = request.appName );
-        variables.framework.redirect( ':security.retrieve', 'alert' );
+        variables.framework.redirect( ':#rc.returnToSection#.retrieve', 'alert' );
       }
     }
   }
