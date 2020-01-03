@@ -15,6 +15,15 @@ component accessors=true {
     }
 
     var entityProperties = entityToSave.getInheritedProperties( );
+
+    for ( var key in entityProperties ) {
+      var fieldDefinition = entityProperties[ key ];
+      param fieldDefinition.fieldType = "string";
+      if ( !structKeyExists( formData, key ) && ( fieldDefinition.fieldType == 'boolean' || fieldDefinition.fieldType == 'bit' ) ) {
+        formData[ key ] = false;
+      }
+    }
+
     var inlineEditProperties = structFindKey( entityProperties, "inlineedit", "all" );
 
     // add inline form as sub items to be saved along side the main entity:
@@ -55,6 +64,16 @@ component accessors=true {
 
     transaction {
       var result = entityToSave.save( formData );
+      // save empty fields:
+      for ( var key in formData ) {
+        if ( entityToSave.propertyExists( key ) ) {
+          var fieldDefinition = entityProperties[ key ];
+          param fieldDefinition.fieldType='string';
+          if ( fieldDefinition.fieldType == 'string' && isSimpleValue( formData[ key ] ) && !len( trim( formData[ key ] ) ) ) {
+            invoke( entityToSave, "set#key#", { '#key#' = '' } );
+          }
+        }
+      }
     }
 
     variables.logService.writeLogLevel( "Entity '#entityName#' saved" );
