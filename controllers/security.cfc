@@ -272,12 +272,13 @@ component accessors=true {
   public void function doRetrieve( required struct rc ) {
     param rc.returnToSection='security';
     param rc.passwordResetFQA=':#rc.returnToSection#.password';
+    param rc.emailTemplate='';
 
     if ( structKeyExists( rc, 'email' ) && len( trim( rc.email ) ) ) {
-      var user = variables.contactService.getByEmail( rc.email );
+      var contact = variables.contactService.getByEmail( rc.email );
 
-      if ( !isNull( user ) ) {
-        var authhash = toBase64( encrypt( user.getID(), variables.config.encryptKey ) );
+      if ( !isNull( contact ) ) {
+        var authhash = toBase64( encrypt( contact.getID(), variables.config.encryptKey ) );
         var activationEmails = variables.contentService.getByFQA( 'mail.activation' );
 
         if ( isObject( activationEmails ) ) {
@@ -292,18 +293,23 @@ component accessors=true {
           throw( logMessage );
         }
 
-        variables.emailService.send(
-          from = variables.config.ownerEmail,
-          to = user,
-          subject = emailText.getTitle(),
-          body = variables.utilityService.parseStringVariables(
-            emailText.getBody(),
-            {
-              link = variables.framework.buildURL( action = rc.passwordResetFQA, queryString = { 'authhash' = authhash } ),
-              fullname = user.getFullname()
-            }
-          )
+        var emailBody = variables.utilityService.parseStringVariables(
+          emailText.getBody(),
+          {
+            'link' = variables.framework.buildURL( action = rc.passwordResetFQA, queryString = { 'authhash' = authhash } ),
+            'firstname' = contact.getFirstname(),
+            'fullname' = contact.getFullname()
+          }
         );
+
+        if ( len( trim( rc.emailTemplate ) ) ) {
+          var emailBody = variables.utilityService.parseStringVariables(
+            variables.framework.layout( 'mail', variables.framework.view( rc.emailTemplate ) ),
+            { 'firstname' = contact.getFirstname(), 'body' = emailBody }
+          );
+        }
+
+        variables.emailService.send( from = variables.config.ownerEmail, to = contact, subject = emailText.getTitle(), body = emailBody );
 
         rc.alert = { 'class' = 'success', 'text' = 'email-sent' };
         variables.logService.writeLogLevel( text = 'retrieve password email sent', type = 'information', file = request.appName );
