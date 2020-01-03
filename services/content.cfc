@@ -1,6 +1,6 @@
 component extends="baseService" {
-  public component function getByFQA( required  string fqa, any locale, boolean deleted = false, struct options = { cacheable = true } ) {
-    var hql = 'FROM content c WHERE c.fullyqualifiedaction = :fqa AND c.deleted != :deleted';
+  public component function getByFQA( required  string fqa, any locale, boolean deleted = false, struct options = { cacheable = true }, contentTable = 'content' ) {
+    var hql = 'FROM #contentTable# c WHERE c.fullyqualifiedaction = :fqa AND c.deleted != :deleted';
     var params = { fqa = fqa, deleted = !deleted };
 
     if ( !isNull( locale ) ) {
@@ -14,7 +14,7 @@ component extends="baseService" {
       return result[ 1 ];
     }
 
-    var result = entityNew( 'content' );
+    var result = entityNew( contentTable );
 
     return result;
   }
