@@ -59,11 +59,15 @@ component extends=framework.one {
       this.ormSettings = {
         'cfcLocation' = variables.root & 'model',
         'dbCreate' = variables.mstng.getDbCreate( variables.cfg ),
-        'sqlScript' = variables.cfg.nukescript,
         'secondaryCacheEnabled' = variables.live ? true : false,
         'cacheProvider' = 'ehcache',
         'cacheConfig' = 'ehcache-config_ORM_#request.appSimpleName#.xml'
       };
+
+      if ( fileExists( expandPath( variables.cfg.nukescript ) ) ) {
+        this.ormSettings[ 'sqlScript' ] = variables.cfg.nukescript;
+      }
+
     }
   }
 
