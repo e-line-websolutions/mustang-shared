@@ -51,44 +51,36 @@ component accessors=true {
   }
 
   public void function newpassword( required struct rc ) {
-    param rc.newPassword=utilityService.generatePassword( 8 );
+    param rc.newPassword = utilityService.generatePassword( 8 );
+    param rc.returnToSection = "profile";
+    param rc.returnTo = ":#rc.returnToSection#";
 
-    if( len( trim( rc.newPassword )) lt 8 ) {
-      lock scope="session" timeout="5" {
-        session.alert = {
-          "class" = "danger",
-          "text"  = "password-change-fail-tooshort"
-        };
-      }
-      framework.redirect( '.password' );
+    if ( len( trim( rc.newPassword ) ) lt 8 ) {
+      rc.alert = { 'class' = 'danger', 'text' = 'password-change-fail-tooshort' };
+      framework.redirect( ':#rc.returnToSection#.password', 'alert' );
+      framework.abortController();
     }
 
-    lock scope="session" timeout="5" {
-      session.alert = {
-        "class"           = "danger",
-        "text"            = "password-change-failed"
-      };
-    }
+    var currentUser = contactService.get( rc.auth.userID );
 
-    transaction {
-      var currentUser = contactService.get( rc.auth.userID );
-
-      if( isDefined( "currentUser" )) {
-        currentUser.save({
-          password = securityService.hashPassword( rc.newPassword )
-        });
-        lock scope="session" timeout="5" {
-          session.alert = {
-            "class"           = "success",
-            "text"            = "password-changed",
-            "stringVariables" = { "newPassword" = rc.newPassword }
-          };
+    if ( !isNull( currentUser ) ) {
+      transaction {
+        try {
+          currentUser.save( { password = securityService.hashPassword( rc.newPassword ) } );
+        } catch ( any e ) {
+          rc.alert = { 'class' = 'danger', 'text' = 'password-change-failed' };
+          logService.writeLogLevel( text = 'Error saving password (userid = #rc.auth.userID#)', level = 'fatal' );
         }
       }
-
-
+      rc.alert = {
+        'class' = 'success',
+        'text' = 'password-changed',
+        'stringVariables' = { 'newPassword' = rc.newPassword }
+      };
+    } else {
+      rc.alert = { 'class' = 'danger', 'text' = 'user-not-found-error' };
     }
 
-    framework.redirect( ':' );
+    framework.redirect( rc.returnTo, 'alert' );
   }
 }

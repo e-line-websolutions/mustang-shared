@@ -271,6 +271,7 @@ component accessors=true {
 
   public void function doRetrieve( required struct rc ) {
     param rc.returnToSection='security';
+    param rc.passwordResetFQA=':#rc.returnToSection#.password';
 
     if ( structKeyExists( rc, 'email' ) && len( trim( rc.email ) ) ) {
       var user = variables.contactService.getByEmail( rc.email );
@@ -298,7 +299,7 @@ component accessors=true {
           body = variables.utilityService.parseStringVariables(
             emailText.getBody(),
             {
-              link = variables.framework.buildURL( action = 'profile.password', queryString = { 'authhash' = authhash } ),
+              link = variables.framework.buildURL( action = rc.passwordResetFQA, queryString = { 'authhash' = authhash } ),
               fullname = user.getFullname()
             }
           )
