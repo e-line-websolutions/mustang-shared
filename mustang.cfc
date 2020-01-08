@@ -63,11 +63,6 @@ component extends=framework.one {
         'cacheProvider' = 'ehcache',
         'cacheConfig' = 'ehcache-config_ORM_#request.appSimpleName#.xml'
       };
-
-      if ( fileExists( expandPath( variables.cfg.nukescript ) ) ) {
-        this.ormSettings[ 'sqlScript' ] = variables.cfg.nukescript;
-      }
-
     }
   }
 
@@ -133,6 +128,12 @@ component extends=framework.one {
         var t = getTickCount();
 
         ormReload();
+
+        if ( structKeyExists( url, 'nuke' ) &&
+             structKeyExists( variables.cfg, 'nukescript' ) &&
+             fileExists( expandPath( variables.cfg.nukescript ) ) ) {
+          queryExecute( fileRead( expandPath( variables.cfg.nukescript ), 'utf-8' ) );
+        }
 
         logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM reloaded', request.appName );
 
