@@ -131,8 +131,20 @@ component extends=framework.one {
 
         if ( structKeyExists( url, 'nuke' ) &&
              structKeyExists( variables.cfg, 'nukescript' ) &&
-             fileExists( expandPath( variables.cfg.nukescript ) ) ) {
-          queryExecute( fileRead( expandPath( variables.cfg.nukescript ), 'utf-8' ) );
+             fileExists( expandPath( variables.cfg.nukescript ) ) &&
+             (
+               structKeyExists( this.ormSettings, 'dbCreate' ) &&
+               this.ormSettings.dbCreate == 'dropcreate'
+             ) ) {
+          transaction {
+            try {
+              queryExecute( fileRead( expandPath( variables.cfg.nukescript ), 'utf-8' ) );
+              transactionCommit();
+            } catch ( any e ) {
+              transactionRollback();
+              rethrow;
+            }
+          }
         }
 
         logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM reloaded', request.appName );
