@@ -5,6 +5,8 @@ component {
     variables.name = hash( variables.basePath & cgi.server_name );
     variables.framework = fw1Config;
 
+    writeLog( 'FW/1-Mustang app #cgi.server_name# at #variables.basePath# accessed' );
+
     return this;
   }
 
@@ -35,6 +37,8 @@ component {
       mergeStructs( defaultConfig, result );
     }
 
+    site = replaceNoCase( site, 'www.', '' );
+
     if ( fileExists( variables.root & '/config/' & site & '.json' ) ) {
       var siteConfig = deserializeJSON( fileRead( variables.root & '/config/' & site & '.json', 'utf-8' ) );
 
@@ -44,6 +48,13 @@ component {
       }
 
       mergeStructs( siteConfig, result );
+    }
+
+    var machineName = createObject("java", "java.net.InetAddress").getLocalHost().getHostName();
+
+    if ( fileExists( variables.root & '/config/#machineName#.json' ) ) {
+      var machineConfig = deserializeJSON( fileRead( variables.root & '/config/#machineName#.json', 'utf-8' ) );
+      mergeStructs( machineConfig, result );
     }
 
     lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {

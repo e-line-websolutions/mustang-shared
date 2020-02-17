@@ -70,9 +70,8 @@ component extends=framework.one {
   this.sessionTimeout = createTimespan( 0, 2, 0, 0 );
 
   mustangRoot = variables.mstng.getMustangRoot();
-
-  this.javaSettings.loadPaths = [ mustangRoot & '/lib/json/gson-2.8.jar' ];
-  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & '/lib/unirest', false, 'path', '*.jar' ) );
+  param this.javaSettings.loadPaths=[];
+  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & '/lib', true, 'path', '*.jar' ) );
 
   if ( isNull( request.appSimpleName ) ) {
     request.appSimpleName = listFirst( request.appName, ' ,-_' );

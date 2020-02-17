@@ -2,7 +2,7 @@ component accessors=true {
   public component function init( root, config ) {
     var jlPaths = [ expandPath( "/mustang/lib/json/gson-2.8.jar" ) ];
 
-    if ( !isNull( config ) && !isNull( config.paths.jsonLib ) ) {
+    if ( !isNull( config ) && !isNull( config.paths.jsonLib ) && directoryExists( config.paths.jsonLib ) ) {
       jlPaths = [ config.paths.jsonLib ];
     }
 

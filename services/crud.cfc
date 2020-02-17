@@ -97,7 +97,7 @@ component accessors=true {
     if ( !structKeyExists( formData, "#entityName#id" ) ) {
       throw(
         "Cannot change deleted state of #entityName#, missing primary key",
-        "crudService.changeEntityDeletedState.missingPrimaryKeyError"
+        "missingPrimaryKeyError.changeEntityDeletedState.crudService"
       );
     }
 

@@ -21,6 +21,8 @@ component accessors=true {
   // CONSTRUCTOR
 
   public component function init( ds, websiteId, config, fw ) {
+    param arguments.ds='';
+
     fw.frameworkTrace( '<b>webmanager</b>: webmanagerService initialized.' );
 
     structAppend( variables, arguments, true );
@@ -37,7 +39,7 @@ component accessors=true {
     variables.allLanguages = structKeyList( variables.supportedLocales );
     variables.safeDelim = chr( 0182 );
     variables.defaultLanguage = lCase( listLast( config.defaultLanguage, '_' ) );
-    variables.datasource = ds;
+    variables.datasource = arguments.ds;
     variables.queryOptions = { 'datasource' = variables.datasource, 'cachedWithin' = createTimespan( 0, 0, 5, 0 ) };
 
     variables.resizeBeforeServe = 'jpg,jpeg,png,gif';

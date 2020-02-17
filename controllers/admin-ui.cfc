@@ -7,13 +7,16 @@ component accessors=true {
   property securityService;
 
   public void function load( rc ) {
-    var locale = variables.localeService.get( variables.translationService.getLocaleID( ) );
+    if ( !structKeyExists( rc, 'content' ) || isNull( rc.content ) ) {
+      var locale = variables.localeService.get( variables.translationService.getLocaleID( ) );
 
-    if ( isNull( locale ) ) {
-      throw( "Application data not initialized", "admin-uiController.load.initError" );
+      if ( isNull( locale ) ) {
+        throw( "Application data not initialized", "admin-uiController.load.initError" );
+      }
+
+      rc.content = variables.contentService.getByFQA( variables.framework.getfullyqualifiedaction( ), locale );
     }
 
-    rc.content = variables.contentService.getByFQA( variables.framework.getfullyqualifiedaction( ), locale );
     rc.displaytitle = variables.translationService.translate( variables.framework.getfullyqualifiedaction( ) );
 
     if ( !structKeyExists( rc, "topnav" ) ) {
@@ -22,7 +25,7 @@ component accessors=true {
 
     rc.subnavHideHome = false;
 
-    if ( variables.framework.getSubsystem( ) == variables.framework.getDefaultSubsystem( ) ) {
+    if ( variables.framework.getSubsystem() == variables.framework.getDefaultSubsystem() || listFindNoCase( config.contentSubsystems, variables.framework.getSubsystem() ) ) {
       var reload = true;
 
       lock scope="session" timeout="5" type="readonly" {

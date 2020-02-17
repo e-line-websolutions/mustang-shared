@@ -82,6 +82,9 @@ component extends=framework.one {
     request.fileUploads = variables.cfg.paths.fileUploads;
   }
 
+  mustangRoot = variables.mstng.getMustangRoot();
+  param this.javaSettings.loadPaths=[];
+  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & '/lib', true, 'path', '*.jar' ) );
 
   // fw1 flow control
 
@@ -229,7 +232,8 @@ component extends=framework.one {
     controller( ':i18n.load' );
 
     // content:
-    if ( getSubsystem() == getDefaultSubsystem() || listFindNoCase( variables.cfg.contentSubsystems, getSubsystem() ) ) {
+    if ( getSubsystem() == getDefaultSubsystem() ||
+         listFindNoCase( variables.cfg.contentSubsystems, getSubsystem() ) ) {
       controller( ':admin-ui.load' );
     }
 
@@ -286,13 +290,14 @@ component extends=framework.one {
   }
 
   public string function onMissingView( struct rc ) {
-    if ( util.fileExistsUsingCache( variables.root & '/views/' & getSection() & '/' & getItem() & '.cfm' ) ) {
-      return view( getSection() & '/' & getItem() );
+    var cfmlFileInsideDefaultSubsystem = variables.root & '/views/' & getSection() & '/' & getItem() & '.cfm';
+    var cfmlFileInsideSubsystem = variables.root & '/subsystems/' & getSubsystem() & '/views/' & getSection() & '/' & getItem() & '.cfm';
+
+    if ( util.fileExistsUsingCache( cfmlFileInsideDefaultSubsystem ) ) {
+      return view( ':' & getSection() & '/' & getItem() );
     }
 
-    if ( util.fileExistsUsingCache(
-      variables.root & '/subsystems/' & getSubsystem() & '/views/' & getSection() & '/' & getItem() & '.cfm'
-    ) ) {
+    if ( util.fileExistsUsingCache( cfmlFileInsideSubsystem ) ) {
       return view( getSubsystem() & ':' & getSection() & '/' & getItem() );
     }
 

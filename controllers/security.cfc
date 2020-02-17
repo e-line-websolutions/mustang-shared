@@ -263,6 +263,7 @@ component accessors=true {
         doLogin( rc );
       } else {
         // nope, still not logged in: reset session via logout method.
+        variables.logService.writeLogLevel( text = 'User not logged in, reset session', type = 'information', file = request.appName );
         rc.alert = { 'class' = 'danger', 'text' = 'user-not-logged-in' };
         doLogout( rc );
       }
