@@ -1,5 +1,6 @@
 <cfcomponent output="false" accessors="true">
   <cfproperty name="emailService" />
+  <cfproperty name="fw" />
   <cfproperty name="logService" />
   <cfproperty name="config" />
 
@@ -305,7 +306,7 @@
   public boolean function fileExistsUsingCache( required string absolutePath ) {
     var cachedPaths = cacheGet( "cachedPaths_#request.appName#" );
 
-    if ( isNull( cachedPaths ) || request.reset ) {
+    if ( isNull( cachedPaths ) || fw.isFrameworkReloadRequest() ) {
       var cachedPaths = { };
     }
 

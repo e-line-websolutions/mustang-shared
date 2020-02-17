@@ -62,11 +62,8 @@ component accessors=true {
   }
 
   public void function done( ) {
-    if ( !variables.enabled ) {
-      return;
-    }
-    variables.current = variables.total;
     variables.done = true;
+    variables.current = variables.total;
   }
 
   public struct function getProgress( ) {

@@ -6,7 +6,8 @@ component extends="baseService" accessors=true {
     any locale,
     boolean deleted = false,
     struct options = { cacheable = true },
-    contentTable = 'content'
+    contentTable = 'content',
+    any company
   ) {
     var hql_from = ' FROM ' & contentTable & ' c ';
     var hql_where = ' WHERE c.fullyqualifiedaction = :fqa AND c.deleted != :deleted ';
@@ -16,6 +17,11 @@ component extends="baseService" accessors=true {
     if ( !isNull( locale ) ) {
       hql_where &= ' AND c.locale = :locale';
       params[ 'locale' ] = locale;
+    }
+
+    if ( !isNull( company ) ) {
+      hql_where &= ' AND c.company = :company';
+      params[ 'company' ] = company;
     }
 
     var result = ormExecuteQuery( hql_from & hql_where, params, options );
