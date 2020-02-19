@@ -15,6 +15,8 @@ component extends=framework.one {
   param request.appSimpleName=listFirst( request.appName, " ,-_" );
   param request.context.debug=variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
 
+  param this.javaSettings={};
+
   variables.mstng.cleanXHTMLQueryString();
   variables.live = variables.cfg.appIsLive;
   variables.routes = [];
@@ -83,8 +85,7 @@ component extends=framework.one {
   }
 
   mustangRoot = variables.mstng.getMustangRoot();
-  param this.javaSettings.loadPaths=[];
-  this.javaSettings.loadPaths.addAll( directoryList( mustangRoot & '/lib', true, 'path', '*.jar' ) );
+  variables.mstng.addToJavapaths( this.javaSettings, mustangRoot & '/lib' );
 
   // fw1 flow control
 

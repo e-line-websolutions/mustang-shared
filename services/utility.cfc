@@ -7,7 +7,7 @@
   <cfprocessingdirective pageEncoding="utf-8" />
 
   <cfscript>
-  public any function init( ) {
+  public any function init( fw ) {
     structAppend( variables, arguments );
     return this;
   }

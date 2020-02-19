@@ -225,4 +225,18 @@ component {
       cacheRemove( arrayToList( allCacheIds ) );
     }
   }
+
+  public void function addToJavapaths( javaSettings, absolutePath ) {
+    param javaSettings.loadPaths = [];
+
+    var existingFileNames = javaSettings.loadPaths.map( function( path ) {
+      return getFileFromPath( path );
+    } );
+
+    javaSettings.loadPaths.addAll(
+      directoryList( absolutePath, true, 'path', '*.jar' ).filter( function( path ) {
+        return !arrayFind( existingFileNames, getFileFromPath( path ) );
+      } )
+    );
+  }
 }
