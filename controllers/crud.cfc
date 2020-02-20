@@ -542,22 +542,17 @@ component accessors=true {
       rc.data = object;
     }
 
-    // prep the form fields and sort them in the right order
-    var indexNr = 0;
-    var columnsInForm = [];
-    var numberOfPropertiesInForm = arrayLen( propertiesInForm ) + 10;
+    // sort form fields based on their orderInForm attribute (if available)
+    arraySort( propertiesInForm, function( current, next ) {
+      param current.orderInForm=999;
+      param next.orderInForm=999;
+      return current.orderInForm < next.orderInForm ? -1 : current.orderInForm > next.orderInForm ? 1 : 0;
+    });
 
     for ( var property in propertiesInForm ) {
-      if ( structKeyExists( property, 'orderinform' ) && isNumeric( property.orderinform ) ) {
-        indexNr = property.orderinform;
-      } else {
-        indexNr = numberOfPropertiesInForm++;
-      }
+      property.saved = '';
 
-      columnsInForm[ indexNr ] = duplicate( property );
-      columnsInForm[ indexNr ].saved = '';
-
-      var savedValue = evaluate( 'rc.data.get#property.name#()' );
+      var savedValue = invoke( rc.data, 'get#property.name#' );
 
       if ( !isNull( savedValue ) ) {
         if ( isArray( savedValue ) ) {
@@ -567,22 +562,22 @@ component accessors=true {
           }
           savedValue = savedValueList;
         }
-        columnsInForm[ indexNr ].saved = savedValue;
+        property.saved = savedValue;
       } else if ( structKeyExists( rc, property.name ) ) {
-        columnsInForm[ indexNr ].saved = rc[ property.name ];
+        property.saved = rc[ property.name ];
       }
     }
 
     rc.columns = [];
 
-    for ( var columnInForm in columnsInForm ) {
-      if ( !isNull( columnInForm ) ) {
-        if ( !isNull( columnInForm.entityname ) ) {
-          columnInForm.subclasses = createObject( 'java', 'java.util.Arrays' ).asList(
-            entityNew( columnInForm.entityname ).getSubClasses()
+    for ( var property in propertiesInForm ) {
+      if ( !isNull( property ) ) {
+        if ( !isNull( property.entityname ) ) {
+          property.subclasses = createObject( 'java', 'java.util.Arrays' ).asList(
+            entityNew( property.entityname ).getSubClasses()
           );
         }
-        arrayAppend( rc.columns, columnInForm );
+        arrayAppend( rc.columns, property );
       }
     }
   }
