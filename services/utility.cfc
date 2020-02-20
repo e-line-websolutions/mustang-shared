@@ -1,8 +1,10 @@
 <cfcomponent output="false" accessors="true">
-  <cfproperty name="emailService" />
   <cfproperty name="fw" />
-  <cfproperty name="logService" />
   <cfproperty name="config" />
+
+  <cfproperty name="emailService" />
+  <cfproperty name="dataService" />
+  <cfproperty name="logService" />
 
   <cfprocessingdirective pageEncoding="utf-8" />
 
@@ -287,12 +289,17 @@
     return encodedValue;
   }
 
-  public string function base64URLDecode( required string value ) {
-    value = replace( value, "-", "+", "all" );
-    value = replace( value, "_", "/", "all" );
-    value &= repeatString( "=", ( 4 - ( len( value ) % 4 ) ) );
-    var bytes = binaryDecode( value, "base64" );
-    return charsetEncode( bytes, "utf-8" );
+  public string function base64URLDecode( required string input ) {
+    if ( dataService.isGuid( input ) ) return input;
+
+    try {
+      var tmp = replace( replace( input, '-', '+', 'all' ), '_', '/', 'all' );
+      tmp &= repeatString( '=', ( 4 - ( len( tmp ) % 4 ) ) );
+      var bytes = binaryDecode( tmp, "base64" );
+      return charsetEncode( bytes, "utf-8" );
+    } catch ( any e ) {
+      return input;
+    }
   }
 
   public string function encryptForUrl( stringToEncrypt, encryptKey = variables.config.encryptKey, algorithm = 'CFMX_COMPAT' ) {
