@@ -374,22 +374,22 @@
     return replace( pathInfo, "index.cfm", "", "one" );
   }
 
-  public string function cleanPath( input ) {
-    var result = [ ];
+  public string function cleanPath( input, boolean addTrailingSlash = true ) {
+    var result = [];
 
-    if ( server.os.name contains "windows" ) {
-      var driveLetter = listFirst( input, ":" );
-      input = listRest( input, ":" );
+    if ( server.os.name contains 'windows' ) {
+      var driveLetter = listFirst( input, ':' );
+      input = listRest( input, ':' );
     }
 
-    var path = listToArray( input, "/\" );
+    var path = listToArray( input, '/\' );
 
     for ( var item in path ) {
       switch ( item ) {
-        case ".":
+        case '.':
           continue;
 
-        case "..":
+        case '..':
           pathLength = arrayLen( result );
           if ( pathLength > 0 ) {
             arrayDeleteAt( result, pathLength );
@@ -398,11 +398,10 @@
 
         default:
           arrayAppend( result, item );
-
       }
     }
 
-    return ( isNull( driveLetter ) ? "" : driveLetter & ":" ) & "/" & arrayToList( result, "/" ) & "/";
+    return ( isNull( driveLetter ) ? '' : driveLetter & ':' ) & '/' & arrayToList( result, '/' ) & (addTrailingSlash ? '/' : '');
   }
 
   public boolean function isValidEmail( string email ){

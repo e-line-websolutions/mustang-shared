@@ -11,7 +11,7 @@ component accessors=true {
 
   // CONSTRUCTOR
 
-  public any function init( root, config, fw, logService ) {
+  public any function init( root, config, fw, logService, utilityService ) {
     structAppend( variables, arguments );
     populateLanguageStruct( );
     param config.defaultLanguage="en_US";
@@ -154,26 +154,32 @@ component accessors=true {
 
   // PRIVATE
 
-  private void function populateLanguageStruct( ) {
+  private void function populateLanguageStruct() {
     if ( !isNull( fw ) ) {
-      fw.frameworkTrace( "<b>i18n</b>: populateLanguageStruct() called." );
+      fw.frameworkTrace( '<b>i18n</b>: populateLanguageStruct() called.' );
     }
 
-    variables.languageStruct = { };
+    variables.languageStruct = { 'default' = {} };
 
-    var translationFiles = directoryList( root & "/i18n/", false, "path", "*.json" );
+    var translationFilesRoot = utilityService.cleanPath( root & '/i18n/' );
 
-    for ( var jsonFile in translationFiles ) {
-      var jsonFileContents = fileRead( jsonFile, "utf-8" );
-      var locale = listFirst( listLast( jsonFile, "/\" ), "." );
-      variables.languageStruct[ locale ] = deserializeJson( jsonFileContents );
-    }
+    directoryList( translationFilesRoot, true, 'path', '*.json' ).each( function( path ) {
+      var justSubDir = replace( utilityService.cleanPath( path, false ), translationFilesRoot, '' ).listToArray( '/' );
+      var translationData = deserializeJSON( fileRead( path ) );
+      var grouping = justSubDir.len() > 1 ? justSubDir[ 1 ] : 'default';
+      var locale = listFirst( justSubDir[ justSubDir.len() ], '.' );
+      if ( grouping != 'default' && structKeyExists( variables.languageStruct.default, locale ) ) {
+        structAppend( translationData, variables.languageStruct.default[ locale ], false );
+      }
+      variables.languageStruct[ grouping ][ locale ] = translationData;
+    } );
   }
 
   private string function cacheRead(
     required string translation,
     string localeID = getLocaleId( ),
-    boolean reload = false
+    boolean reload = false,
+    string grouping = 'default'
   ) {
     if ( !isNull( fw ) ) {
       fw.frameworkTrace( "<b>i18n</b>: cacheRead() called." );
@@ -187,9 +193,9 @@ component accessors=true {
       return variables.translations[ localeID ][ translation ];
     } catch ( any e ) {
       var currentLanguage = getCurrentLanguage( );
-      if ( structKeyExists( variables.languageStruct, currentLanguage ) &&
-           structKeyExists( variables.languageStruct[ currentLanguage ], translation ) ) {
-        var translated = variables.languageStruct[ currentLanguage ][ translation ];
+      if ( structKeyExists( variables.languageStruct[ grouping ], currentLanguage ) &&
+           structKeyExists( variables.languageStruct[ grouping ][ currentLanguage ], translation ) ) {
+        var translated = variables.languageStruct[ grouping ][ currentLanguage ][ translation ];
         variables.translations[ localeID ][ translation ] = translated;
         return translated;
       }
