@@ -5,7 +5,7 @@ component accessors=true {
   public any function init( ) {
     var meta = getMetaData( this );
 
-    setEntityName( listLast( meta.name, '.' ) );
+    variables.entityName = listLast( meta.name, '.' );
 
     return this;
   }
@@ -35,19 +35,19 @@ component accessors=true {
   }
 
   public component function create( ) {
-    return entityNew( getEntityName( ) );
+    return entityNew( variables.entityName );
   }
 
   private any function getOne( required string id ) {
-    return entityLoadByPK( getEntityName( ), id );
+    return entityLoadByPK( variables.entityName, id );
   }
 
   private array function getSome( ) {
-    return entityLoad( getEntityName( ), arguments );
+    return entityLoad( variables.entityName, arguments );
   }
 
   private array function getAll( ) {
-    return entityLoad( getEntityName( ) );
+    return entityLoad( variables.entityName );
   }
 
   public any function getAsStruct( required string id ) {
