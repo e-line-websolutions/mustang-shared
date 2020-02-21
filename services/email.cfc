@@ -61,7 +61,7 @@ component accessors=true {
 
       message.send( );
 
-      variables.logService.writeLogLevel( "email sent: '#subject#' to #sendTo#." );
+      variables.logService.writeLogLevel( "email sent: '#subject#' from #from#, to #sendTo# (original: #toEmail#)." );
     } catch ( any e ) {
       variables.logService.writeLogLevel( text = "Error sending email. (#e.message#)", type = "fatal" );
       rethrow;
