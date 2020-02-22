@@ -165,7 +165,7 @@ component accessors=true {
 
     directoryList( translationFilesRoot, true, 'path', '*.json' ).each( function( path ) {
       var justSubDir = replace( utilityService.cleanPath( path, false ), translationFilesRoot, '' ).listToArray( '/' );
-      var translationData = deserializeJSON( fileRead( path ) );
+      var translationData = deserializeJSON( fileRead( path, 'utf-8' ) );
       var grouping = justSubDir.len() > 1 ? justSubDir[ 1 ] : 'default';
       var locale = listFirst( justSubDir[ justSubDir.len() ], '.' );
       if ( grouping != 'default' && structKeyExists( variables.languageStruct.default, locale ) ) {
