@@ -290,6 +290,12 @@
   }
 
   public string function base64URLDecode( required string input ) {
+    if ( 0 != compareNoCase( input, urlDecode( input ) ) ) {
+      input = urlDecode( input );
+    }
+
+    logService.writeLogLevel( text = 'base64URLDecode( #input# ) called', level = 'fatal' );
+
     if ( dataService.isGuid( input ) ) return input;
 
     try {
@@ -298,6 +304,8 @@
       var bytes = binaryDecode( tmp, "base64" );
       return charsetEncode( bytes, "utf-8" );
     } catch ( any e ) {
+      logService.writeLogLevel( text = 'input is not well formatted: ' & input, level = 'fatal' );
+      logService.dumpToFile( { error = duplicate( e ) }, true );
       return input;
     }
   }
