@@ -31,7 +31,10 @@ component accessors=true {
     if ( structKeyExists( rc, 'authhash' ) && len( trim( rc.authhash ) ) ) {
       variables.logService.writeLogLevel( 'trying authhash', request.appName );
 
-      var decryptedHash = decrypt( variables.utilityService.base64urlDecode( rc.authhash ), variables.config.encryptKey );
+      var decryptedHash = decrypt(
+            variables.utilityService.base64URLDecode( rc.authhash ),
+            variables.config.encryptKey
+          );
       if ( isJSON( decryptedHash ) ) {
         var hashStruct = deserializeJSON( decryptedHash );
         if ( isStruct( hashStruct ) && structKeyExists( hashStruct, 'path' ) ) {
@@ -48,7 +51,7 @@ component accessors=true {
           var contactID = hashStruct.userId;
         }
       } else {
-        var contactID = decrypt( variables.utilityService.base64urlDecode( rc.authhash ), variables.config.encryptKey );
+        var contactID = decrypt( variables.utilityService.base64URLDecode( rc.authhash ), variables.config.encryptKey );
       }
       var user = variables.contactService.get( contactID );
 
@@ -148,7 +151,7 @@ component accessors=true {
 
   public void function doLogout( required struct rc ) {
     // reset session
-    variables.securityService.invalidateSession();
+    // variables.securityService.invalidateSession();
 
     var logMessage = 'user logged out.';
 
