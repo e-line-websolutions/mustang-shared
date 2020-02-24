@@ -233,10 +233,14 @@ component {
       return getFileFromPath( path );
     } );
 
-    javaSettings.loadPaths.addAll(
-      directoryList( absolutePath, true, 'path', '*.jar' ).filter( function( path ) {
-        return !arrayFind( existingFileNames, getFileFromPath( path ) );
-      } )
-    );
+    if ( fileExists( absolutePath ) ) {
+      javaSettings.loadPaths.add( absolutePath );
+    } else if ( directoryExists( absolutePath ) ) {
+      javaSettings.loadPaths.addAll(
+        directoryList( absolutePath, true, 'path', '*.jar' ).filter( function( path ) {
+          return !arrayFind( existingFileNames, getFileFromPath( path ) );
+        } )
+      );
+    }
   }
 }
