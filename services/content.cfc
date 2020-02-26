@@ -14,14 +14,15 @@ component extends="baseService" accessors=true {
 
     var params = { 'fqa' = fqa, 'deleted' = !deleted };
 
-    if ( !isNull( locale ) ) {
+    if ( !isNull( arguments.locale ) ) {
       hql_where &= ' AND c.locale = :locale';
-      params[ 'locale' ] = locale;
+      params[ 'locale' ] = arguments.locale;
     }
 
-    if ( !isNull( company ) ) {
+    // isNull( company ) finds company variable that does not exists in argument scope, therefor we force to search in arguments scope. Bug?
+    if ( !isNull( arguments.company ) ) {
       hql_where &= ' AND c.company = :company';
-      params[ 'company' ] = company;
+      params[ 'company' ] = arguments.company;
     }
 
     var result = ormExecuteQuery( hql_from & hql_where, params, options );
