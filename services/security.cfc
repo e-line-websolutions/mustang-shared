@@ -105,11 +105,12 @@ component accessors=true {
 
     if ( structKeyExists( user, 'getSecurityRole' ) ) {
       var securityRole = user.getSecurityRole();
-      tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
 
-      if ( isNull( tempAuth.role ) || structIsEmpty( tempAuth.role ) || !structKeyExists( tempAuth.role, "name" ) ) {
+      if ( isNull( securityRole ) ) {
         throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
       }
+
+      tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
 
       if ( isAdmin( tempAuth.role.name ) ) {
         tempAuth.role.can = yesWeCan;
