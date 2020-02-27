@@ -63,6 +63,12 @@ component accessors=true {
     structAppend( session, tmpSession );
   }
 
+  public void function endSession() {
+    structDelete( session, 'auth' );
+    structDelete( session, 'can' );
+    sessionRotate();
+  }
+
   public void function refreshFakeSession( ) {
     createSession( );
 
