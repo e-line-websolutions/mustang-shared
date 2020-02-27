@@ -73,7 +73,6 @@ component accessors=true {
     createSession( );
 
     var tempAuth = {
-      "canAccessAdmin" = true,
       "isLoggedIn" = true,
       "role" = getFakeRole( ),
       "user" = dataService.processEntity( getFakeUser( ) ),
@@ -105,21 +104,18 @@ component accessors=true {
     };
 
     if ( structKeyExists( user, 'getSecurityRole' ) ) {
-      var securityRole = dataService.processEntity( user.getSecurityRole( ), 0, 1, false );
+      var securityRole = user.getSecurityRole();
+      tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
 
-      if ( isNull( securityRole ) || structIsEmpty( securityRole ) || !structKeyExists( securityRole, "name" ) ) {
+      if ( isNull( tempAuth.role ) || structIsEmpty( tempAuth.role ) || !structKeyExists( tempAuth.role, "name" ) ) {
         throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
       }
 
-      tempAuth[ "role" ] = securityRole;
-
-      if ( isAdmin( securityRole.name ) ) {
+      if ( isAdmin( tempAuth.role.name ) ) {
         tempAuth.role.can = yesWeCan;
-        tempAuth.canAccessAdmin = true;
       } else {
-        cachePermissions( securityRole.permissions );
-        tempAuth.role.can = can;
-        tempAuth.canAccessAdmin = false;
+        cachePermissions( tempAuth.role.permissions );
+        tempAuth.role.can = this.can;
       }
     }
 
@@ -160,8 +156,8 @@ component accessors=true {
 
   public boolean function isAdmin( string roleName ) {
     if ( isNull( roleName ) ) {
-      var tempAuth = getAuth( );
-      roleName = tempAuth.role.name;
+      var currentAuth = getAuth( );
+      roleName = currentAuth.role.name;
     }
 
     return roleName == "Administrator" || roleName == "Admin";
@@ -171,12 +167,15 @@ component accessors=true {
     return true;
   }
 
-  public boolean function can( string action = "", string section = "" ) {
-    param session.can={};
-    var cachedCan = session.can;
-    var tempAuth = session.auth;
+  public boolean function can( string action = '', string section = '' ) {
+    if ( !structKeyExists( session, 'auth' ) ) {
+      // not logged in
+      return false;
+    }
 
-    return structKeyExists( cachedCan, "#action#-#section#" ) || tempAuth.canAccessAdmin;
+    param session.can = {};
+
+    return structKeyExists( session.can, '#action#-#section#' ) || session.auth.role.canAccessAdmin;
   }
 
   public boolean function canIgnoreSecurity( string subsystem="",
@@ -257,8 +256,10 @@ component accessors=true {
         continue;
       }
       for ( var action in [ "view", "change", "delete", "execute", "create" ] ) {
-        if ( structKeyExists( permission, action ) && isBoolean( permission[ action ] ) && permission[ action ] ) {
-          cachedPermissions[ "#action#-#permission.section#" ] = true;
+        if ( structKeyExists( permission, action ) &&
+                   isBoolean( permission[ action ] ) &&
+                              permission[ action ] ) {
+          cachedPermissions[ "#action#-#permission.section#" ] = '';
         }
       }
     }
@@ -297,8 +298,7 @@ component accessors=true {
       "isLoggedIn" = false,
       "user" = { },
       "role" = { "name" = "none" },
-      "userid" = '',
-      "canAccessAdmin" = false
+      "userid" = ''
     };
   }
 }

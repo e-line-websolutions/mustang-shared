@@ -273,6 +273,11 @@ component accessors=true {
         doLogout( rc );
       }
     }
+
+    if ( framework.isFrameworkReloadRequest() && rc.auth.isLoggedIn ) {
+      var user = contactService.get( rc.auth.userid );
+      securityService.refreshSession( user );
+    }
   }
 
   public void function doRetrieve( required struct rc ) {
