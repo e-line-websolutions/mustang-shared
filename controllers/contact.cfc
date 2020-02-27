@@ -9,13 +9,18 @@ component extends=crud accessors=true {
   }
 
   public void function save( required struct rc ) {
-    if ( structKeyExists( rc, 'password' ) and len( trim( rc.password ) ) > 0 ) {
+    if ( structKeyExists( rc, 'password' ) && len( trim( rc.password ) ) > 0 ) {
       if ( len( trim( rc.password ) ) < 2 ) {
         rc.alert = { 'class' = 'danger', 'text' = 'password-too-short' };
         framework.redirect( 'contact', 'alert' );
       }
 
       rc.password = form.password = securityService.hashPassword( rc.password );
+    } else {
+      structDelete( rc, 'password' );
+      structDelete( form, 'password' );
+      var posInFieldnames = listFindNoCase( form.FIELDNAMES, 'password' );
+      if ( posInFieldnames ) form.FIELDNAMES = listDeleteAt( form.FIELDNAMES, posInFieldnames );
     }
 
     super.save( rc = rc ); // sets rc.savedEntity to the saved entity
