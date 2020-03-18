@@ -1,8 +1,8 @@
-component extends=framework.one {
+component extends="latest-framework.one" {
   if ( !structKeyExists( variables, 'framework' ) ) {
     variables.framework = {};
   }
-  variables.mstng = new mustang.base( variables.framework );
+  variables.mstng = createObject( 'base' ).init( variables.framework );
   variables.cfg = variables.mstng.readConfig();
   variables.root = variables.mstng.getRoot();
 

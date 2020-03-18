@@ -1,4 +1,4 @@
-component extends=framework.one {
+component extends="latest-framework.one" {
   if ( !structKeyExists( variables, 'framework' ) ) {
     variables.framework = {};
   }
