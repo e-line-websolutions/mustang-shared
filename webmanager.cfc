@@ -98,32 +98,33 @@ component extends=framework.one {
     var bf = getDefaultBeanFactory();
     var i18n = bf.getBean( 'translationService' );
     var util = bf.getBean( 'utilityService' );
-    var wm = bf.getBean( 'webmanagerService' );
+    var ws = bf.getBean( 'webmanagerService' );
 
     request.reset = reset;
     request.context.util = variables.util = util;
     request.context.i18n = variables.i18n = i18n;
+    request.context.ws = variables.ws = ws;
 
     util.setCFSetting( 'showdebugoutput', request.context.debug );
     util.limiter();
 
-    wm.relocateOnce( request.domainName );
+    ws.relocateOnce( request.domainName );
 
     if ( structKeyExists( url, 'clear' ) ) {
       variables.mstng.clearCache();
       frameworkTrace( '<b>webmanager</b>: cache reset' );
     }
 
-    wm.robotstxt();
-    wm.sitemap();
+    ws.robotstxt();
+    ws.sitemap();
 
     if ( getSection() == 'main' ) {
-      var seoPathArray = wm.seoPathAsArray();
-      i18n.changeLanguage( wm.getLanguageFromPath( seoPathArray ) );
+      var seoPathArray = ws.seoPathAsArray();
+      i18n.changeLanguage( ws.getLanguageFromPath( seoPathArray ) );
       controller( 'main.setupLevel#arrayLen( seoPathArray )#' );
-      request.action = request.context.action = wm.getActionFromPath( seoPathArray );
+      request.action = request.context.action = ws.getActionFromPath( seoPathArray );
       setView( request.action );
-      wm.logVisit( request.action );
+      ws.logVisit( request.action );
     }
   }
 

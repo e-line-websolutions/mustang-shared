@@ -93,7 +93,6 @@ component extends=framework.one {
     frameworkTrace( '<b>mustang</b>: setupApplication() called.' );
 
     var bf = getBeanFactory();
-
     var logService = bf.getBean( 'logService' );
 
     if ( structKeyExists( url, 'nuke' ) ) {
@@ -201,6 +200,7 @@ component extends=framework.one {
   }
 
   public void function setupRequest() {
+    writeLog( 'Has auth: #structKeyExists( session, "auth" )#' );
     frameworkTrace( '<b>mustang</b>: setupRequest() called.' );
 
     if ( structKeyExists( url, 'clear' ) ) {
@@ -295,11 +295,11 @@ component extends=framework.one {
     var cfmlFileInsideSubsystem = variables.root & '/subsystems/' & getSubsystem() & '/views/' & getSection() & '/' & getItem() & '.cfm';
 
     if ( util.fileExistsUsingCache( cfmlFileInsideDefaultSubsystem ) ) {
-      return view( ':' & getSection() & '/' & getItem() );
+      return view( framework.subsystemDelimiter & getSection() & '/' & getItem() );
     }
 
     if ( util.fileExistsUsingCache( cfmlFileInsideSubsystem ) ) {
-      return view( getSubsystem() & ':' & getSection() & '/' & getItem() );
+      return view( getSubsystem() & framework.subsystemDelimiter & getSection() & '/' & getItem() );
     }
 
     if ( structKeyExists( request.context, 'fallbackView' ) ) {

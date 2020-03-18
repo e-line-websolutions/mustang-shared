@@ -120,8 +120,12 @@ component accessors=true {
       fw.frameworkTrace( "<b>i18n</b>: getCurrentLanguage() called." );
     }
 
-    param session.currentLanguage=config.defaultLanguage;
-    return session.currentLanguage;
+    try {
+      param session.currentLanguage=config.defaultLanguage;
+      return session.currentLanguage;
+    } catch ( any e ) {
+      return config.defaultLanguage;
+    }
   }
 
   public void function setLocaleId( required string locale ) {
@@ -183,10 +187,6 @@ component accessors=true {
   ) {
     if ( !isNull( fw ) ) {
       fw.frameworkTrace( "<b>i18n</b>: cacheRead() called." );
-    }
-
-    if ( reload ) {
-      variables.translations = { };
     }
 
     try {

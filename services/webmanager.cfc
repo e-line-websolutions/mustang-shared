@@ -58,6 +58,7 @@ component accessors=true {
     variables.fw.frameworkTrace( '<b>webmanager</b>: appendPageDataToRequestContext() called.' );
 
     var seoPathArray = seoPathAsArray();
+
     var pageData = {
       'pageTemplate' = '',
       'pageDetails' = {},
@@ -74,13 +75,11 @@ component accessors=true {
     pageData[ 'pageTitle' ] = getPageTitle( seoPathArray );
     pageData[ 'websiteDetails' ] = getWebsiteDetails();
     pageData[ 'currentBaseMenuItemId' ] = -1;
+    pageData[ 'navigation' ] = [];
 
     switch ( variables.navigationType ) {
       case 'full':
         pageData[ 'fullNavigation' ] = getFullNavigation( variables.websiteId );
-        break;
-      case 'per-level':
-        pageData[ 'navigation' ] = [];
         break;
     }
 

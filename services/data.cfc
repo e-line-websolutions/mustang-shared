@@ -834,7 +834,7 @@ component accessors=true {
 
     for ( var row in asArrayOfStructs ) {
       parents[ row.menuId ] = row;
-      parents[ row.menuId ].children = [ ];
+      parents[ row.menuId ][ 'children' ] = [ ];
     }
 
     for ( var row in asArrayOfStructs ) {
