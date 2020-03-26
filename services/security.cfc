@@ -3,23 +3,6 @@ component accessors=true {
   property dataService;
   property logService;
   property utilityService;
-  property javaloaderService;
-
-  property any bcrypt;
-
-  public component function init( root, config, javaloaderService ) {
-    structAppend( variables, arguments );
-
-    var bCryptPath = replace( getDirectoryFromPath( getCurrentTemplatePath( ) ), "\", "/", "all" ) & "../lib/bcrypt";
-
-    if ( structKeyExists( config, "paths" ) && structKeyExists( config.paths, "bcrypt" ) && len( trim( config.paths.bcrypt ) ) ) {
-      bCryptPath = config.paths.bcrypt;
-    }
-
-    variables.bcrypt = getBCrypt( bCryptPath );
-
-    return this;
-  }
 
   public struct function getAuth( ) {
     var result = getEmptyAuth( );
@@ -128,11 +111,12 @@ component accessors=true {
   public string function hashPassword( required string password ) {
     var minSpeed = 100;
     var cost = 4;
+    var bcrypt = getBCrypt();
     do {
-      var salt = variables.bcrypt.gensalt( cost );
-      var hashedPW = variables.bcrypt.hashpw( password, salt );
+      var salt = bcrypt.gensalt( cost );
+      var hashedPW = bcrypt.hashpw( password, salt );
       var start = getTickCount( );
-      variables.bcrypt.checkpw( password, hashedPW );
+      bcrypt.checkpw( password, hashedPW );
       var hashSpeed = getTickCount( ) - start;
       logService.writeLogLevel( "Password hash speed #hashSpeed#ms at #cost#.", "securityService", "debug" );
       cost++;
@@ -143,8 +127,10 @@ component accessors=true {
   public boolean function comparePassword( required string password, required string storedPW ) {
     try {
       // FIRST TRY BCRYPT:
-      return variables.bcrypt.checkpw( password, storedPW );
+      var bcrypt = getBCrypt();
+      return bcrypt.checkpw( password, storedPW );
     } catch ( any e ) {
+      writeDump( e );abort;
       try {
         // THEN TRY THE OLD SHA-512 WAY:
         var storedsalt = right( storedPW, 16 );
@@ -214,39 +200,6 @@ component accessors=true {
     return false;
   }
 
-  /*
-   * From https://github.com/misterdai/cfbackport/blob/master/cf10.cfm
-   * Altered a bit to follow project coding style
-   **/
-  public void function invalidateSession( ) {
-    if ( val( server.coldfusion.productversion ) >= 10 ) {
-      sessionInvalidate( );
-      return;
-    }
-
-    if ( structKeyExists( session, "cfid" ) && structKeyExists( session, "cftoken" ) ) {
-      var sessionId = session.cfid & '_' & session.cftoken;
-    }
-
-    // Fire onSessionEnd
-    var appEvents = application.getEventInvoker( );
-    appEvents.onSessionEnd( [ application, session ] );
-
-    // Make sure that session is empty
-    for ( var key in session ) {
-      if ( !listFindNoCase( "cfid,cftoken,sessionid,urltoken", key ) ) {
-        structDelete( session, key );
-      }
-    }
-    // structClear( session );
-
-    // Clean up the session
-    if ( !isNull( sessionId ) ) {
-      var sessionTracker = createObject( "java", "coldfusion.runtime.SessionTracker" );
-      sessionTracker.cleanUp( application.applicationName, sessionId );
-    }
-  }
-
   // private
 
   private void function cachePermissions( required array allPermissions ) {
@@ -284,14 +237,8 @@ component accessors=true {
     };
   }
 
-  private any function getBCrypt( required string pathToBcrypt ) {
-    var minMaxVersion = [ 7, 8 ];
-    var system = createObject( "java", "java.lang.System" );
-    var currentJavaVersion = listGetAt( system.getProperty( "java.version" ), 2, "." );
-    var supportedJavaVersion = max( minMaxVersion[ 1 ], min( minMaxVersion[ 2 ], currentJavaVersion ) );
-    var bCryptLocation = directoryList( pathToBcrypt & "/" & supportedJavaVersion, false, "path", "*.jar" );
-    var jl = javaloaderService.new( bCryptLocation );
-    return jl.create( "org.mindrot.jbcrypt.BCrypt" );
+  private any function getBCrypt() {
+    return createObject( 'java', 'org.mindrot.jbcrypt.BCrypt' );
   }
 
   private struct function getEmptyAuth( ) {
