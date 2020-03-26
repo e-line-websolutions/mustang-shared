@@ -5,8 +5,6 @@ component {
     variables.name = hash( variables.basePath & cgi.server_name );
     variables.framework = fw1Config;
 
-    writeLog( 'FW/1-Mustang app #cgi.server_name# at #variables.basePath# accessed' );
-
     return this;
   }
 
@@ -25,7 +23,7 @@ component {
       }
     }
 
-    var result = { 'webroot' = ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.server_name };
+    var result = { 'webroot' = getDefaultWebroot() };
 
     var mustangSharedRoot = getMustangRoot();
 
@@ -50,11 +48,34 @@ component {
       mergeStructs( siteConfig, result );
     }
 
-    var machineName = createObject("java", "java.net.InetAddress").getLocalHost().getHostName();
-
+    var machineName = getMachineName();
     if ( fileExists( variables.root & '/config/#machineName#.json' ) ) {
       var machineConfig = deserializeJSON( fileRead( variables.root & '/config/#machineName#.json', 'utf-8' ) );
       mergeStructs( machineConfig, result );
+    }
+
+    var useCommandbox = false;
+
+    if ( fileExists( variables.root & '/config/commandbox.json' ) ) {
+      if ( structKeyExists( server, 'system' ) ) {
+        param server.system.properties={};
+        if ( structKeyExists( server.system.properties, 'sun.java.command' ) &&
+             server.system.properties[ 'sun.java.command' ] contains '.CommandBox' ) {
+          useCommandbox = true;
+        }
+      }
+
+      if ( !useCommandbox ) {
+        try {
+          createObject("java", "runwar.options.ServerOptions");
+          useCommandbox = true;
+        } catch ( any e ) {}
+      }
+
+      if ( useCommandbox ) {
+        var machineConfig = deserializeJSON( fileRead( variables.root & '/config/commandbox.json', 'utf-8' ) );
+        mergeStructs( machineConfig, result );
+      }
     }
 
     lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {
@@ -242,5 +263,13 @@ component {
         } )
       );
     }
+  }
+
+  private string function getDefaultWebroot() {
+    return ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.http_host;
+  }
+
+  public string function getMachineName() {
+    return lCase( createObject("java", "java.lang.System").getenv().computername );
   }
 }

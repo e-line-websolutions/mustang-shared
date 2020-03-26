@@ -34,8 +34,8 @@ component extends="latest-framework.one" {
       'SESOmitIndex' = true,
       'base' = '/root',
       'diLocations' = [
-        '/mustang/services',
-        '/root/model/services'
+        '/mustang-staging/services',
+        '/#variables.cfg.root#/model/services'
       ],
       'diConfig' = {
         'constants' = {
@@ -65,7 +65,7 @@ component extends="latest-framework.one" {
   );
 
   this.name = request.appName;
-  this.mappings[ '/root' ] = request.root = variables.root;
+  this.mappings[ '/#variables.cfg.root#' ] = request.root = variables.root;
   this.sessionManagement = true;
   this.sessionTimeout = createTimespan( 0, 2, 0, 0 );
 

@@ -52,7 +52,7 @@ component accessors=true {
   }
 
   public component function getInstance( ) {
-    return duplicate( this );
+    return this;
   }
 
   public void function writeToBrowser( required string filePath ) {
