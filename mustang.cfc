@@ -28,9 +28,9 @@ component extends="latest-framework.one" {
       'base' = '/#variables.cfg.root#',
       'baseURL' = variables.cfg.webroot,
       'error' = 'app.error',
-      'unhandledPaths' = '/inc,/tests,/browser,/cfimage,/diagram',
+      'unhandledPaths' = '/inc,/tests,/browser,/cfimage,/diagram,/orm',
       'diLocations' = [
-        '/mustang/services',
+        '/mustang-staging/services',
         '/#variables.cfg.root#/services',
         '/#variables.cfg.root#/model/services',
         '/#variables.cfg.root#/subsystems/api/services'
@@ -84,8 +84,8 @@ component extends="latest-framework.one" {
     request.fileUploads = variables.cfg.paths.fileUploads;
   }
 
-  mustangRoot = variables.mstng.getMustangRoot();
-  variables.mstng.addToJavapaths( this.javaSettings, mustangRoot & '/lib' );
+  variables.mustangRoot = variables.mstng.getMustangRoot();
+  variables.mstng.addToJavapaths( this.javaSettings, variables.mustangRoot & '/lib' );
 
   // fw1 flow control
 
@@ -200,7 +200,6 @@ component extends="latest-framework.one" {
   }
 
   public void function setupRequest() {
-    writeLog( 'Has auth: #structKeyExists( session, "auth" )#' );
     frameworkTrace( '<b>mustang</b>: setupRequest() called.' );
 
     if ( structKeyExists( url, 'clear' ) ) {
