@@ -9,10 +9,9 @@ component accessors=true {
   property numeric fileSize;
   property any fileContent;
 
-  public file function init( root, logService, javaloaderService ) {
+  public file function init( root, logService ) {
     variables.jFileInputStream = createObject( 'java', 'java.io.FileInputStream' );
     variables.jFile = createObject( 'java', 'java.io.File' );
-    variables.jl = javaloaderService.new( [ expandPath( "/mustang/lib/tika/tika-eval-1.22.jar" ) ] );
     return this;
   }
 
@@ -98,7 +97,7 @@ component accessors=true {
   }
 
   public string function getMimetypeFromBinaryFile( binaryFileData ) {
-    return jl.create( 'org.apache.tika.Tika' ).detect( binaryFileData );
+    return createObject( 'java', 'org.apache.tika.Tika' ).detect( binaryFileData );
   }
 
   public string function getMimetype( string filePath = variables.originalFileName ) {

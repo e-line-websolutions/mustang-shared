@@ -17,7 +17,6 @@ component accessors=true {
   public component function init( root, logService, imageSizes ) {
     variables.logService = logService;
     variables.logService.setConfig( { "logLevel" = "information" } );
-    this.jl = new javaloader.JavaLoader( [ expandPath( "/mustang/lib/imageScaler/java-image-scaling-0.8.5.jar" ) ] );
 
     if ( !isNull( imageSizes ) ) {
       variables.imageSizes = imageSizes;
@@ -124,8 +123,8 @@ component accessors=true {
     }
 
     var bufferedImage = imageGetBufferedImage( sourceImage );
-    var dimensionConstrain = this.jl.create( "com.mortennobel.imagescaling.DimensionConstrain" );
-    var resampleOp = this.jl.create( "com.mortennobel.imagescaling.ResampleOp" );
+    var dimensionConstrain = createObject( 'java', 'com.mortennobel.imagescaling.DimensionConstrain' );
+    var resampleOp = createObject( 'java', 'com.mortennobel.imagescaling.ResampleOp' );
 
     return resampleOp.init( dimensionConstrain.createMaxDimension( d.width, d.height ) ).filter( bufferedImage, nil( ) );
   }
