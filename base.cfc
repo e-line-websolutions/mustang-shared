@@ -270,6 +270,7 @@ component {
   }
 
   public string function getMachineName() {
-    return lCase( createObject("java", "java.lang.System").getenv().computername );
+    var env = createObject("java", "java.lang.System").getenv();
+    return isNull( env.computername ) ? 'commandbox' : lCase( env.computername );
   }
 }
