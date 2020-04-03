@@ -1,17 +1,6 @@
 component accessors=true {
   public component function init( root, config ) {
-    var jlPaths = [ expandPath( "/mustang/lib/json/gson-2.8.jar" ) ];
-
-    if ( !isNull( config ) && !isNull( config.paths.jsonLib ) && directoryExists( config.paths.jsonLib ) ) {
-      jlPaths = [ config.paths.jsonLib ];
-    }
-
-    var jl = new javaloader.javaloader( jlPaths );
-
-    variables.gson = jl.create( "com.google.gson.GsonBuilder" )
-      .serializeNulls( )
-      .create( );
-
+    variables.gson = createObject( 'java', 'com.google.gson.GsonBuilder' ).serializeNulls().create();
     return this;
   }
 
