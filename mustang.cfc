@@ -108,7 +108,9 @@ component extends="latest-framework.one" {
       if ( variables.cfg.useOrm ) {
         var t = getTickCount();
 
-        ormEvictQueries();
+        try {
+          ormEvictQueries();
+        } catch ( any e ) {}
 
         logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM Caches purged', request.appName );
 

@@ -266,11 +266,11 @@ component {
   }
 
   private string function getDefaultWebroot() {
-    return ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.http_host;
+    defaultPorts = [ 80, 443 ];
+    return ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.http_host & ( defaultPorts.find( cgi.server_port ) ? '' : ':' & cgi.server_port );
   }
 
   public string function getMachineName() {
-    var env = createObject("java", "java.lang.System").getenv();
-    return isNull( env.computername ) ? 'commandbox' : lCase( env.computername );
+    return createObject( 'java', 'java.net.InetAddress' ).getLocalHost().getHostName();
   }
 }
