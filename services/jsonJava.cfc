@@ -9,7 +9,7 @@ component accessors=true {
   }
 
   public any function deserialize( source ) {
-    if ( isNull( source ) || !isSimpleValue( source ) || !isJson( source ) ) return;
+    if ( isNull( source ) || !isSimpleValue( source ) || !isJSON( source ) ) return;
 
     source = lTrim( source );
 

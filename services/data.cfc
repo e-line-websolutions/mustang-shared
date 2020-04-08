@@ -384,7 +384,8 @@ component accessors=true {
 
         if ( fieldProperties.dataType == 'json' ) {
           try {
-            structAppend( result, useJsonService.deserialize( value ) );
+            var deserialized = useJsonService.deserialize( value );
+            if ( !isNull( deserialized ) ) structAppend( result, deserialized );
           } catch ( any e ) {
             variables.logService.dumpToFile(
               {
