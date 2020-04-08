@@ -8,7 +8,9 @@ component accessors=true {
     return variables.gson.toJsonTree( source ).toString();
   }
 
-  public any function deserialize( required string source ) {
+  public any function deserialize( source ) {
+    if ( isNull( source ) || !isSimpleValue( source ) || !isJson( source ) ) return;
+
     source = lTrim( source );
 
     var firstChar = left( source, 1 );
