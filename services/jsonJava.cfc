@@ -4,6 +4,9 @@ component accessors=true {
     return this;
   }
 
+  public any function s( source ) { return this.serialize(source); }
+  public any function d( source ) { return this.deserialize(source); }
+
   public string function serialize( required any source ) {
     return variables.gson.toJsonTree( source ).toString();
   }

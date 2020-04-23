@@ -311,6 +311,7 @@ component accessors=true {
     // data parsing:
     if ( isSimpleValue( data ) ) {
       var result = data;
+
     } else if ( isArray( data ) ) {
       var result = [];
       var itemCounter = 0;
@@ -325,6 +326,7 @@ component accessors=true {
           }
         }
       }
+
     } else if ( isObject( data ) ) {
       if ( !isInstanceOf( data, 'basecfc.base' ) ) {
         if ( level == 0 ) {
@@ -384,7 +386,7 @@ component accessors=true {
 
         if ( fieldProperties.dataType == 'json' ) {
           try {
-            var deserialized = useJsonService.deserialize( value );
+            var deserialized = useJsonService.d( value );
             if ( !isNull( deserialized ) ) structAppend( result, deserialized );
           } catch ( any e ) {
             variables.logService.dumpToFile(
@@ -407,12 +409,14 @@ component accessors=true {
 
         result[ fieldProperties.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path );
       }
+
     } else if ( isStruct( data ) ) {
       var result = {};
       for ( var key in data ) {
         var value = data[ key ];
         result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path );
       }
+
     }
 
     return result;
@@ -523,38 +527,6 @@ component accessors=true {
         var value = data[ key ];
         result[ key ] = deOrm( value, nextLevel, maxLevel, basicsOnly );
       }
-    }
-
-    return result;
-  }
-
-  /**
-    * a struct containing this objects and its ancestors properties
-    */
-  public struct function getInheritedProperties( object ) {
-    var md = getMetaData( object );
-    var result = { };
-
-    while ( structKeyExists( md, "extends" ) ) {
-      if ( structKeyExists( md, "properties" ) && isArray( md.properties ) ) {
-        var numberOfProperties = arrayLen( md.properties );
-
-        for ( var i = 1; i <= numberOfProperties; i++ ) {
-          var property = md.properties[ i ];
-
-          if ( !structKeyExists( result, property.name ) ) {
-            result[ property.name ] = { };
-          }
-
-          if ( structKeyExists( property, "cfc" ) ) {
-            property.entityName = getEntityName( property.cfc );
-            property.tableName = getTableName( property.cfc );
-          }
-
-          structAppend( result[ property.name ], property, false );
-        }
-      }
-      md = md.extends;
     }
 
     return result;
