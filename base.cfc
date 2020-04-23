@@ -8,7 +8,7 @@ component {
     return this;
   }
 
-  public struct function readConfig( string site = cgi.server_name ) {
+  public struct function readConfig( string site = cgi.server_name, string configRoot = variables.root ) {
     if ( !structKeyExists( url, 'reload' ) ) {
       lock name="lock_mustang_#variables.name#_config_read" timeout="3" type="readonly" {
         var cachedConfig = cacheGet( 'config_#variables.name#' );
@@ -24,24 +24,23 @@ component {
     }
 
     var result = { 'webroot' = getDefaultWebroot() };
-
     var mustangSharedRoot = getMustangRoot();
 
     var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & '/config/global.json', 'utf-8' ) );
     mergeStructs( globalConfig, result );
 
-    if ( fileExists( variables.root & '/config/default.json' ) ) {
-      var defaultConfig = deserializeJSON( fileRead( variables.root & '/config/default.json', 'utf-8' ) );
+    if ( fileExists( configRoot & '/config/default.json' ) ) {
+      var defaultConfig = deserializeJSON( fileRead( configRoot & '/config/default.json', 'utf-8' ) );
       mergeStructs( defaultConfig, result );
     }
 
-    site = replaceNoCase( site, 'www.', '' );
+    site = site.replaceNoCase( 'www.', '' );
 
-    if ( fileExists( variables.root & '/config/' & site & '.json' ) ) {
-      var siteConfig = deserializeJSON( fileRead( variables.root & '/config/' & site & '.json', 'utf-8' ) );
+    if ( fileExists( configRoot & '/config/' & site & '.json' ) ) {
+      var siteConfig = deserializeJSON( fileRead( configRoot & '/config/' & site & '.json', 'utf-8' ) );
 
-      if ( structKeyExists( siteConfig, 'include' ) ) {
-        var includeConfig = deserializeJSON( fileRead( variables.root & '/config/#siteConfig.include#', 'utf-8' ) );
+      if ( siteConfig.keyExists( 'include' ) ) {
+        var includeConfig = deserializeJSON( fileRead( configRoot & '/config/#siteConfig.include#', 'utf-8' ) );
         mergeStructs( includeConfig, result );
       }
 
@@ -49,17 +48,18 @@ component {
     }
 
     var machineName = getMachineName();
-    if ( fileExists( variables.root & '/config/#machineName#.json' ) ) {
-      var machineConfig = deserializeJSON( fileRead( variables.root & '/config/#machineName#.json', 'utf-8' ) );
+
+    if ( fileExists( configRoot & '/config/#machineName.lCase()#.json' ) ) {
+      var machineConfig = deserializeJSON( fileRead( configRoot & '/config/#machineName#.json', 'utf-8' ) );
       mergeStructs( machineConfig, result );
     }
 
     var useCommandbox = false;
 
-    if ( fileExists( variables.root & '/config/commandbox.json' ) ) {
-      if ( structKeyExists( server, 'system' ) ) {
+    if ( fileExists( configRoot & '/config/commandbox.json' ) ) {
+      if ( server.keyExists( 'system' ) ) {
         param server.system.properties={};
-        if ( structKeyExists( server.system.properties, 'sun.java.command' ) &&
+        if ( server.system.properties.keyExists( 'sun.java.command' ) &&
              server.system.properties[ 'sun.java.command' ] contains '.CommandBox' ) {
           useCommandbox = true;
         }
@@ -73,7 +73,7 @@ component {
       }
 
       if ( useCommandbox ) {
-        var machineConfig = deserializeJSON( fileRead( variables.root & '/config/commandbox.json', 'utf-8' ) );
+        var machineConfig = deserializeJSON( fileRead( configRoot & '/config/commandbox.json', 'utf-8' ) );
         mergeStructs( machineConfig, result );
       }
     }
@@ -88,7 +88,7 @@ component {
   public void function mergeStructs( required struct from, struct to = { } ) {
     for ( var key in from ) {
       if ( isStruct( from[ key ] ) ) {
-        if ( !structKeyExists( to, key ) ) {
+        if ( !to.keyExists( key ) ) {
           to[ key ] = from[ key ];
         } else if ( isStruct( to[ key ] ) ) {
           mergeStructs( from[ key ], to[ key ] );
@@ -97,7 +97,7 @@ component {
         to[ key ] = from[ key ];
       }
     }
-    structAppend( from, to, false );
+    from.append( to, false );
   }
 
   public void function addToConstants( required struct websiteSpecificConstants ) {
@@ -106,7 +106,7 @@ component {
 
   public string function getRoot( string basePath = variables.basePath ) {
     var tmp = fixPath( basePath );
-    return listDeleteAt( tmp, listLen( tmp, "/" ), "/" ) & "/";
+    return tmp.listDeleteAt( tmp.listLen( "/" ), "/" ) & "/";
   }
 
   public string function getMustangRoot( ) {
@@ -116,16 +116,16 @@ component {
   public void function cleanXHTMLQueryString( ) {
     for ( var kv in url ) {
       if ( kv contains ";" ) {
-        url[ listRest( kv, ";" ) ] = url[ kv ];
-        structDelete( url, kv );
+        url[ kv.listRest( ";" ) ] = url[ kv ];
+        url.delete( kv );
       }
     };
   }
 
   public string function fixPath( string originalPath ) {
-    var output = listChangeDelims( originalPath, '/', '\/' );
+    var output = originalPath.listChangeDelims( '/', '\/' );
 
-    if ( !server.os.name contains "Windows" && left( originalPath, 1 ) == "/" ) {
+    if ( !server.os.name contains "Windows" && originalPath.left( 1 ) == "/" ) {
       output = "/" & output;
     }
 
@@ -133,7 +133,7 @@ component {
   }
 
   public string function getDbCreate( required struct config ) {
-    if ( !structKeyExists( url, "reload" ) || !structKeyExists( url, "nuke" ) ) {
+    if ( !url.keyExists( "reload" ) || !url.keyExists( "nuke" ) ) {
       return "none";
     }
 
@@ -146,7 +146,7 @@ component {
 
   public void function loadListener( bf ) {
     // ACF / Lucee compatibility services:
-    if ( !structKeyExists( server, "lucee" ) ) {
+    if ( !server.keyExists( "lucee" ) ) {
       bf.declareBean( "threadfix", "mustang.compatibility.acf.threadfix" );
     }
   }
@@ -154,7 +154,7 @@ component {
   public void function handleExceptions( required struct config, any exception, string event ) {
     exception = duplicate( exception );
 
-    if ( structKeyExists( exception, "Cause" ) ) {
+    if ( exception.keyExists( "Cause" ) ) {
       exception = duplicate( exception.cause );
     }
 
@@ -171,7 +171,7 @@ component {
 
     var pc = getPageContext( );
 
-    if ( structKeyExists( server, "lucee" ) ) {
+    if ( server.keyExists( "lucee" ) ) {
       cfcontent( reset = true );
       cfheader( statusCode = errorCode, statusText = exception.message );
     } else {
@@ -181,7 +181,7 @@ component {
         .setStatus( errorCode, exception.message );
     }
 
-    var showDebugError = listFind( config.debugIP, cgi.remote_addr );
+    var showDebugError = config.debugIP.listFind( cgi.remote_addr );
 
     if ( !showDebugError && !isNull( config.rollbar ) ) {
       try {
@@ -191,7 +191,7 @@ component {
     }
 
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError || config.showDebug ) {
-      if ( structKeyExists( server, "lucee" ) ) {
+      if ( server.keyExists( "lucee" ) ) {
         cfcontent( type = "text/plain" );
       } else {
         pc.getResponse( )
@@ -242,8 +242,8 @@ component {
 
     // clear ehcache:
     var allCacheIds = cacheGetAllIds();
-    if ( !arrayIsEmpty( allCacheIds ) ) {
-      cacheRemove( arrayToList( allCacheIds ) );
+    if ( !allCacheIds.isEmpty() ) {
+      cacheRemove( allCacheIds.toList() );
     }
   }
 
@@ -259,18 +259,36 @@ component {
     } else if ( directoryExists( absolutePath ) ) {
       javaSettings.loadPaths.addAll(
         directoryList( absolutePath, true, 'path', '*.jar' ).filter( function( path ) {
-          return !arrayFind( existingFileNames, getFileFromPath( path ) );
+          return !existingFileNames.find( getFileFromPath( path ) );
         } )
       );
     }
   }
 
   private string function getDefaultWebroot() {
-    defaultPorts = [ 80, 443 ];
-    return ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.http_host & ( defaultPorts.find( cgi.server_port ) ? '' : ':' & cgi.server_port );
+    return ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.http_host;
   }
 
   public string function getMachineName() {
     return createObject( 'java', 'java.net.InetAddress' ).getLocalHost().getHostName();
+  }
+
+  public struct function listAllOrmEntities( cfcLocation ) {
+    var cacheKey = 'orm-entities';
+    var allOrmEntities = cacheGet( cacheKey );
+
+    if ( !isNull( allOrmEntities ) ) return allOrmEntities;
+
+    var allOrmEntities = {};
+    var allEntities = ormGetSessionFactory().getStatistics().getEntityNames();
+
+    for ( var entityName in allEntities ) {
+      var entity = getMetadata( entityNew( entityName ) );
+      result[ entityName ] = { 'name' = entityName, 'table' = entity.table ?: entityName };
+    }
+
+    cachePut( cacheKey, allOrmEntities );
+
+    return allOrmEntities;
   }
 }
