@@ -171,9 +171,8 @@ component accessors=true {
                                              string defaultSubsystem="" ) {
     logService.writeLogLevel( text = fqa, level = 'information' );
 
-    if ( listFindNoCase( variables.config.dontSecureFQA, fqa ) ) {
-      return true;
-    }
+    if ( isArray( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.findNoCase( fqa ) ) return true;
+    if ( isSimpleValue( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.listfindNoCase( fqa ) ) return true;
 
     if ( subsystem == "adminapi" && section == "css" ) {
       return true;

@@ -29,6 +29,7 @@ component accessors=true {
     param rc.authhash="";
 
     var updateUserWith = { 'lastLoginDate' = now() };
+
     // Check credentials:
     if ( structKeyExists( rc, 'authhash' ) && len( trim( rc.authhash ) ) ) {
       logService.writeLogLevel( 'trying authhash', request.appName );
@@ -97,12 +98,9 @@ component accessors=true {
 
       if ( decryptSpeed < 250 || decryptSpeed > 1000 ) {
         // re-encrypt if decryption is too slow, or too fast:
-        updateUserWith.password = securityService.hashPassword( rc.password );
+        updateUserWith[ 'password' ] = securityService.hashPassword( rc.password );
       }
     }
-
-    // Set auth struct:
-    securityService.refreshSession( user );
 
     updateUserWith[ 'contactID' ] = user.getID();
 
@@ -118,36 +116,27 @@ component accessors=true {
       };
     }
 
-    var originalLogSetting = config.log;
-
-    request.context.config.log = false;
-
-    transaction {
-      user.save( updateUserWith );
-    }
-
-    request.context.config.log = originalLogSetting;
+    // user.enableDebug();
+    user.dontLog();
+    user.save( updateUserWith );
 
     logService.writeLogLevel( text = 'user #user.getUsername()# logged in.', type = 'information', file = request.appName );
 
+    // Set auth struct:
+    entityReload( user );
+    securityService.refreshSession( user );
     rc.auth = securityService.getAuth();
 
     param rc.dontRedirect = false;
 
     if ( !rc.dontRedirect ) {
-      var loginscript = '';
+      var redirectTo = rc.keyExists( 'returnpage' )
+        ? rc.returnpage
+        : rc?.auth?.role?.loginscript;
 
-      if ( !isNull( rc.auth.role.loginscript ) ) {
-        loginscript = rc.auth.role.loginscript;
-      }
-
-      if ( structKeyExists( rc, 'returnpage' ) ) {
-        loginscript = rc.returnpage;
-      } else if ( isNull( loginscript ) || !len( trim( loginscript ) ) ) {
-        loginscript = ':';
-      }
-
-      framework.redirect( loginscript );
+      redirectTo.left( 1 ) == '/'
+        ? framework.redirectCustomURL( redirectTo )
+        : framework.redirect( redirectTo.trim().len() ? redirectTo : ':' );
     }
   }
 
