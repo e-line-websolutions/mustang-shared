@@ -4,14 +4,14 @@ component accessors=true {
     return this;
   }
 
-  public any function s( source ) { return this.serialize(source); }
-  public any function d( source ) { return this.deserialize(source); }
+  public string function s( required any source ) { return this.serialize(source); }
+  public any function d( required string source ) { return this.deserialize(source); }
 
   public string function serialize( required any source ) {
     return variables.gson.toJsonTree( source ).toString();
   }
 
-  public any function deserialize( source ) {
+  public any function deserialize( required string source ) {
     if ( isNull( source ) || !isSimpleValue( source ) || !isJSON( source ) ) return;
 
     source = lTrim( source );
