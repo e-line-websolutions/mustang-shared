@@ -12,7 +12,7 @@ component accessors=true {
   // sanitation functions:
 
   public numeric function sanitizeNumericValue( required string source ) {
-    var result = reReplace( source, '[^\d-\.,]+', '', 'all' );
+    var result = source.reReplace( '[^\d-\.,]+', '', 'all' ).replace( ',', '.' );
 
     if ( isNumeric( result ) ) {
       return result;
@@ -310,7 +310,7 @@ component accessors=true {
 
     // data parsing:
     if ( isSimpleValue( data ) ) {
-      var result = data;
+      var result = isJson( data ) ? useJsonService.d( data ) : data;
 
     } else if ( isArray( data ) ) {
       var result = [];
@@ -419,7 +419,7 @@ component accessors=true {
 
     }
 
-    return result;
+    return result?:'';
   }
 
   public any function deOrm( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false ) {
