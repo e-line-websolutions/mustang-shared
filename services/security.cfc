@@ -78,8 +78,6 @@ component accessors=true {
 
     createSession( );
 
-    var userAsStruct = dataService.processEntity( user, 0, 1, false );
-
     var tempAuth = {
       "isLoggedIn" = true,
       "user" = dataService.processEntity( user, 0, 1, false ),
