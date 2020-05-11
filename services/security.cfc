@@ -78,8 +78,6 @@ component accessors=true {
 
     createSession( );
 
-    var userAsStruct = dataService.processEntity( user, 0, 1, false );
-
     var tempAuth = {
       "isLoggedIn" = true,
       "user" = dataService.processEntity( user, 0, 1, false ),
@@ -161,6 +159,10 @@ component accessors=true {
     }
 
     param session.can = {};
+
+    if ( !isBoolean( session.auth.role.canAccessAdmin ) ) {
+      session.auth.role.canAccessAdmin = false;
+    }
 
     return structKeyExists( session.can, '#action#-#section#' ) || session.auth.role.canAccessAdmin;
   }

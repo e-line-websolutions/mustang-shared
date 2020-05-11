@@ -118,12 +118,14 @@ component accessors=true {
 
     // user.enableDebug();
     user.dontLog();
-    user.save( updateUserWith );
+
+    transaction {
+      user.save( updateUserWith );
+    }
 
     logService.writeLogLevel( text = 'user #user.getUsername()# logged in.', type = 'information', file = request.appName );
 
     // Set auth struct:
-    entityReload( user );
     securityService.refreshSession( user );
     rc.auth = securityService.getAuth();
 
@@ -167,7 +169,11 @@ component accessors=true {
         var originalLogSetting = config.log;
         request.context.config.log = false;
 
-        user.save( updateUserLog );
+        entityReload(user);
+
+        transaction {
+          user.save( updateUserLog );
+        }
 
         request.context.config.log = originalLogSetting;
       }
@@ -193,6 +199,7 @@ component accessors=true {
     framework.abortController();
   }
 
+  // THIS FUNCTION WILL ALWAYS SET RC.AUTH
   public void function authorize( required struct rc ) {
     if( structKeyExists( rc, 'authhash' ) ) doLogin( rc );
 
@@ -201,7 +208,6 @@ component accessors=true {
 
     if ( config.disableSecurity ) {
       securityService.refreshFakeSession();
-      rc.auth = securityService.getAuth();
       return;
     }
 
@@ -214,7 +220,7 @@ component accessors=true {
     };
 
     if ( securityService.canIgnoreSecurity( argumentCollection = args ) ) {
-      return;
+      return; // EARLY EXIT
     }
 
     // check validity of auth struct
@@ -261,11 +267,6 @@ component accessors=true {
         rc.alert = { 'class' = 'danger', 'text' = 'user-not-logged-in' };
         doLogout( rc );
       }
-    }
-
-    if ( framework.isFrameworkReloadRequest() && rc.auth.isLoggedIn ) {
-      var user = contactService.get( rc.auth.userid );
-      securityService.refreshSession( user );
     }
   }
 

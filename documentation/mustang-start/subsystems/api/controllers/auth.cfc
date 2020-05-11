@@ -4,7 +4,7 @@ component accessors=true {
   property jsonJavaService;
 
   public void function logout( required struct rc ) {
-    variables.securityService.createSession();
+    variables.securityService.endSession();
     variables.framework.renderData( "rawjson", variables.jsonJavaService.serialize( { "status" = "logged-out" } ) );
     variables.framework.abortController( );
   }

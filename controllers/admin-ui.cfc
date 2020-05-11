@@ -7,6 +7,10 @@ component accessors=true {
   property securityService;
 
   public void function load( rc ) {
+    var noContentItems = ['doLogout','doLogin'];
+
+    if ( noContentItems.findNoCase( framework.getItem() ) ) return;
+
     if ( !structKeyExists( rc, 'content' ) || isNull( rc.content ) ) {
       var locale = variables.localeService.get( variables.translationService.getLocaleID( ) );
 
