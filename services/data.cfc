@@ -310,7 +310,11 @@ component accessors=true {
 
     // data parsing:
     if ( isSimpleValue( data ) ) {
-      var result = isJson( data ) ? useJsonService.d( data ) : data;
+      var result = isBoolean( data )
+        ? data
+        : isJson( data )
+          ? useJsonService.d( data )
+          : data;
 
     } else if ( isArray( data ) ) {
       var result = [];
