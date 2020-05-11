@@ -15,7 +15,7 @@ component accessors=true {
       offset = offset
     };
 
-    if ( !isNull( permissionService ) ) {
+    if ( !isNull( permissionService.getFilterForEntity ) ) {
       filters.addAll( permissionService.getFilterForEntity( entityName ) );
     }
 

@@ -236,7 +236,7 @@ component accessors=true {
       }
     }
 
-    rc.orderby = replaceNoCase( replaceNoCase( rc.defaultSort, ' ASC', '', 'all' ), ' DESC', '', 'all' );
+    rc.orderby = rc.defaultSort.replaceNoCase( ' ASC', '', 'all' ).replaceNoCase( ' DESC', '', 'all' );
 
     if ( rc.defaultSort contains ' DESC' ) {
       rc.d = 1;
