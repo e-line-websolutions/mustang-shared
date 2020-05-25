@@ -6,7 +6,7 @@ component accessors=true {
 
   // PUBLIC
 
-  public struct function list( required string entityName, properties, showdeleted, filters, filterType, orderByString, maxResults, offset ) {
+  public struct function list( required string entityName, properties, showdeleted, filters, filterType, orderByString, maxResults, offset, entityInstanceVars ) {
     var result = {};
 
     var queryOptions = {

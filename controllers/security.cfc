@@ -132,9 +132,11 @@ component accessors=true {
     param rc.dontRedirect = false;
 
     if ( !rc.dontRedirect ) {
+      param rc.auth.role.loginscript=":";
+
       var redirectTo = rc.keyExists( 'returnpage' )
         ? rc.returnpage
-        : rc?.auth?.role?.loginscript;
+        : rc.auth.role.loginscript;
 
       redirectTo.left( 1 ) == '/'
         ? framework.redirectCustomURL( redirectTo )
