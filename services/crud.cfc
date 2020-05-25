@@ -99,7 +99,7 @@ component accessors=true {
 
       result.alldata = ORMExecuteQuery( HQLselector, whereParameters, queryOptions );
 
-      if ( arrayLen( result ) gt 0 ) {
+      if ( !result.alldata.isEmpty() ) {
         result.recordCounter = ORMExecuteQuery( HQLcounter, whereParameters, { ignorecase = true } )[ 1 ];
       }
     } else {
