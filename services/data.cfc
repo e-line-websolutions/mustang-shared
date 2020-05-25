@@ -12,7 +12,7 @@ component accessors=true {
   // sanitation functions:
 
   public numeric function sanitizeNumericValue( required string source ) {
-    var result = source.reReplace( '[^\d-\.,]+', '', 'all' ).replace( ',', '.' );
+    var result = reReplace( source, '[^\d-\.,]+', '', 'all' ).replace( ',', '.' );
 
     if ( isNumeric( result ) ) {
       return result;

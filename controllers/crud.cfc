@@ -41,10 +41,10 @@ component accessors=true {
 
     if ( arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
       var object = entityNew( variables.entity );
-      var entityInstanceVars = object.getInstanceVariables( );
+      rc.entityInstanceVars = object.getInstanceVariables( );
 
-      if ( structKeyExists( entityInstanceVars.settings, "useForViews" ) ) {
-        rc.useAsViewEntity = entityInstanceVars.settings.useForViews;
+      if ( structKeyExists( rc.entityInstanceVars.settings, "useForViews" ) ) {
+        rc.useAsViewEntity = rc.entityInstanceVars.settings.useForViews;
       }
     }
 
@@ -160,7 +160,7 @@ component accessors=true {
     }
 
     var object = entityNew( variables.entity );
-    var entityInstanceVars = object.getInstanceVariables( );
+    rc.entityInstanceVars = object.getInstanceVariables( );
 
     var property = "";
     var indexNr = 0;
@@ -171,7 +171,7 @@ component accessors=true {
 
     rc.recordCounter = 0;
     rc.deleteddata = 0;
-    rc.properties = entityInstanceVars.properties;
+    rc.properties = rc.entityInstanceVars.properties;
     rc.lineactions = variables.lineactions;
     rc.listactions = variables.listactions;
     rc.confirmactions = variables.confirmactions;
@@ -182,10 +182,10 @@ component accessors=true {
     rc.showAsTree = false;
 
     // exit out of controller if using a tree view (data retrieval goes through ajax calls instead)
-    if ( structKeyExists( entityInstanceVars.settings, "list" ) ) {
-      rc.tableView = ":elements/" & entityInstanceVars.settings.list;
+    if ( structKeyExists( rc.entityInstanceVars.settings, "list" ) ) {
+      rc.tableView = ":elements/" & rc.entityInstanceVars.settings.list;
 
-      if ( entityInstanceVars.settings.list == "hierarchy" ) {
+      if ( rc.entityInstanceVars.settings.list == "hierarchy" ) {
         rc.allColumns = { };
         rc.allData = [ ];
         rc.showAsTree = true;
@@ -200,16 +200,16 @@ component accessors=true {
       }
     }
 
-    if ( structKeyExists( entityInstanceVars.settings, "classColumn" ) && len( trim( entityInstanceVars.settings.classColumn ) ) ) {
-      classColumn = entityInstanceVars.settings.classColumn;
+    if ( structKeyExists( rc.entityInstanceVars.settings, "classColumn" ) && len( trim( rc.entityInstanceVars.settings.classColumn ) ) ) {
+      classColumn = rc.entityInstanceVars.settings.classColumn;
     }
 
     rc.defaultSort = "";
 
-    if ( structKeyExists( entityInstanceVars.settings, "defaultSort" ) ) {
-      rc.defaultSort = entityInstanceVars.settings.defaultSort;
-    } else if ( structKeyExists( entityInstanceVars.settings.extends, "defaultSort" ) ) {
-      rc.defaultSort = entityInstanceVars.settings.extends.defaultSort;
+    if ( structKeyExists( rc.entityInstanceVars.settings, "defaultSort" ) ) {
+      rc.defaultSort = rc.entityInstanceVars.settings.defaultSort;
+    } else if ( structKeyExists( rc.entityInstanceVars.settings.extends, "defaultSort" ) ) {
+      rc.defaultSort = rc.entityInstanceVars.settings.extends.defaultSort;
     }
 
     if ( len( trim( rc.orderby ) ) ) {
@@ -277,7 +277,7 @@ component accessors=true {
     }
 
     if ( !rc.keyExists( 'alldata' ) ) {
-      var crudData = crudService.list( variables.entity, rc.properties, rc.showdeleted, rc.filters, rc.filterType, orderByString, rc.maxResults, rc.offset );
+      var crudData = crudService.list( variables.entity, rc.properties, rc.showdeleted, rc.filters, rc.filterType, orderByString, rc.maxResults, rc.offset, rc.entityInstanceVars );
       if ( crudData.keyExists( 'allData' ) ) rc.append( crudData );
     }
 
@@ -391,12 +391,12 @@ component accessors=true {
 
     // is this a loggable object?
     var object = entityNew( variables.entity );
-    var entityInstanceVars = object.getInstanceVariables();
+    rc.entityInstanceVars = object.getInstanceVariables();
     rc.subclasses = object.getSubClasses();
     rc.canBeLogged = ( config.log && isInstanceOf( object, '#config.root#.model.logged' ) && rc.entity != 'logentry' );
 
     // load form properties
-    rc.properties = entityInstanceVars.properties;
+    rc.properties = rc.entityInstanceVars.properties;
 
     var propertiesInForm = [];
 
@@ -406,7 +406,7 @@ component accessors=true {
       }
     }
 
-    rc.hideDelete = structKeyExists( entityInstanceVars.settings, 'hideDelete' );
+    rc.hideDelete = structKeyExists( rc.entityInstanceVars.settings, 'hideDelete' );
 
     if ( structKeyExists( rc, '#rc.entity#id' ) && !len( trim( rc[ '#rc.entity#id' ] ) ) ) {
       structDelete( rc, '#rc.entity#id' );

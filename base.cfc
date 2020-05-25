@@ -284,7 +284,7 @@ component {
 
     for ( var entityName in allEntities ) {
       var entity = getMetadata( entityNew( entityName ) );
-      result[ entityName ] = { 'name' = entityName, 'table' = entity.table ?: entityName };
+      result[ entityName ] = { 'name' = entityName, 'table' = isNull( entity.table ) ? entityName : entity.table };
     }
 
     cachePut( cacheKey, allOrmEntities );
