@@ -310,9 +310,9 @@ component accessors=true {
 
     // data parsing:
     if ( isSimpleValue( data ) ) {
-      var result = isBoolean( data )
+      var result = ( isBoolean( data ) || isNumeric( data ) )
         ? data
-        : isJson( data )
+        : isJSON( data )
           ? useJsonService.d( data )
           : data;
 
@@ -423,7 +423,7 @@ component accessors=true {
 
     }
 
-    return result?:'';
+    return isNull( result ) ? '' : result;
   }
 
   public any function deOrm( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false ) {
