@@ -310,9 +310,9 @@ component accessors=true {
 
     // data parsing:
     if ( isSimpleValue( data ) ) {
-      var result = isBoolean( data )
+      var result = ( isBoolean( data ) || isNumeric( data ) )
         ? data
-        : isJson( data )
+        : isJSON( data )
           ? useJsonService.d( data )
           : data;
 
@@ -423,7 +423,7 @@ component accessors=true {
 
     }
 
-    return result?:'';
+    return isNull( result ) ? '' : result;
   }
 
   public any function deOrm( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false ) {
@@ -790,17 +790,42 @@ component accessors=true {
     return;
   }
 
-  public struct function mapToTemplateFields( data, template ) {
-    var flattenedData = flattenStruct( data );
-    var result = { };
+  public void function structDeepSet( required struct inputStruct, required string keyPath, required value ) {
+    var keyPathAsArray = listToArray( keyPath, "." );
+    var pathLength = arrayLen( keyPathAsArray );
+    var counter = 0;
 
-    for ( var key in flattenedData ) {
-      try {
-        var mappedKey = evaluate( "template.#key#" );
-        result[ mappedKey ] = flattenedData[ key ];
-      } catch ( any e ) {
+    for ( var key in keyPathAsArray ) {
+      counter++;
+
+      if ( structKeyExists( inputStruct, key ) ) {
+        inputStruct = inputStruct[ key ];
+      } else if ( counter != pathLength ) {
+        throw(
+          "Key not found",
+          "dataService.structFindPath.keyNotFoundError",
+          "Key #key# of path #keyPath# not found in struct."
+        );
+      }
+
+      if ( counter == pathLength ) {
+        inputStruct = value;
       }
     }
+  }
+
+  public struct function mapToTemplateFields( data, template ) {
+    var result = { };
+
+    flattenStruct( data ).each( function( key, value ) {
+      var tmp = template;
+      var mappedKey = structFindPath( tmp, key );
+      if ( isSimpleValue( mappedKey ) ) {
+        result[ mappedKey ] = value;
+      } else {
+        result[ key ] = value;
+      }
+    });
 
     return result;
   }
