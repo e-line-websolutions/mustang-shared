@@ -1,4 +1,4 @@
-component extends="basecfc.base" persistent=true table="log"  defaultSort="dd DESC" classColumn="logaction" {
+component extends="basecfc.base" persistent=true table="log" defaultSort="dd DESC" classColumn="logaction" {
   property name="name" type="string" length=128;
   property name="deleted" type="boolean" ORMType="boolean" default=false inapi=false;
   property name="sortorder" type="numeric" ORMType="integer" default=0;
@@ -13,15 +13,15 @@ component extends="basecfc.base" persistent=true table="log"  defaultSort="dd DE
   property name="note" length=1024 inform=true orderinform=6 editable=true required=true inlist=true;
   property name="attachment" length=128 inform=true orderinform=7 editable=true formfield="file";
 
-  public string function getName( ) {
+  public string function getName() {
     if ( !isNull( variables.relatedEntity ) ) {
-      return variables.relatedEntity.getName( ) & " log";
+      return variables.relatedEntity.getName() & ' log';
     }
 
-    return "not linked to entity";
+    return 'not linked to entity';
   }
 
-  public any function enterIntoLog( string action = "init", struct newState = { }, component entityToLog ) {
+  public any function enterIntoLog( string action = 'init', struct newState = {}, component entityToLog ) {
     if ( isNull( entityToLog ) && !isNull( variables.relatedEntity ) ) {
       entityToLog = variables.relatedEntity;
     }
@@ -30,48 +30,48 @@ component extends="basecfc.base" persistent=true table="log"  defaultSort="dd DE
       return this;
     }
 
-    writeLog( text = "Logging entry for #entityToLog.getId( )#", file = request.appName );
+    writeLog( text = 'Logging entry for #entityToLog.getId()#', file = request.appName );
 
     var formData = {
-      "dd" = now( ),
-      "ip" = cgi.remote_addr,
-      "relatedEntity" = entityToLog.getId( )
+      'dd' = now(),
+      'ip' = cgi.remote_addr,
+      'relatedEntity' = entityToLog.getId()
     };
 
-    if ( isDefined( "request.context.auth.userID" ) ) {
-      var contact = entityLoadByPK( "contact", request.context.auth.userID );
+    if ( isDefined( 'request.context.auth.userID' ) ) {
+      var contact = entityLoadByPK( 'contact', request.context.auth.userID );
 
       if ( !isNull( contact ) ) {
-        formData[ "by" ] = contact;
+        formData[ 'by' ] = contact;
       }
     }
 
     if ( len( trim( action ) ) ) {
-      var logaction = entityLoad( "logaction", { name = action }, true );
+      var logaction = entityLoad( 'logaction', { name = action }, true );
 
       if ( isNull( logaction ) ) {
-        var logaction = entityLoad( "logaction", { name = "init" }, true );
+        var logaction = entityLoad( 'logaction', { name = 'init' }, true );
       }
 
       if ( !isNull( logaction ) ) {
-        formData[ "logaction" ] = logaction;
+        formData[ 'logaction' ] = logaction;
       }
     }
 
     if ( structIsEmpty( newState ) ) {
-      newState = { "init" = true, "name" = entityToLog.getName( ) };
+      newState = { 'init' = true, 'name' = entityToLog.getName() };
     }
 
-    formData[ "savedState" ] = left( serializeJson( deORM( newState ) ), 4000 );
+    formData[ 'savedState' ] = left( serializeJSON( deORM( newState ) ), 4000 );
 
     transaction {
       var result = save( formData );
     }
 
-    var e = result.getRelatedEntity( );
+    var e = result.getRelatedEntity();
 
     if ( !isNull( e ) ) {
-      writeLog( text = "Entry logged for #e.getId( )#", file = request.appName );
+      writeLog( text = 'Entry logged for #e.getId()#', file = request.appName );
     }
 
     return result;
