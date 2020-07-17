@@ -21,14 +21,14 @@ component accessors=true {
   // CONSTRUCTOR
 
   public component function init( ds, websiteId, config, fw ) {
-    param arguments.ds='';
+    param arguments.ds = "";
 
     fw.frameworkTrace( '<b>webmanager</b>: webmanagerService initialized.' );
 
     structAppend( variables, arguments, true );
 
-    param config.showDebug=false;
-    param config.redirectToMainUrl=true;
+    param config.showDebug = false;
+    param config.redirectToMainUrl = true;
 
     variables.supportedLocales = {
       'nl' = 'nl_NL',
@@ -40,8 +40,10 @@ component accessors=true {
     variables.safeDelim = chr( 0182 );
     variables.defaultLanguage = lCase( listLast( config.defaultLanguage, '_' ) );
     variables.datasource = arguments.ds;
-    variables.queryOptions = { 'datasource' = variables.datasource, 'cachedWithin' = createTimespan( 0, 0, 5, 0 ) };
-
+    variables.queryOptions = {
+      'datasource' = variables.datasource,
+      'cachedWithin' = createTimespan( 0, 0, 5, 0 )
+    };
     variables.resizeBeforeServe = 'jpg,jpeg,png,gif';
 
     return this;
@@ -648,17 +650,20 @@ component accessors=true {
 
   private string function getPageTitle( required array seoPathArray, string titleDelimiter = ' - ' ) {
     variables.fw.frameworkTrace( '<b>webmanager</b>: getPageTitle() called.' );
+
     if ( arrayIsEmpty( seoPathArray ) ) {
       return '';
     }
 
     var allLocales = structKeyArray( variables.supportedLocales );
 
+    var seoPathArray_copy = duplicate( seoPathArray );
+
     if ( arrayFindNoCase( allLocales, seoPathArray[ 1 ] ) ) {
-      arrayDeleteAt( seoPathArray, 1 );
+      arrayDeleteAt( seoPathArray_copy, 1 );
     }
 
-    var reversedSeoPath = variables.utilityService.arrayReverse( seoPathArray );
+    var reversedSeoPath = variables.utilityService.arrayReverse( seoPathArray_copy );
     var fullPath = arrayToList( reversedSeoPath, variables.safeDelim );
     var asTitle = replace( fullPath, variables.safeDelim, titleDelimiter, 'all' );
 
@@ -677,7 +682,7 @@ component accessors=true {
                 assetcontent_sTitleText     AS name,
                 assetmeta_nRating           AS template,
                 assetcontent_sPath          AS htmlKeywords,
-                assetcontent_sName          AS htmlTitle,
+                ISNULL( assetcontent_sName, assetcontent_sTitleText ) AS htmlTitle,
                 assetcontent_sFileExtension AS htmlDescription,
                 assetcontent_sIntroText     AS unknown_1,
                 assetcontent_sBodyText      AS unknown_2
@@ -692,36 +697,23 @@ component accessors=true {
         AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
     ';
 
-    var queryParams = { 'pageId' = pageId, 'websiteId' = variables.websiteId };
+    var queryResult = variables.queryService.execute( sql, { 'pageId' = pageId, 'websiteId' = variables.websiteId }, variables.queryOptions );
 
-    var queryResult = variables.queryService.execute( sql, queryParams, variables.queryOptions );
-
-    if ( queryResult.recordCount == 0 ) {
-      return {};
-    }
-
-    return variables.queryService.toArray( queryResult )[ 1 ];
+    return queryResult.recordCount == 0
+      ? {}
+      : variables.queryService.toArray( queryResult )[ 1 ];
   }
 
   private struct function getWebsiteDetails() {
     variables.fw.frameworkTrace( '<b>webmanager</b>: getWebsiteDetails() called.' );
-    var sql = '
-      SELECT    *
 
-      FROM      tbl_bws
+    var queryResult = variables.queryService.execute(
+      'SELECT * FROM tbl_bws WHERE bws_nId = :websiteId',
+      { 'websiteId' = variables.websiteId },
+      variables.queryOptions
+    );
 
-      WHERE     bws_nId = :websiteId
-    ';
-
-    var queryParams = { 'websiteId' = variables.websiteId };
-
-    var queryResult = variables.queryService.execute( sql, queryParams, variables.queryOptions );
-
-    if ( queryResult.recordCount == 0 ) {
-      return {};
-    }
-
-    return variables.queryService.toArray( queryResult )[ 1 ];
+    return queryResult.recordCount == 0 ? {} : variables.queryService.toArray( queryResult )[ 1 ];
   }
 
   private array function getArticleImages( required numeric articleId ) {
