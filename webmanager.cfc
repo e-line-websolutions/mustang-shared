@@ -41,7 +41,7 @@ component extends="latest-framework.one" {
         'constants' = {
           'root' = variables.root,
           'config' = variables.cfg,
-          'ds' = 'e-line_cm',
+          'ds' = isNull( variables.cfg.webmanager.datasource ) ? 'e-line_cm' : variables.cfg.webmanager.datasource,
           'navigationType' = 'per-level'
         },
         'loadListener' = variables.mstng.loadListener
