@@ -1,6 +1,7 @@
 component accessors=true {
   property config;
   property ds;
+  property fw;
   property dataService;
   property logService;
 
@@ -46,16 +47,19 @@ component accessors=true {
     var localQueryOptions = duplicate( queryOptions );
 
     if ( structKeyExists( localQueryOptions, "cachedWithin" ) &&
-         isNumeric( localQueryOptions.cachedWithin ) &&
-         val( localQueryOptions.cachedWithin ) > 0 ) {
+         val( localQueryOptions.cachedWithin ) > 0 &&
+         !url.keyExists( 'reload' ) ) {
       var cacheId = buildCacheId( sqlStatement, queryParams );
       var cacheFor = localQueryOptions.cachedWithin;
       structDelete( localQueryOptions, "cachedWithin" );
       var cachedQuery = cacheGet( cacheId );
       if ( !isNull( cachedQuery ) ) {
+        if ( !isNull( variables.fw ) ) variables.fw.frameworkTrace( ' -> queryService.execute() called [using cache]' );
         return cachedQuery;
       }
     }
+
+    if ( !isNull( variables.fw ) ) variables.fw.frameworkTrace( ' -> queryService.execute() called [no cache]' );
 
     try {
       if( isModernCFML( ) ) {
@@ -84,7 +88,7 @@ component accessors=true {
     }
 
     if ( !isNull( cacheFor ) ) {
-      cachePut( cacheId, result, cacheFor, createTimeSpan( 0, 1, 0, 0 ) );
+      cachePut( cacheId, result, createTimeSpan( 0, 1, 0, 0 ), cacheFor );
     }
 
     return result;
