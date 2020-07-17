@@ -175,42 +175,26 @@ component accessors=true {
   }
 
   public any function keyValuePairFind( any data, string key, string value, string scope = 'one', string part = 'full' ) {
-    var itemsWithKey = structFindKey( { 'data' = data }, key, 'all' );
-    var result = [];
+    if ( isArray( data ) ) {
+      data = { 'data' = data };
+    }
 
-    for ( var item in itemsWithKey ) {
-      var match = false;
-
+    var result = data.findKey( key, 'all' ).filter( function( item ) {
       switch ( part ) {
-        case 'left':
-          match = left( item.value, len( value ) ) == value;
-          break;
-
-        case 'middle':
-          match = item.value contains value;
-          break;
-
-        case 'right':
-          match = right( item.value, len( value ) ) == value;
-          break;
-
-        default:
-          match = item.value == value;
+        case 'left':    return item.value.left( value.len() ) == value;
+        case 'middle':  return item.value contains value;
+        case 'right':   return item.value.right( value.len() ) == value;
+        default:        return item.value == value;
       }
+    } ).map( function( item ) {
+      return item.owner;
+    } );
 
-      if ( match ) {
-        if ( scope == 'one' ) {
-          return item.owner;
-        }
-        arrayAppend( result, item.owner );
-      }
-    }
+    if ( result.isEmpty() ) return;
 
-    if ( !arrayIsEmpty( result ) ) {
-      return result;
-    }
+    if ( scope == 'one' ) return result[ 1 ];
 
-    return;
+    return result;
   }
 
   /**
@@ -751,13 +735,11 @@ component accessors=true {
     * @version  2, September 2, 2011
     */
   public struct function flattenStruct( required struct original, string delimiter = ".", struct flattened = { }, string prefix_string = "" ) {
-    var names = structKeyArray( original );
-
-    for ( var name in names ) {
-      if ( isStruct( original[ name ] ) ) {
-        flattened = flattenStruct( original[ name ], delimiter, flattened, prefix_string & name & delimiter );
+    for ( var key in original ) {
+      if ( isStruct( original[ key ] ) ) {
+        flattened = flattenStruct( original[ key ], delimiter, flattened, prefix_string & key & delimiter );
       } else {
-        flattened[ prefix_string & name ] = original[ name ];
+        flattened[ prefix_string & key ] = original[ key ];
       }
     }
 
@@ -765,21 +747,17 @@ component accessors=true {
   }
 
   public any function structFindPath( required struct inputStruct, required string keyPath ) {
-    var keyPathAsArray = listToArray( keyPath, "." );
-    var pathLength = arrayLen( keyPathAsArray );
+    var keyPathAsArray = keyPath.listToArray( '.' );
+    var pathLength = keyPathAsArray.len();
     var counter = 0;
 
     for ( var key in keyPathAsArray ) {
       counter++;
 
-      if ( structKeyExists( inputStruct, key ) ) {
+      if ( inputStruct.keyExists( key ) ) {
         inputStruct = inputStruct[ key ];
       } else if ( counter != pathLength ) {
-        throw(
-          "Key not found",
-          "dataService.structFindPath.keyNotFoundError",
-          "Key #key# of path #keyPath# not found in struct."
-        );
+        throw( 'Key not found', 'dataService.structFindPath.keyNotFoundError', 'Key #key# of path #keyPath# not found in struct.' );
       }
 
       if ( counter == pathLength ) {
@@ -803,7 +781,7 @@ component accessors=true {
       } else if ( counter != pathLength ) {
         throw(
           "Key not found",
-          "dataService.structFindPath.keyNotFoundError",
+          "dataService.structDeepSet.keyNotFoundError",
           "Key #key# of path #keyPath# not found in struct."
         );
       }
@@ -818,7 +796,7 @@ component accessors=true {
     var result = { };
 
     flattenStruct( data ).each( function( key, value ) {
-      var tmp = template;
+      var tmp = duplicate( template );
       var mappedKey = structFindPath( tmp, key );
       if ( isSimpleValue( mappedKey ) ) {
         result[ mappedKey ] = value;
