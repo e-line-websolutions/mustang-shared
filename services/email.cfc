@@ -13,24 +13,24 @@ component accessors=true {
               any  attachement
   ) {
     try {
-      var toEmail = isSimpleValue( to ) ? to : to.getEmail( );
+      var toEmail = isSimpleValue( to ) ? to : to.getEmail();
       var sendTo = variables.config.appIsLive ? toEmail : variables.config.debugEmail;
 
-      var emailsFrom = listToArray( from );
-      for( emailFrom in emailsFrom ){
-        if( !variables.utilityService.isValidEmail( emailFrom ) ) {
-          throw( "Invalid to address", "emailService.send.invalidEmailError", emailFrom );
+      from = from.listToArray().map( function( emailAddress ) {
+        if ( !variables.utilityService.isValidEmail( emailAddress.trim() ) ) {
+          throw( 'Invalid to address', 'emailService.send.invalidEmailError', emailAddress );
         }
-      }
+        return emailAddress.trim();
+      } );
 
-      var emailsTo = listToArray( sendTo );
-      for( emailTo in emailsTo ){
-        if( !variables.utilityService.isValidEmail( emailTo ) ) {
-          throw( "Invalid to address", "emailService.send.invalidEmailError", emailTo );
+      sendTo = sendTo.listToArray().map( function( emailAddress ) {
+        if ( !variables.utilityService.isValidEmail( emailAddress.trim() ) ) {
+          throw( 'Invalid to address', 'emailService.send.invalidEmailError', emailAddress );
         }
-      }
+        return emailAddress.trim();
+      } );
 
-      var message = new mail( );
+      var message = new mail();
 
       message.setType( type );
       message.setFrom( from );
@@ -42,28 +42,27 @@ component accessors=true {
         message.setBcc( bcc );
       }
 
-      if( !isNull( attachement ) ){
-        if( isStruct( attachement )){
-          var attachements = [attachement];
+      if ( !isNull( attachement ) ) {
+        if ( isStruct( attachement ) ) {
+          var attachements = [ attachement ];
         }
 
-        if( isArray( attachement )){
+        if ( isArray( attachement ) ) {
           var attachements = attachement;
         }
 
-
-        for( var att in attachements ){
+        for ( var att in attachements ) {
           if ( structKeyExists( att, 'file' ) && structKeyExists( att, 'type' ) && structKeyExists( att, 'remove' ) ) {
-            message.addParam( file  = att.file, type = att.type, remove = att.remove );
+            message.addParam( file = att.file, type = att.type, remove = att.remove );
           }
         }
       }
 
-      message.send( );
+      message.send();
 
-      variables.logService.writeLogLevel( "email sent: '#subject#' from #from#, to #sendTo# (original: #toEmail#)." );
+      variables.logService.writeLogLevel( 'email sent: ''#subject#'' from #from#, to #sendTo# (original: #toEmail#).' );
     } catch ( any e ) {
-      variables.logService.writeLogLevel( text = "Error sending email. (#e.message#)", type = "fatal" );
+      variables.logService.writeLogLevel( text = 'Error sending email. (#e.message#)', type = 'fatal' );
       rethrow;
     }
   }
