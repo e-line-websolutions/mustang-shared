@@ -228,8 +228,8 @@ component {
         include "/#config.root#/#webroot#/error-#errorCode#.html";
         writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
         abort;
-      } else if ( fileExists( variables.root & "/#webroot#/error.html" ) ) {
-        include "/#config.root#/#webroot#/error.html";
+      } else if ( fileExists( variables.root & "/#webroot#/#fallbackErrorFile#" ) ) {
+        include "/#config.root#/#webroot#/#fallbackErrorFile#";
         writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
         abort;
       }
