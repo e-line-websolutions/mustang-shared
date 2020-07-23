@@ -6,14 +6,15 @@ component accessors=true {
 
   // PUBLIC
 
-  public struct function list( required string entityName, properties, showdeleted, filters, filterType, orderByString, maxResults, offset, entityInstanceVars ) {
+  public struct function list( required string entityName, properties, showdeleted = false, filters = [], filterType, orderByString = '', maxResults = 0, offset = 0, entityInstanceVars ) {
     var result = {};
 
     var queryOptions = {
-      ignorecase = true,
-      maxResults = maxResults,
-      offset = offset
+      ignorecase = true
     };
+
+    if ( maxResults > 0 ) queryOptions.maxResults = maxResults;
+    // if ( offset > 0 ) queryOptions.offset = offset;
 
     if ( !isNull( permissionService.getFilterForEntity ) ) {
       filters.addAll( permissionService.getFilterForEntity( entityName ) );
@@ -197,6 +198,7 @@ component accessors=true {
 
     transaction {
       var result = entityToSave.save( formData );
+
       // save empty fields:
       for ( var key in formData ) {
         if ( entityToSave.propertyExists( key ) && entityProperties.keyExists( key ) ) {
@@ -244,12 +246,10 @@ component accessors=true {
     }
   }
 
-  private struct function getFormData( ) {
-    var formData = { };
-
-    structAppend( formData, url );
-    structAppend( formData, form );
-
-    return formData;
+  private struct function getFormData() {
+    var formData = {};
+    return formData
+      .append( url )
+      .append( form );
   }
 }
