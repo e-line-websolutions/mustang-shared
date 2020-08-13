@@ -28,7 +28,6 @@ component {
 
     var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & '/config/global.json', 'utf-8' ) );
     mergeStructs( globalConfig, result );
-
     if ( fileExists( configRoot & '/config/default.json' ) ) {
       var defaultConfig = deserializeJSON( fileRead( configRoot & '/config/default.json', 'utf-8' ) );
       mergeStructs( defaultConfig, result );
@@ -73,8 +72,8 @@ component {
       }
 
       if ( useCommandbox ) {
-        var machineConfig = deserializeJSON( fileRead( configRoot & '/config/commandbox.json', 'utf-8' ) );
-        mergeStructs( machineConfig, result );
+        var commandboxConfig = deserializeJSON( fileRead( configRoot & '/config/commandbox.json', 'utf-8' ) );
+        mergeStructs( commandboxConfig, result );
       }
     }
 
@@ -86,18 +85,13 @@ component {
   }
 
   public void function mergeStructs( required struct from, struct to = { } ) {
-    for ( var key in from ) {
-      if ( isStruct( from[ key ] ) ) {
-        if ( !to.keyExists( key ) ) {
-          to[ key ] = from[ key ];
-        } else if ( isStruct( to[ key ] ) ) {
-          mergeStructs( from[ key ], to[ key ] );
-        }
+    from.each(function(key, value){
+      if ( isStruct( value ) && to.keyExists( key ) && isStruct( to[ key ] ) ) {
+        mergeStructs( value, to[ key ] );
       } else {
-        to[ key ] = from[ key ];
+        to[ key ] = value;
       }
-    }
-    from.append( to, false );
+    });
   }
 
   public void function addToConstants( required struct websiteSpecificConstants ) {
