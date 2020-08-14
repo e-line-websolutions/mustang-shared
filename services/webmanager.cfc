@@ -52,7 +52,8 @@ component accessors=true {
   // PUBLIC
 
   public boolean function actionHasView( required string action ) {
-    variables.fw.frameworkTrace( '<b>webmanager</b>: actionHasView() called.' );
+    variables.fw.frameworkTrace( '<b>webmanager</b>: actionHasView( #action# ) called. Looking for view: #variables.root & '/views/' & replace( action, '.', '/', 'all' ) & '.cfm'#' );
+
     return variables.utilityService.fileExistsUsingCache( variables.root & '/views/' & replace( action, '.', '/', 'all' ) & '.cfm' );
   }
 
@@ -66,6 +67,7 @@ component accessors=true {
       'pageDetails' = {},
       'modules' = {},
       'articles' = [],
+      'onPage' = false,
       'navPath' = [],
       'stylesheets' = [],
       'security' = {}
@@ -100,6 +102,7 @@ component accessors=true {
         pageData.pageDetails = getPageDetails( currentMenuId );
         // pageData.security = getClientSecurity( currentMenuId );
         pageData.modules = getActiveModules( currentMenuId );
+        pageData.onPage = ( pageData.articles.len() && pageData.articles[1].articleId == pageData.pageDetails.pageId );
       }
 
       if ( currentMenuId > 0 ) {
@@ -238,11 +241,12 @@ component accessors=true {
   public array function getArticles( required numeric pageId ) {
     variables.fw.frameworkTrace( '<b>webmanager</b>: getArticles() called.' );
     var sql = '
-      SELECT    vw_selectAsset.assetmeta_nid                AS [articleId],
-                vw_selectAsset.assetmeta_dcreationdatetime  AS [creationDate],
-                vw_selectAsset.assetcontent_stitletext      AS [title],
-                vw_selectAsset.assetcontent_sintrotext      AS [teaser],
-                vw_selectAsset.assetcontent_sbodytext       AS [body]
+      SELECT    vw_selectAsset.assetmeta_nid                                      AS [articleId],
+                vw_selectAsset.assetmeta_dcreationdatetime                        AS [creationDate],
+                vw_selectAsset.assetcontent_stitletext                            AS [title],
+                dbo.variableFormatMstng( vw_selectAsset.assetcontent_stitletext ) AS [formatted],
+                vw_selectAsset.assetcontent_sintrotext                            AS [teaser],
+                vw_selectAsset.assetcontent_sbodytext                             AS [body]
 
       FROM      mid_assetmetaAssetmeta
                 INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
@@ -262,15 +266,11 @@ component accessors=true {
 
     var queryParams = { 'pageId' = pageId, 'websiteId' = variables.websiteId };
 
-    var articles = variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
-
-    var row = 0;
-    for ( var article in articles ) {
-      row++;
-      articles[ row ][ 'images' ] = getArticleImages( article.articleId );
-    }
-
-    return articles;
+    return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) ).map( function( article ) {
+      article.images = getArticleImages( article.articleId );
+      article.tags = getArticleShortcuts( article.articleId );
+      return article;
+    } );
   }
 
   public struct function getActiveModules( required numeric pageId ) {
@@ -734,6 +734,39 @@ component accessors=true {
         AND     vw_selectAsset.assetmeta_x_nStatusID = 100
 
       ORDER BY  vw_selectAsset.assetmeta_nSortKey
+    ';
+
+    var queryParams = { 'articleId' = articleId, 'websiteId' = variables.websiteId };
+
+    return variables.queryService.toArray( variables.queryService.execute( sql, queryParams, variables.queryOptions ) );
+  }
+
+  private array function getArticleShortcuts( required numeric articleId ) {
+    variables.fw.frameworkTrace( '<b>webmanager</b>: getArticleShortcuts() called.' );
+    var sql = '
+      SELECT    tag_am.assetmeta_nID AS id,
+                tag_ac.assetcontent_sTitleText AS name,
+                tag_ac.assetcontent_x_nLanguageID AS languageId
+
+      FROM      mid_assetmetaAssetcontent AS article_amac
+                INNER JOIN mid_assetmetaAssetcontent  AS link_amac    ON link_amac.assetmetaAssetcontent_x_nAssetContentID = article_amac.assetmetaAssetcontent_x_nAssetContentID
+                INNER JOIN tbl_assetMeta              AS link_am      ON link_am.assetmeta_nID = link_amac.assetmetaAssetcontent_x_nAssetMetaID
+                INNER JOIN mid_assetmetaAssetmeta     AS linktag_amam ON linktag_amam.assetmetaAssetmeta_x_nChildID = link_am.assetmeta_nID
+                INNER JOIN tbl_assetMeta              AS tag_am       ON tag_am.assetmeta_nID = linktag_amam.assetmetaAssetmeta_x_nParentID
+                INNER JOIN mid_assetmetaAssetcontent  AS tag_amac     ON tag_amac.assetmetaAssetcontent_x_nAssetMetaID = tag_am.assetmeta_nID
+                INNER JOIN tbl_assetContent           AS tag_ac       ON tag_ac.assetcontent_nID = tag_amac.assetmetaAssetcontent_x_nAssetContentID
+
+      WHERE     link_am.assetmeta_x_nTypeID = 15
+        AND     link_am.assetmeta_x_nStatusID = 100
+        AND     link_am.assetmeta_x_nBmID = 8
+        AND     link_am.assetmeta_x_nBwsID = :websiteId
+        AND     tag_am.assetmeta_x_nTypeID = 14
+        AND     tag_am.assetmeta_x_nStatusID = 100
+        AND     tag_am.assetmeta_x_nBmID = 8
+        AND     tag_am.assetmeta_x_nBwsID = :websiteId
+        AND     article_amac.assetmetaAssetcontent_x_nAssetMetaID = :articleId
+
+      ORDER BY ISNULL(link_am.assetmeta_nSortKey, 9999)
     ';
 
     var queryParams = { 'articleId' = articleId, 'websiteId' = variables.websiteId };
