@@ -297,7 +297,7 @@ component accessors=true {
       var result = ( isBoolean( data ) || isNumeric( data ) )
         ? data
         : isJSON( data )
-          ? useJsonService.d( data )
+          ? useJsonService.deserialize( data )
           : data;
 
     } else if ( isArray( data ) ) {
@@ -372,9 +372,9 @@ component accessors=true {
           continue;
         }
 
-        if ( fieldProperties.dataType == 'json' ) {
+        if ( fieldProperties.dataType == 'json' && isSimpleValue( value ) ) {
           try {
-            var deserialized = useJsonService.d( value );
+            var deserialized = useJsonService.deserialize( value );
             if ( !isNull( deserialized ) ) structAppend( result, deserialized );
           } catch ( any e ) {
             variables.logService.dumpToFile(
