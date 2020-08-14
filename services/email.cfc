@@ -21,14 +21,14 @@ component accessors=true {
           throw( 'Invalid to address', 'emailService.send.invalidEmailError', emailAddress );
         }
         return emailAddress.trim();
-      } );
+      } ).toList();
 
       sendTo = sendTo.listToArray().map( function( emailAddress ) {
         if ( !variables.utilityService.isValidEmail( emailAddress.trim() ) ) {
           throw( 'Invalid to address', 'emailService.send.invalidEmailError', emailAddress );
         }
         return emailAddress.trim();
-      } );
+      } ).toList();
 
       var message = new mail();
 
