@@ -108,7 +108,7 @@ component accessors=true {
       return;
     }
 
-    session.currentLanguage = newLanguage;
+    setSessionVar( 'currentLanguage', newLanguage );
 
     setLocaleId( newLanguage );
 
@@ -121,8 +121,7 @@ component accessors=true {
     }
 
     try {
-      param session.currentLanguage=config.defaultLanguage;
-      return session.currentLanguage;
+      return getFromSession( 'currentLanguage', config.defaultLanguage );
     } catch ( any e ) {
       return config.defaultLanguage;
     }
@@ -142,18 +141,18 @@ component accessors=true {
       }
 
       if ( !isNull( localeObj ) ) {
-        session.localeID = localeObj.getID( );
+        setSessionVar( 'localeID', localeObj.getID( ) );
       }
     } else {
-      session.localeID = locale;
+      setSessionVar( 'localeID', locale );
     }
   }
 
   public string function getLocaleId( ) {
-    if ( isNull( session.localeID ) ) {
+    if ( getFromSession( 'localeID' ) == '' ) {
       setLocaleId( config.defaultLanguage );
     }
-    return session.localeID;
+    return getFromSession( 'localeID' );
   }
 
   // PRIVATE
@@ -202,5 +201,14 @@ component accessors=true {
     }
 
     return "";
+  }
+
+  private void function setSessionVar( variableName, value ) {
+    if ( config.sessionManagement ) session[ variableName ] = value;
+  }
+
+  private any function getFromSession( variableName, defaultValue = '' ) {
+    if ( !config.sessionManagement ) return defaultValue;
+    return session.keyExists( variableName ) ? session[ variableName ] : defaultValue;
   }
 }
