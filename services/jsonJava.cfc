@@ -37,7 +37,11 @@ component accessors=true {
 
   public array function deserializeArray( required string source ) {
     var array = [];
-    return duplicate( variables.gson.fromJson( source, array.getClass() ) );
+    try {
+      return duplicate( variables.gson.fromJson( source, array.getClass() ) );
+    } catch ( any e ) {
+      return deserializeJSON( source );
+    }
   }
 
   public any function jsonFileToCf( required string path ) {
