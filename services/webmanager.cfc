@@ -145,12 +145,11 @@ component accessors=true {
   public array function getNavigation( required numeric parentId ) {
     variables.fw.frameworkTrace( '<b>webmanager</b>: getNavigation() called.' );
     var sql = '
-      SELECT    assetcontent_sTitleText as name,
-                dbo.variableFormatMstng( assetcontent_sTitleText ) AS formatted,
-
+      SELECT    assetcontent_sTitleText                               AS name,
+                dbo.variableFormatMstng( assetcontent_sTitleText )    AS formatted,
                 mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nParentID AS parentId,
-                assetmeta_nID                           AS menuId,
-                assetmeta_nSortKey                      AS sortKey
+                assetmeta_nID                                         AS menuId,
+                assetmeta_nSortKey                                    AS sortKey
 
       FROM      mid_assetmetaAssetmeta
                 INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
@@ -163,8 +162,8 @@ component accessors=true {
         AND     GETDATE() BETWEEN assetmeta_dOnlineDateTime AND assetmeta_dOfflineDateTime
         AND     LEFT( assetcontent_sTitleText, 1 ) <> ''_''
 
-      ORDER BY  assetmeta_nSortKey,
-                assetcontent_sTitleText
+      ORDER BY  sortKey,
+                formatted
     ';
 
     var queryParams = { 'parentId' = arguments.parentId, 'websiteId' = variables.websiteId };
