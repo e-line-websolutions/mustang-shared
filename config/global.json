@@ -6,6 +6,7 @@
   "debugIP": "127.0.0.1",
   "defaultLanguage": "en_US",
   "disableSecurity": false,
+  "sessionManagement": true,
   "dontSecureFQA": "",
   "encryptKey": "Xeexnvtvtz7wbxu4v892gHjs9ecwL778C2h8MhM4DumnhDDYnqEycmc2erytpNXR",
   "log": true,

@@ -66,8 +66,13 @@ component extends="latest-framework.one" {
 
   this.name = request.appName;
   this.mappings[ '/#variables.cfg.root#' ] = request.root = variables.root;
-  this.sessionManagement = true;
-  this.sessionTimeout = createTimespan( 0, 2, 0, 0 );
+
+  if ( variables.cfg.sessionManagement ) {
+    this.sessionManagement = true;
+    this.sessionTimeout = createTimespan( 0, 2, 0, 0 );
+  } else {
+    this.setClientCookies = false;
+  }
 
   mustangRoot = variables.mstng.getMustangRoot();
   param this.javaSettings.loadPaths=[];

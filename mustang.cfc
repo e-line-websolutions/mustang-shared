@@ -189,6 +189,7 @@ component extends="latest-framework.one" {
 
   public void function setupSession() {
     frameworkTrace( '<b>mustang</b>: setupSession() called.' );
+    if ( variables.cfg.sessionManagement )
     structDelete( session, 'progress' );
     session.connectionStorage = {};
   }
