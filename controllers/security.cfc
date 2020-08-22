@@ -255,7 +255,7 @@ component accessors=true {
           var response = isLucee ? pageContext.getResponse() : pageContext.getFusionContext().getResponse();
           response.setHeader( 'WWW-Authenticate', 'Basic realm="#request.appName#-API"' );
 
-          framework.renderData( 'rawjson', '{"status":"error","detail":"Unauthorized"}', 401 );
+          framework.renderData( 'rawjson', '{"status":"error","detail":"Unauthorized","action":"#rc.action#"}', 401 );
           framework.abortController();
         }
       }
