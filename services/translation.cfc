@@ -15,6 +15,7 @@ component accessors=true {
     structAppend( variables, arguments );
     populateLanguageStruct( );
     param config.defaultLanguage="en_US";
+    param config.sessionManagement=false;
     changeLanguage( config.defaultLanguage );
     return this;
   }
@@ -204,11 +205,18 @@ component accessors=true {
   }
 
   private void function setSessionVar( variableName, value ) {
-    if ( config.sessionManagement ) session[ variableName ] = value;
+    if ( config.sessionManagement ) {
+      session[ variableName ] = value;
+    } else {
+      request[ variableName ] = value;
+    }
   }
 
   private any function getFromSession( variableName, defaultValue = '' ) {
-    if ( !config.sessionManagement ) return defaultValue;
+    if ( !config.sessionManagement ) {
+      return request.keyExists( variableName ) ? request[ variableName ] : defaultValue;
+    }
+
     return session.keyExists( variableName ) ? session[ variableName ] : defaultValue;
   }
 }
