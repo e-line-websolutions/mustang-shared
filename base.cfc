@@ -264,6 +264,7 @@ component {
   }
 
   public string function getMachineName() {
+    if ( server.keyExists( 'lucee' ) ) return cgi.local_host;
     return createObject( 'java', 'java.net.InetAddress' ).getLocalHost().getHostName();
   }
 
