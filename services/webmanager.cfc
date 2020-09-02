@@ -579,6 +579,68 @@ component accessors=true {
     logService.writeLogLevel( text = page, level = 'information' );
   }
 
+
+  public string function linkExpander( required body, publishOnURL = '', reload = false ) {
+    reMatchNoCase( 'href="([^"]+)"', body )
+      .map( ( linkMatch ) => {
+        var link = {
+          replaceThis = linkMatch.mid( 7, linkMatch.len() - 7 ),
+          withThis = ''
+        };
+
+        var cachedLink = cacheGet( hash( link.replaceThis ) );
+
+        if ( !isNull( cachedLink ) ) {
+          return cachedLink;
+        }
+
+        var linkToIndex = link.replaceThis.replaceNoCase( 'amp;', '', 'all' );
+
+        if ( linkToIndex.findNoCase( 'client/modules/links/index.cfm?fuseaction=linkHandler' ) ) {
+          var testLink={};
+
+          http url=linkToIndex redirect=false result="testLink";
+
+          param testLink.responseheader.status_code=200;
+
+          // file links:
+          if ( testLink.keyExists( 'fileContent' ) && !isSimpleValue( testLink.fileContent ) ) {
+            replaceWith = linkToIndex;
+
+            if ( testLink.responseheader.keyexists( 'content-disposition' ) &&
+                 testLink.responseheader[ 'content-disposition' ].trim().len() ) {
+              var expandedlink = '#publishOnURL#/media/files/#testLink.responseheader[ 'content-disposition' ].listlast( '=' )#';
+            }
+
+          // regular links:
+          } else {
+            //  404 Not found
+            if ( testLink.responseheader.status_code == '404' ) {
+              linkToIndex = linkToIndex & ( linkToIndex.find('?')?'&':'?') & 'reload=1';
+              http url=linkToIndex redirect=false result=testLink;
+            }
+
+            //  Working link
+            if ( testLink.responseheader.location.trim().len() ) {
+              link.withThis = testLink.responseheader.location
+                .replace( '_', '-', 'all' )
+                .replace( '/#defaultLanguage#/', '/' );
+            }
+          }
+        }
+
+        return link;
+      } )
+      .filter( ( link ) => link.withThis.len() )
+      .each( ( link ) => {
+        cachePut( hash( link.replaceThis ), link );
+        body = body.replaceNoCase( link.replaceThis, link.withThis, 'all' );
+      } );
+
+    return body.trim();
+  }
+
+
   // PRIVATE
 
   private struct function getParentFromId( required numeric childId ) {
