@@ -582,7 +582,7 @@ component accessors=true {
 
   public string function linkExpander( required body, publishOnURL = '', reload = false ) {
     reMatchNoCase( 'href="([^"]+)"', body )
-      .map( ( linkMatch ) => {
+      .map( function ( linkMatch ) {
         var link = {
           replaceThis = linkMatch.mid( 7, linkMatch.len() - 7 ),
           withThis = ''
@@ -599,7 +599,7 @@ component accessors=true {
         if ( linkToIndex.findNoCase( 'client/modules/links/index.cfm?fuseaction=linkHandler' ) ) {
           var testLink={};
 
-          http url=linkToIndex redirect=false result="testLink";
+          cfhttp( url=linkToIndex, redirect=false, result="testLink" );
 
           param testLink.responseheader.status_code=200;
 
@@ -617,7 +617,7 @@ component accessors=true {
             //  404 Not found
             if ( testLink.responseheader.status_code == '404' ) {
               linkToIndex = linkToIndex & ( linkToIndex.find('?')?'&':'?') & 'reload=1';
-              http url=linkToIndex redirect=false result=testLink;
+              cfhttp( url=linkToIndex, redirect=false, result=testLink );
             }
 
             //  Working link
@@ -631,8 +631,8 @@ component accessors=true {
 
         return link;
       } )
-      .filter( ( link ) => link.withThis.len() )
-      .each( ( link ) => {
+      .filter( function ( link ) { return link.withThis.len(); } )
+      .each( function ( link ) {
         cachePut( hash( link.replaceThis ), link );
         body = body.replaceNoCase( link.replaceThis, link.withThis, 'all' );
       } );
