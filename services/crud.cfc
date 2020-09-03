@@ -14,7 +14,7 @@ component accessors=true {
     };
 
     if ( maxResults > 0 ) queryOptions.maxResults = maxResults;
-    // if ( offset > 0 ) queryOptions.offset = offset;
+    if ( offset > 0 ) queryOptions.offset = offset;
 
     if ( !isNull( permissionService.getFilterForEntity ) ) {
       filters.addAll( permissionService.getFilterForEntity( entityName ) );
