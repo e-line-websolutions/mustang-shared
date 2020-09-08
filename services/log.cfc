@@ -12,6 +12,7 @@ component accessors=true {
     param config.showDebug=false;
 
     if ( structKeyExists( config, "rollbar" ) && structKeyExists( config.rollbar, "access_token" ) ) {
+      config.rollbar.environment = cgi.SERVER_NAME;
       variables.rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
     }
     return this;
