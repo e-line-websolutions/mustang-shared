@@ -401,7 +401,7 @@ component accessors=true {
     var propertiesInForm = [];
 
     for ( var key in rc.properties ) {
-      if ( structKeyExists( rc.properties[ key ], 'inform' ) ) {
+      if ( structKeyExists( rc.properties[ key ], 'inform' ) && isBoolean( rc.properties[ key ].inform ) && rc.properties[ key ].inform == true ) {
         arrayAppend( propertiesInForm, rc.properties[ key ] );
       }
     }
