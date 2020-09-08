@@ -57,14 +57,14 @@ component accessors=true {
     var levelThreshold = arrayFindNoCase( this.logLevels, variables.config.logLevel );
 
     if ( requestedLevel >= levelThreshold ) {
-      if ( structKeyExists( variables, "rollbar" ) && level != "debug" ) {
-        var rollbarData = {
-          "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
-          "payload" = variables.rollbar.getPreparedMessagePayload( text, level )
-        };
-        sendGatewayMessage( "Rollbar", rollbarData );
-        return true;
-      }
+      // if ( structKeyExists( variables, "rollbar" ) && level != "debug" ) {
+      //   var rollbarData = {
+      //     "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
+      //     "payload" = variables.rollbar.getPreparedMessagePayload( text, level )
+      //   };
+      //   sendGatewayMessage( "Rollbar", rollbarData );
+      //   return true;
+      // }
 
       writeLog( text = text, type = mapLevelToCfType( level ), file = file );
       return true;
@@ -87,14 +87,14 @@ component accessors=true {
         asStruct.stackTrace = variables.debugService.getStackTrace( );
       }
 
-      if ( structKeyExists( variables, "rollbar" ) && level != "debug" ) {
-        var rollbarData = {
-          "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
-          "payload" = variables.rollbar.getPreparedMessagePayload( "debug data", level, { meta = data } )
-        };
-        sendGatewayMessage( "Rollbar", rollbarData );
-        return;
-      }
+      // if ( structKeyExists( variables, "rollbar" ) && level != "debug" ) {
+      //   var rollbarData = {
+      //     "api_endpoint" = variables.rollbar.getAPIEndpoint( ),
+      //     "payload" = variables.rollbar.getPreparedMessagePayload( "debug data", level, { meta = data } )
+      //   };
+      //   sendGatewayMessage( "Rollbar", rollbarData );
+      //   return;
+      // }
 
       if ( !variables.utilityService.amInCFThread( ) ) {
         var threadData = { data = asStruct, args = arguments };
