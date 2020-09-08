@@ -179,14 +179,6 @@ component {
 
     var showDebugError = config.debugIP.listFind( cgi.remote_addr );
 
-    if ( !showDebugError && !isNull( config.rollbar ) ) {
-      try {
-        config.rollbar.environment = cgi.SERVER_NAME;
-        var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
-        rollbar.reportMessage( exception.message, "critical", exception );
-      } catch ( any e ) { }
-    }
-
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError || config.showDebug ) {
       if ( server.keyExists( "lucee" ) ) {
         try {
@@ -207,17 +199,26 @@ component {
       abort;
     }
 
-    var errorDump = "";
-
-    savecontent variable="errorDump" {
-      writeOutput( "Error: " & exception.message );
-      writeOutput( "<br />Detail: " & exception.detail );
-      writeOutput( "<br />Stacktrace: <pre>" & exception.stackTrace & "</pre>" );
-
-      writeDump( cgi );
+    if ( !showDebugError && config.keyExists( 'rollbar' ) ) {
+      runAsync( function() {
+        try {
+          config.rollbar.environment = cgi.SERVER_NAME;
+          var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
+          rollbar.reportMessage( exception.message, "critical", exception );
+        } catch ( any e ) {
+          writeLog( 'Failed to send error to Rollbar: #e.message# (#e.detail#).', 'fatal' );
+        }
+      } );
+    } else {
+      var errorDump = "";
+      savecontent variable="errorDump" {
+        writeOutput( "Error: " & exception.message );
+        writeOutput( "<br />Detail: " & exception.detail );
+        writeOutput( "<br />Stacktrace: <pre>" & exception.stackTrace & "</pre>" );
+        writeDump( cgi );
+      }
+      fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
     }
-
-    fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
 
     var webroots = [ 'webroot', 'www' ];
     var fallbackErrorFile = 'error.html';
