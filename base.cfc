@@ -166,8 +166,10 @@ component {
     var pc = getPageContext( );
 
     if ( server.keyExists( "lucee" ) ) {
-      cfcontent( reset = true );
-      cfheader( statusCode = errorCode, statusText = exception.message );
+      try {
+        cfcontent( reset = true );
+        cfheader( statusCode = errorCode, statusText = exception.message );
+      } catch ( any e ) {}
     } else {
       pc.getCfoutput( ).clearAll( );
       pc.getResponse( )
@@ -179,6 +181,7 @@ component {
 
     if ( !showDebugError && !isNull( config.rollbar ) ) {
       try {
+        config.rollbar.environment = cgi.SERVER_NAME;
         var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
         rollbar.reportMessage( exception.message, "critical", exception );
       } catch ( any e ) { }
@@ -186,7 +189,9 @@ component {
 
     if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError || config.showDebug ) {
       if ( server.keyExists( "lucee" ) ) {
-        cfcontent( type = "text/plain" );
+        try {
+          cfcontent( type = "text/plain" );
+        } catch ( any e ) {}
       } else {
         pc.getResponse( )
           .setContentType( "text/plain" );
