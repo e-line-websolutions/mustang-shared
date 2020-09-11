@@ -44,6 +44,7 @@
         continue;
       }
       stringToParse = replaceNoCase( stringToParse, '###key###', stringVariables[ key ], 'all' );
+      stringToParse = replaceNoCase( stringToParse, '{#key#}', stringVariables[ key ], 'all' );
     }
 
     return stringToParse;
