@@ -154,8 +154,6 @@ component extends="latest-framework.one" {
 
         logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM reloaded', request.appName );
 
-        application.allOrmEntities = variables.mstng.listAllOrmEntities( this.ormSettings.cfcLocation );
-
         var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml' );
 
         if ( !arrayIsEmpty( hbmxmlFiles ) ) {
@@ -218,12 +216,7 @@ component extends="latest-framework.one" {
       setupSession();
     }
 
-    if ( isNull( application.listAllOrmEntities ) ) {
-      lock name="_lock_listAllOrmEntities_#hash( this.name )#" type="exclusive" timeout="10" {
-        application.listAllOrmEntities = variables.mstng.listAllOrmEntities( this.ormSettings.cfcLocation );
-      }
-    }
-    request.allOrmEntities = application.listAllOrmEntities;
+    request.allOrmEntities = variables.mstng.listAllOrmEntities( this.ormSettings.cfcLocation );
 
     var bf = getBeanFactory();
     var i18n = bf.getBean( 'translationService' );
