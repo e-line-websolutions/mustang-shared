@@ -10,7 +10,8 @@ component accessors=true {
     required  string  body,
               string  type = "html",
               string  bcc,
-              any  attachement
+              any  attachement,
+              string  replyto
   ) {
     try {
       var toEmail = isSimpleValue( to ) ? to : to.getEmail();
@@ -40,6 +41,10 @@ component accessors=true {
 
       if ( !isNull( bcc ) ) {
         message.setBcc( bcc );
+      }
+
+      if ( !isNull( replyto ) ) {
+        message.setReplyto( replyto );
       }
 
       if ( !isNull( attachement ) ) {
