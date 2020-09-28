@@ -208,7 +208,8 @@ component accessors=true {
                 assetmeta_dcreationdatetime  AS [creationDate],
                 assetcontent_stitletext      AS [title],
                 assetcontent_sintrotext      AS [teaser],
-                assetcontent_sbodytext       AS [body]
+                assetcontent_sbodytext       AS [body],
+                assetmeta_nSortKey           AS [sortKey]
 
       FROM      vw_selectAsset
 
@@ -245,7 +246,8 @@ component accessors=true {
                 vw_selectAsset.assetcontent_stitletext                            AS [title],
                 dbo.variableFormatMstng( vw_selectAsset.assetcontent_stitletext ) AS [formatted],
                 vw_selectAsset.assetcontent_sintrotext                            AS [teaser],
-                vw_selectAsset.assetcontent_sbodytext                             AS [body]
+                vw_selectAsset.assetcontent_sbodytext                             AS [body],
+                vw_selectAsset.assetmeta_nSortKey                                 AS [sortKey]
 
       FROM      mid_assetmetaAssetmeta
                 INNER JOIN vw_selectAsset ON mid_assetmetaAssetmeta.assetmetaAssetmeta_x_nChildId = vw_selectAsset.assetmeta_nID
@@ -379,6 +381,7 @@ component accessors=true {
     }
 
     var fileExtension = listLast( requestContext.file, '.' );
+    var cacheFor = dateAdd( 'ww', 1, now() );
 
     if ( listFind( variables.resizeBeforeServe, fileExtension ) ) {
       if ( !variables.utilityService.fileExistsUsingCache( '#variables.root#/www/inc/img/resized/#requestContext.s#-#requestContext.file#' ) ) {
@@ -395,9 +398,11 @@ component accessors=true {
       var fileToServe = variables.config.mediaRoot & '/sites/site#variables.websiteId#/images/#requestContext.file#';
     }
 
-    variables.utilityService.cfheader( name = 'Expires', value = '#getHTTPTimeString( dateAdd( 'ww', 1, now() ) )#' );
-    variables.utilityService.cfheader( name = 'Last-Modified', value = '#getHTTPTimeString( dateAdd( 'ww', -1, now() ) )#' );
-    variables.fileService.writeToBrowser( fileToServe );
+    variables.utilityService.cfheader( statuscode = 200, statustext = 'OK' );
+    variables.utilityService.cfheader( name = 'Expires', value = '#getHTTPTimeString( cacheFor )#' );
+    variables.utilityService.cfheader( name = 'Cache-Control', value = 'public, max-age=604800' );
+    variables.utilityService.cfcontent( reset = true, file = fileToServe, type = 'image/#fileExtension#' );
+    abort;
   }
 
   public struct function validate( required component beanToValidate ) {
