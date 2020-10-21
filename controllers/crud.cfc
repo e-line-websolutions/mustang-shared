@@ -248,6 +248,8 @@ component accessors=true {
       orderByString = listAppend( orderByString, "mainEntity.#orderByPart#" );
     }
 
+
+
     if ( len( trim( rc.startsWith ) ) ) {
       rc.filters = [
         {
@@ -259,11 +261,23 @@ component accessors=true {
     }
 
     for ( var key in rc ) {
-      if ( !isSimpleValue( rc[ key ] ) ) {
+      if ( !isSimpleValue( rc[ key ] ) && !isStruct( rc[ key ]) ) {
         continue;
       }
 
       key = urlDecode( key );
+
+      if ( listFirst( key, "_" ) == "filter" && isStruct( rc[ key ] ) ) {
+        arrayAppend(
+          rc.filters,
+          {
+            "field"     = listRest( key, "_" ),
+            "filterOn"  = rc[ key ].value,
+            "operator"  = rc[ key ].operator
+          }
+        );
+        continue;
+      }
 
       if ( listFirst( key, "_" ) == "filter" && len( trim( rc[ key ] ) ) ) {
         arrayAppend(
@@ -275,6 +289,7 @@ component accessors=true {
         );
       }
     }
+
 
     if ( !rc.keyExists( 'alldata' ) ) {
       var crudData = crudService.list( variables.entity, rc.properties, rc.showdeleted, rc.filters, rc.filterType, orderByString, rc.maxResults, rc.offset, rc.entityInstanceVars );
