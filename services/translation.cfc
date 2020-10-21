@@ -42,7 +42,12 @@ component accessors=true {
     if ( label == "" && alternative == "" ) {
       translation = "Please provide a label to translate.";
     } else {
-      translation = cacheRead( label, localeID, request.reset );
+      // allow use of request.design to offer design-specific translations
+      if ( request.keyExists( 'design' ) ) {
+        translation = cacheRead( label, localeID, request.reset, request.design );
+      } else {
+        translation = cacheRead( label, localeID, request.reset );
+      }
     }
 
     if ( !len( trim( translation ) ) ) {
@@ -193,6 +198,7 @@ component accessors=true {
       return variables.translations[ localeID ][ translation ];
     } catch ( any e ) {
       var currentLanguage = getCurrentLanguage( );
+      grouping = variables.languageStruct.keyExists( grouping ) ? grouping : 'default'; // make sure grouping exists, fallback to "default"
       if ( structKeyExists( variables.languageStruct[ grouping ], currentLanguage ) &&
            structKeyExists( variables.languageStruct[ grouping ][ currentLanguage ], translation ) ) {
         var translated = variables.languageStruct[ grouping ][ currentLanguage ][ translation ];
