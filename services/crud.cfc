@@ -50,6 +50,10 @@ component accessors=true {
               whereBlock &= " OR ( ";
               whereBlock &= " mainEntity.#lCase( filter.field )#.id = :where_#lCase( filter.field )# ";
               whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
+            } else if ( structKeyExists( filter, "operator" ) ) {
+              whereBlock &= " OR ( ";
+              whereBlock &= " mainEntity.#lCase( filter.field )# #filter.operator# :where_#lCase( filter.field )# ";
+              whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
             } else {
               if ( filterType == "contains" ) {
                 filterOn = "%#filterOn#";
