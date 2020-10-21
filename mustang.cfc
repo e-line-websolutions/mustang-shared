@@ -17,6 +17,8 @@ component extends="latest-framework.one" {
 
   param this.javaSettings={};
 
+  param variables.framework.subsystemDelimiter=':';
+
   variables.mstng.cleanXHTMLQueryString();
   variables.live = variables.cfg.appIsLive;
   variables.routes = [];
@@ -44,7 +46,7 @@ component extends="latest-framework.one" {
         },
         'dev' = { 'trace' = variables.cfg.showDebug }
       },
-      'subsystems' = { 'api' = { 'error' = 'api:main.error' } }
+      'subsystems' = { 'api' = { 'error' = 'api#variables.framework.subsystemDelimiter#main.error' } }
     },
     variables.framework
   );
@@ -239,25 +241,25 @@ component extends="latest-framework.one" {
     util.setCFSetting( 'showdebugoutput', request.context.debug );
     util.limiter();
     // security:
-    controller( ':security.authorize' );
+    controller( '#framework.subsystemDelimiter#security.authorize' );
 
     // internationalization:
-    controller( ':i18n.load' );
+    controller( '#framework.subsystemDelimiter#i18n.load' );
 
     // content:
     if ( getSubsystem() == getDefaultSubsystem() ||
          listFindNoCase( variables.cfg.contentSubsystems, getSubsystem() ) ) {
-      controller( ':admin-ui.load' );
+      controller( '#framework.subsystemDelimiter#admin-ui.load' );
     }
 
     // try to queue up crud (admin) actions:
     if ( getSubsystem() == getDefaultSubsystem() && !util.fileExistsUsingCache( variables.root & '/controllers/#getSection()#.cfc' ) ) {
-      controller( ':crud.#getItem()#' );
+      controller( '#framework.subsystemDelimiter#crud.#getItem()#' );
     }
 
     // try to queue up api actions:
     if ( getSubsystem() == 'api' && !util.fileExistsUsingCache( variables.root & '/subsystems/api/controllers/#getSection()#.cfc' ) ) {
-      controller( 'api:main.#getItem()#' );
+      controller( 'api#framework.subsystemDelimiter#main.#getItem()#' );
     }
   }
 
@@ -278,8 +280,8 @@ component extends="latest-framework.one" {
       var resources = variables.routes;
 
       resources.addAll( [
-        { '^/api/auth/:item' = '/api:auth/:item/' },
-        { '^/api/$' = '/api:main/notfound' },
+        { '^/api/auth/:item' = '/api#framework.subsystemDelimiter#auth/:item/' },
+        { '^/api/$' = '/api#framework.subsystemDelimiter#main/notfound' },
         { '$RESOURCES' = { resources = listOfResources, subsystem = 'api' } }
       ] );
 
@@ -318,6 +320,6 @@ component extends="latest-framework.one" {
       return view( request.context.fallbackView );
     }
 
-    return view( ':app/notfound' );
+    return view( framework.subsystemDelimiter & 'app/notfound' );
   }
 }
