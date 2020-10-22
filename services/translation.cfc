@@ -172,13 +172,13 @@ component accessors=true {
 
     var translationFilesRoot = utilityService.cleanPath( root & '/i18n/' );
 
-    directoryList( translationFilesRoot, true, 'path', '*.json', 'Name desc' ).each( function( path ) {
+    directoryList( translationFilesRoot, true, 'path', '*.json' ).each( function( path ) {
       var justSubDir = replace( utilityService.cleanPath( path, false ), translationFilesRoot, '' ).listToArray( '/' );
       var translationData = deserializeJSON( fileRead( path, 'utf-8' ) );
       var grouping = justSubDir.len() > 1 ? justSubDir[ 1 ] : 'default';
       var locale = listFirst( justSubDir[ justSubDir.len() ], '.' );
       if ( grouping != 'default' && structKeyExists( variables.languageStruct.default, locale ) ) {
-        structAppend( translationData, variables.languageStruct.default[ locale ], false );
+        mergeTranslations( variables.languageStruct.default[ locale ], translationData );
       }
       variables.languageStruct[ grouping ][ locale ] = translationData;
     } );
@@ -224,5 +224,15 @@ component accessors=true {
     }
 
     return session.keyExists( variableName ) ? session[ variableName ] : defaultValue;
+  }
+
+  private void function mergeTranslations( required struct from, struct to = { }, overwrite = false ) {
+    from.each(function(key, value){
+      if ( isStruct( value ) && to.keyExists( key ) && isStruct( to[ key ] ) ) {
+        mergeTranslations( value, to[ key ], overwrite );
+      } else if ( overwrite || !to.keyExists( key ) ) {
+        to[ key ] = value;
+      }
+    });
   }
 }
