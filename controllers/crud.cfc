@@ -408,7 +408,7 @@ component accessors=true {
     var object = entityNew( variables.entity );
     rc.entityInstanceVars = object.getInstanceVariables();
     rc.subclasses = object.getSubClasses();
-    rc.canBeLogged = ( config.log && isInstanceOf( object, '#config.root#.model.logged' ) && rc.entity != 'logentry' );
+    rc.canBeLogged = ( config.log && (isInstanceOf( object, '#config.root#.model.logged' )||isInstanceOf( object, '#config.root#.orm.logged' )) && rc.entity != 'logentry' );
 
     // load form properties
     rc.properties = rc.entityInstanceVars.properties;
