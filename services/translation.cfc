@@ -172,7 +172,7 @@ component accessors=true {
 
     var translationFilesRoot = utilityService.cleanPath( root & '/i18n/' );
 
-    directoryList( translationFilesRoot, true, 'path', '*.json' ).each( function( path ) {
+    directoryList( translationFilesRoot, true, 'path', '*.json', 'Name desc' ).each( function( path ) {
       var justSubDir = replace( utilityService.cleanPath( path, false ), translationFilesRoot, '' ).listToArray( '/' );
       var translationData = deserializeJSON( fileRead( path, 'utf-8' ) );
       var grouping = justSubDir.len() > 1 ? justSubDir[ 1 ] : 'default';
