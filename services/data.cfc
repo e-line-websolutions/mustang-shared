@@ -979,6 +979,12 @@ component accessors=true {
     }
   }
 
+  public numeric function getStructSum(
+    required struct data
+  ){
+    return data.keyArray().map( ( item ) => val( data[item] ) ).sum();
+  }
+
   // private functions
 
   private string function __formatAsGUID( required string text ) {
