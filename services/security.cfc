@@ -153,14 +153,17 @@ component accessors=true {
   }
 
   public boolean function can( string action = '', string section = '' ) {
-    if ( !structKeyExists( session, 'auth' ) ) {
-      // not logged in
-      return false;
-    }
+    // not logged in:
+    if ( !session.keyExists( 'auth' ) ) return false;
 
     param session.can = {};
+    param session.auth.role.isAdmin = false;
 
-    return structKeyExists( session.can, '#action#-#section#' );
+    // admin can do anything:
+    if ( session.auth.role.isAdmin ) return true;
+
+    // check permissions:
+    return session.can.keyExists( '#action#-#section#' );
   }
 
   public boolean function canIgnoreSecurity( string subsystem="",
