@@ -160,11 +160,7 @@ component accessors=true {
 
     param session.can = {};
 
-    if ( !isBoolean( session.auth.role.canAccessAdmin ) ) {
-      session.auth.role.canAccessAdmin = false;
-    }
-
-    return structKeyExists( session.can, '#action#-#section#' ) || session.auth.role.canAccessAdmin;
+    return structKeyExists( session.can, '#action#-#section#' );
   }
 
   public boolean function canIgnoreSecurity( string subsystem="",
