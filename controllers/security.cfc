@@ -129,11 +129,10 @@ component accessors=true {
     securityService.refreshSession( user );
     rc.auth = securityService.getAuth();
 
-    param rc.dontRedirect = false;
+    param rc.dontRedirect=false;
+    param rc.auth.role.loginscript=":";
 
     if ( !rc.dontRedirect ) {
-      param rc.auth.role.loginscript=":";
-
       var redirectTo = rc.keyExists( 'returnpage' )
         ? rc.returnpage
         : rc.auth.role.loginscript;
