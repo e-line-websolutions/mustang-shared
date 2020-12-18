@@ -159,8 +159,11 @@ component accessors=true {
     param session.can = {};
     param session.auth.role.isAdmin = false;
 
-    // admin can do anything:
+    // admin can do anything (cached):
     if ( session.auth.role.isAdmin ) return true;
+
+    // admin can do anything (fallback):
+    if ( isAdmin() ) return true;
 
     // check permissions:
     return session.can.keyExists( '#action#-#section#' );
