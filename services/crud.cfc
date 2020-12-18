@@ -13,6 +13,8 @@ component accessors=true {
       ignorecase = true
     };
 
+    var params = { "deleted" = !showdeleted };
+
     if ( maxResults > 0 ) queryOptions.maxResults = maxResults;
     if ( offset > 0 ) queryOptions.offset = offset;
 
@@ -21,7 +23,7 @@ component accessors=true {
     }
 
     if ( arrayLen( filters ) ) {
-      var alsoFilterKeys = structFindKey( properties, 'alsoFilter' );
+      var alsoFilterKeys = properties.findKey( "alsoFilter" );
       var alsoFilterEntity = "";
       var whereBlock = " WHERE 0 = 0 ";
       var whereParameters = { };
@@ -40,20 +42,20 @@ component accessors=true {
 
         for( var filterOn in filter.filterOn ) {
           if ( len( filter.field ) > 2 && right( filter.field, 2 ) == "id" ) {
-            whereBlock &= "OR mainEntity.#left( filter.field, len( filter.field ) - 2 )# = ( FROM #left( filter.field, len( filter.field ) - 2 )# WHERE id = :where_id )";
+            whereBlock &= "OR mainEntity.#filter.field.left( filter.field.len() - 2 )# = ( FROM #filter.fieldleft( filter.field.len() - 2 )# WHERE id = :where_id )";
             whereParameters[ "where_id" ] = filterOn;
           } else {
             if ( filterOn == "NULL" ) {
               whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )# IS NULL ";
-            } else if ( structKeyExists( properties[ filter.field ], "cfc" ) ) {
+              whereBlock &= " mainEntity.#filter.field.lCase()# IS NULL ";
+            } else if ( properties[ filter.field ].keyExists( "cfc" ) ) {
               whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )#.id = :where_#lCase( filter.field )# ";
-              whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
-            } else if ( structKeyExists( filter, "operator" ) ) {
+              whereBlock &= " mainEntity.#filter.field.lCase()#.id = :where_#filter.field.lCase()# ";
+              whereParameters[ "where_#filter.field.lCase()#" ] = filterOn;
+            } else if ( filter.keyExists( "operator" ) ) {
               whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )# #filter.operator# :where_#lCase( filter.field )# ";
-              whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
+              whereBlock &= " mainEntity.#filter.field.lCase()# #filter.operator# :where_#filter.field.lCase()# ";
+              whereParameters[ "where_#filter.field.lCase()#" ] = filterOn;
             } else {
               if ( filterType == "contains" ) {
                 filterOn = "%#filterOn#";
@@ -62,8 +64,8 @@ component accessors=true {
               filterOn = "#filterOn#%";
 
               whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#lCase( filter.field )# LIKE :where_#lCase( filter.field )# ";
-              whereParameters[ "where_#lCase( filter.field )#" ] = filterOn;
+              whereBlock &= " mainEntity.#filter.field.lCase()# LIKE :where_#filter.field.lCase()# ";
+              whereParameters[ "where_#filter.field.lCase()#" ] = filterOn;
             }
 
             for ( var alsoFilterKey in alsoFilterKeys ) {
@@ -72,9 +74,9 @@ component accessors=true {
               }
 
               counter++;
-              alsoFilterEntity &= " LEFT JOIN mainEntity.#listFirst( alsoFilterKey.owner.alsoFilter, '.' )# AS entity_#counter# ";
-              whereBlock &= " OR entity_#counter#.#listLast( alsoFilterKey.owner.alsoFilter, '.' )# LIKE '#filterOn#' ";
-              whereParameters[ "where_#listLast( alsoFilterKey.owner.alsoFilter, '.' )#" ] = filterOn;
+              alsoFilterEntity &= " LEFT JOIN mainEntity.#alsoFilterKey.owner.alsoFilter.listFirst( '.' )# AS entity_#counter# ";
+              whereBlock &= " OR entity_#counter#.#alsoFilterKey.owner.alsoFilter.listLast( '.' )# LIKE '#filterOn#' ";
+              whereParameters[ "where_#alsoFilterKey.owner.alsoFilter.listLast( '.' )#" ] = filterOn;
             }
             whereBlock &= " ) ";
           }
@@ -83,7 +85,7 @@ component accessors=true {
         whereBlock &= " ) ";
       }
 
-      if ( structKeyExists( entityInstanceVars.settings, "where" ) && len( trim( entityInstanceVars.settings.where ) ) ) {
+      if ( entityInstanceVars.settings.keyExists( "where" ) && len( trim( entityInstanceVars.settings.where ) ) ) {
         whereBlock &= entityInstanceVars.settings.where;
       }
 
@@ -91,7 +93,7 @@ component accessors=true {
       var HQLselector = " SELECT mainEntity ";
 
       var HQL = "";
-      HQL &= " FROM #lCase( entityName )# mainEntity ";
+      HQL &= " FROM #entityName.lCase()# mainEntity ";
       HQL &= alsoFilterEntity;
       HQL &= whereBlock;
 
@@ -108,29 +110,23 @@ component accessors=true {
         result.recordCounter = ORMExecuteQuery( HQLcounter, whereParameters, { ignorecase = true } )[ 1 ];
       }
     } else {
-      var HQL = " FROM #lCase( entityName )# mainEntity ";
-
-      if ( showdeleted ) {
-        HQL &= " WHERE mainEntity.deleted = TRUE ";
-      } else {
-        HQL &= " WHERE ( mainEntity.deleted IS NULL OR mainEntity.deleted = FALSE ) ";
-      }
+      var HQL = " FROM #entityName.lCase()# mainEntity WHERE ( mainEntity.deleted <> :deleted ) ";
 
       if ( len( trim( orderByString ) ) ) {
         HQL &= " ORDER BY #orderByString# ";
       }
 
-      result.alldata = ORMExecuteQuery( HQL, { }, queryOptions );
+      result.alldata = ORMExecuteQuery( HQL, params, queryOptions );
 
       if ( !result.alldata.isEmpty() ) {
         result.recordCounter = ORMExecuteQuery(
-          "SELECT COUNT( e ) AS total FROM #lCase( entityName )# AS e WHERE e.deleted != :deleted",
-          { "deleted" = true },
-          { ignorecase = true }
+          "SELECT COUNT( e ) AS total FROM #entityName.lCase()# AS e WHERE e.deleted != :deleted",
+          params,
+          { "ignorecase" = true }
         )[ 1 ];
         result.deleteddata = ORMExecuteQuery(
-          "SELECT COUNT( mainEntity.id ) AS total FROM #lCase( entityName )# AS mainEntity WHERE mainEntity.deleted = :deleted",
-          { "deleted" = true }
+          "SELECT COUNT( mainEntity.id ) AS total FROM #entityName.lCase()# AS mainEntity WHERE mainEntity.deleted = :deleted",
+          params
         )[ 1 ];
 
         if ( showdeleted ) {
@@ -146,7 +142,7 @@ component accessors=true {
     var formData = getFormData( );
 
     // Load existing, or create a new entity
-    if ( structKeyExists( formData, "#entityName#id" ) ) {
+    if ( formData.keyExists( "#entityName#id" ) ) {
       var entityToSave = entityLoadByPK( entityName, formData[ "#entityName#id" ] );
     } else {
       var entityToSave = entityNew( entityName );
@@ -157,7 +153,7 @@ component accessors=true {
     for ( var key in entityProperties ) {
       var fieldDefinition = entityProperties[ key ];
       param fieldDefinition.fieldType = "string";
-      if ( !structKeyExists( formData, key ) && ( fieldDefinition.fieldType == 'boolean' || fieldDefinition.fieldType == 'bit' ) ) {
+      if ( !formData.keyExists( key ) && ( fieldDefinition.fieldType == 'boolean' || fieldDefinition.fieldType == 'bit' ) ) {
         formData[ key ] = false;
       }
     }
@@ -174,14 +170,14 @@ component accessors=true {
       if ( !arrayIsEmpty( prefixedFields ) ) {
         var subclass = fieldPrefix;
 
-        if( structKeyExists( form, "_#fieldPrefix#_subclass" ) ) {
+        if( form.keyExists( "_#fieldPrefix#_subclass" ) ) {
           subclass = form[ "_#fieldPrefix#_subclass" ];
           inlineData[ "__subclass" ] = subclass;
         }
 
         var pkField = "#subclass#id";
 
-        if ( structKeyExists( form, pkField ) ) {
+        if ( form.keyExists( pkField ) ) {
           structDelete( formData, pkField );
           inlineData[ pkField ] = form[ pkField ];
         }
@@ -189,7 +185,7 @@ component accessors=true {
         for ( var field in prefixedFields ) {
           structDelete( formData, field );
 
-          if ( structKeyExists( form, field ) && len( form[ field ] ) ) {
+          if ( form.keyExists( field ) && len( form[ field ] ) ) {
             inlineData[ listRest( field, "_" ) ] = form[ field ];
           }
         }
@@ -233,7 +229,7 @@ component accessors=true {
   private void function changeEntityDeletedState( required string entityName, required boolean state ) {
     var formData = getFormData( );
 
-    if ( !structKeyExists( formData, "#entityName#id" ) ) {
+    if ( !formData.keyExists( "#entityName#id" ) ) {
       throw(
         "Cannot change deleted state of #entityName#, missing primary key",
         "missingPrimaryKeyError.changeEntityDeletedState.crudService"

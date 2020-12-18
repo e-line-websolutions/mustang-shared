@@ -982,7 +982,7 @@ component accessors=true {
   public numeric function getStructSum(
     required struct data
   ){
-    return data.keyArray().map( ( item ) => val( data[item] ) ).sum();
+    return data.keyArray().map( function( item ) { return val( data[item] ); } ).sum();
   }
 
   // private functions
