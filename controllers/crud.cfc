@@ -74,7 +74,7 @@ component accessors=true {
       variables.framework.redirect( ":", "alert" );
     }
 
-    if ( !rc.useAsViewEntity == "main" && !securityService.can( "view", rc.useAsViewEntity ) ) {
+    if ( rc.useAsViewEntity != "main" && !securityService.can( "view", rc.useAsViewEntity ) ) {
       rc.alert = {
         "class" = "danger",
         "text" = "privileges-error-2",
@@ -153,20 +153,18 @@ component accessors=true {
     rc.entity = variables.entity;
 
     // exit with error when trying to control a non-persisted entity
-    if ( !arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
+    if ( !variables.ormEntities.findNoCase( variables.entity ) ) {
       rc.fallbackView = ":app/notfound";
       variables.framework.setView( '.#variables.entity#' );
       return;
     }
-
-    var object = entityNew( variables.entity );
-    rc.entityInstanceVars = object.getInstanceVariables( );
 
     var property = "";
     var indexNr = 0;
     var orderNr = 0;
     var columnName = "";
     var columnsInList = [ ];
+    var object = entityNew( variables.entity );
     var orderByString = "";
 
     rc.recordCounter = 0;
@@ -180,11 +178,11 @@ component accessors=true {
     rc.showAlphabet = variables.showAlphabet;
     rc.showPager = variables.showPager;
     rc.showAsTree = false;
+    rc.entityInstanceVars = object.getInstanceVariables( );
 
     // exit out of controller if using a tree view (data retrieval goes through ajax calls instead)
-    if ( structKeyExists( rc.entityInstanceVars.settings, "list" ) ) {
+    if ( rc.entityInstanceVars.settings.keyExists( "list" ) ) {
       rc.tableView = ":elements/" & rc.entityInstanceVars.settings.list;
-
       if ( rc.entityInstanceVars.settings.list == "hierarchy" ) {
         rc.allColumns = { };
         rc.allData = [ ];
@@ -194,46 +192,34 @@ component accessors=true {
     }
 
     if ( !securityService.can( "change", variables.entity ) ) {
-      var lineactionPointer = listFind( rc.lineactions, '.edit' );
+      var lineactionPointer = rc.lineactions.listFind( ".edit" );
       if ( lineactionPointer ) {
-        rc.lineactions = listDeleteAt( rc.lineactions, lineactionPointer );
+        rc.lineactions = rc.lineactions.listDeleteAt( lineactionPointer );
       }
     }
 
-    if ( structKeyExists( rc.entityInstanceVars.settings, "classColumn" ) && len( trim( rc.entityInstanceVars.settings.classColumn ) ) ) {
+    if ( rc.entityInstanceVars.settings.keyExists( "classColumn" ) && rc.entityInstanceVars.settings.classColumn.trim().len() ) {
       classColumn = rc.entityInstanceVars.settings.classColumn;
     }
 
     rc.defaultSort = "";
 
-    if ( structKeyExists( rc.entityInstanceVars.settings, "defaultSort" ) ) {
+    if ( rc.entityInstanceVars.settings.keyExists( "defaultSort" ) ) {
       rc.defaultSort = rc.entityInstanceVars.settings.defaultSort;
-    } else if ( structKeyExists( rc.entityInstanceVars.settings.extends, "defaultSort" ) ) {
+    } else if ( rc.entityInstanceVars.settings.extends.keyExists( "defaultSort" ) ) {
       rc.defaultSort = rc.entityInstanceVars.settings.extends.defaultSort;
     }
 
-    if ( len( trim( rc.orderby ) ) ) {
-      local.vettedOrderByString = "";
+    if ( rc.orderby.trim().len() ) {
+      rc.orderby = rc.orderby.listToArray()
+        .map( function( orderField ) { return orderField.listFirst( ' ' ); } )
+        .filter( function( orderField ) { return !orderField.find( ';' ); } )
+        .filter( function( orderField ) { return rc.properties.keyExists( orderField ); } )
+        .toList();
+    }
 
-      for ( var orderField in listToArray( rc.orderby ) ) {
-        if ( orderField contains ';' ) {
-          continue;
-        }
-
-        if ( orderField contains ' ASC' || orderField contains ' DESC' ) {
-          orderField = listFirst( orderField, ' ' );
-        }
-
-        if ( structKeyExists( rc.properties, orderField ) ) {
-          local.vettedOrderByString = listAppend( local.vettedOrderByString, orderField );
-        }
-      }
-
-      rc.orderby = local.vettedOrderByString;
-
-      if ( len( trim( rc.orderby ) ) ) {
-        rc.defaultSort = rc.orderby & ( rc.d ? ' DESC' : '' );
-      }
+    if ( rc.orderby.trim().len() ) {
+      rc.defaultSort = rc.orderby & ( rc.d ? ' DESC' : '' );
     }
 
     rc.orderby = rc.defaultSort.replaceNoCase( ' ASC', '', 'all' ).replaceNoCase( ' DESC', '', 'all' );
@@ -244,52 +230,28 @@ component accessors=true {
       rc.d = 0;
     }
 
-    for ( orderByPart in listToArray( rc.defaultSort ) ) {
-      orderByString = listAppend( orderByString, "mainEntity.#orderByPart#" );
+    orderByString = rc.defaultSort.listToArray()
+      .map( function( orderByPart ) { return 'mainEntity.#orderByPart#'; } )
+      .toList();
+
+    if ( rc.startsWith.trim().len() ) {
+      rc.filters = [ { 'field' = 'name', 'filterOn' = rc.startsWith.replace( '''', '''''', 'all' ) } ];
+      rc.filterType = 'starts-with';
     }
 
-
-
-    if ( len( trim( rc.startsWith ) ) ) {
-      rc.filters = [
-        {
-          "field" = "name",
-          "filterOn" = replace( rc.startsWith, '''', '''''', 'all' )
+    rc.filter( function( key, value ) { return key.listFirst( '_' ) == 'filter'; } )
+      .filter( function( key, value ) { return isSimpleValue( value ) || isStruct( value ); } )
+      .filter( function( key ) { return rc.properties.keyExists( key.listRest( '_' ) ); } )
+      .each( function( key, value ) {
+        var fltr = { 'field' = key.listRest( '_' ) };
+        if ( isStruct( value ) ) {
+          fltr[ 'filterOn' ] = value.value;
+          fltr[ 'operator' ] = value.operator;
+        } else if ( isSimpleValue( value ) ) {
+          fltr[ 'filterOn' ] = value.replace( '''', '''''', 'all' );
         }
-      ];
-      rc.filterType = "starts-with";
-    }
-
-    for ( var key in rc ) {
-      if ( !isSimpleValue( rc[ key ] ) && !isStruct( rc[ key ]) ) {
-        continue;
-      }
-
-      key = urlDecode( key );
-
-      if ( listFirst( key, "_" ) == "filter" && isStruct( rc[ key ] ) ) {
-        arrayAppend(
-          rc.filters,
-          {
-            "field"     = listRest( key, "_" ),
-            "filterOn"  = rc[ key ].value,
-            "operator"  = rc[ key ].operator
-          }
-        );
-        continue;
-      }
-
-      if ( listFirst( key, "_" ) == "filter" && len( trim( rc[ key ] ) ) ) {
-        arrayAppend(
-          rc.filters,
-          {
-            "field" = listRest( key, "_" ),
-            "filterOn" = replace( rc[ key ], '''', '''''', 'all' )
-          }
-        );
-      }
-    }
-
+        rc.filters.append( fltr );
+      } );
 
     if ( !rc.keyExists( 'alldata' ) ) {
       var crudData = crudService.list( variables.entity, rc.properties, rc.showdeleted, rc.filters, rc.filterType, orderByString, rc.maxResults, rc.offset, rc.entityInstanceVars );
