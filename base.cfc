@@ -223,6 +223,9 @@ component {
         writeOutput( "<br />Stacktrace: <pre>" & exception.stackTrace & "</pre>" );
         writeDump( cgi );
       }
+
+      param config.paths.errors = expandPath( '../../ProjectsTemporaryFiles/errors' );
+
       fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
     }
 
@@ -297,5 +300,15 @@ component {
     cachePut( cacheKey, allOrmEntities );
 
     return allOrmEntities;
+  }
+
+  public boolean function canDebug( cfg ) {
+    if ( !cfg.showDebug ) return false;
+
+    if ( cgi.remote_addr.listFirst( '.' ) == 127 ) return true;
+
+    if ( cfg.debugIP.listFind( cgi.remote_addr ) ) return true;
+
+    return false;
   }
 }

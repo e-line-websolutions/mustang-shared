@@ -12,8 +12,8 @@ component extends="latest-framework.one" {
   param request.context.startTime=getTickCount();
   param request.context.config=variables.cfg;
   param request.webroot=variables.cfg.webroot;
-  param request.appSimpleName=listFirst( request.appName, " ,-_" );
-  param request.context.debug=variables.cfg.showDebug && listFind( variables.cfg.debugIP, cgi.remote_addr );
+  param request.appSimpleName=request.appName.listFirst( " ,-_" );
+  param request.context.debug=mstng.canDebug( variables.cfg );
 
   param this.javaSettings={};
 
@@ -82,7 +82,7 @@ component extends="latest-framework.one" {
     variables.cfg.paths[ variables.cfg.root ] = variables.root;
   }
 
-  if ( len( variables.cfg.paths.fileUploads ) ) {
+  if ( !isNull( variables.cfg.paths.fileUploads ) && len( variables.cfg.paths.fileUploads ) ) {
     request.fileUploads = variables.cfg.paths.fileUploads;
   }
 
