@@ -3,7 +3,7 @@
   "contentSubsystems": "",
   "datasource": "",
   "debugEmail": "beta-errors@e-line.nl",
-  "debugIP": "127.0.0.1",
+  "debugIP": "",
   "defaultLanguage": "en_US",
   "disableSecurity": false,
   "sessionManagement": true,
@@ -15,9 +15,6 @@
   "nukeScript": "",
   "ownerEmail": "administrator@e-line.nl",
   "paths": {
-    "basecfc": "",
-    "errors": "D:/mustang-errors",
-    "fileUploads": ""
   },
   "reloadpw": "1",
   "root": "root",
