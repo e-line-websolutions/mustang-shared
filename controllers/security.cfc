@@ -34,10 +34,7 @@ component accessors=true {
     if ( rc.keyExists( 'authhash' ) && rc.authhash.trim().len() ) {
       logService.writeLogLevel( 'trying authhash', request.appName );
 
-      var decryptedHash = decrypt(
-            utilityService.base64URLDecode( rc.authhash ),
-            config.encryptKey
-          );
+      var decryptedHash = utilityService.decryptForUrl( rc.authhash );
       if ( isJSON( decryptedHash ) ) {
         var hashStruct = deserializeJSON( decryptedHash );
         if ( isStruct( hashStruct ) && structKeyExists( hashStruct, 'path' ) ) {
@@ -54,7 +51,7 @@ component accessors=true {
           var contactID = hashStruct.userId;
         }
       } else {
-        var contactID = decrypt( utilityService.base64URLDecode( rc.authhash ), config.encryptKey );
+        var contactID = utilityService.decryptForUrl( rc.authhash );
       }
       var user = contactService.get( contactID );
 
@@ -280,7 +277,7 @@ component accessors=true {
       var contact = contactService.getByEmail( rc.email );
 
       if ( !isNull( contact ) ) {
-        var authhash = toBase64( encrypt( contact.getID(), config.encryptKey ) );
+        var authhash = utilityService.encryptForUrl( contact.getID() );
         var activationEmails = contentService.getByFQA( 'mail.activation' );
 
         if ( isObject( activationEmails ) ) {
