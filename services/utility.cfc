@@ -280,14 +280,10 @@
   }
 
   public string function base64URLEncode( required string value ) {
-    var bytes = charsetDecode( value, "utf-8" );
-    var encodedValue = binaryEncode( bytes, "base64" );
-
-    encodedValue = replace( encodedValue, "+", "-", "all" );
-    encodedValue = replace( encodedValue, "/", "_", "all" );
-    encodedValue = replace( encodedValue, "=", "", "all" );
-
-    return encodedValue;
+    return binaryEncode( charsetDecode( value, 'utf-8' ), 'base64' )
+      .replace( '+', '-', 'all' )
+      .replace( '/', '_', 'all' )
+      .replace( '=', '', 'all' );
   }
 
   public string function base64URLDecode( required string input ) {
@@ -300,10 +296,11 @@
     if ( dataService.isGuid( input ) ) return input;
 
     try {
-      var tmp = replace( replace( input, '-', '+', 'all' ), '_', '/', 'all' );
+      var tmp = input.replace( '-', '+', 'all' )
+                     .replace( '_', '/', 'all' );
       tmp &= repeatString( '=', ( 4 - ( len( tmp ) % 4 ) ) );
-      var bytes = binaryDecode( tmp, "base64" );
-      return charsetEncode( bytes, "utf-8" );
+      var bytes = binaryDecode( tmp, 'base64' );
+      return charsetEncode( bytes, 'utf-8' );
     } catch ( any e ) {
       logService.writeLogLevel( text = 'input is not well formatted: ' & input, level = 'fatal' );
       logService.dumpToFile( { error = duplicate( e ) }, true );
@@ -311,11 +308,15 @@
     }
   }
 
-  public string function encryptForUrl( stringToEncrypt, encryptKey = variables.config.encryptKey, algorithm = 'CFMX_COMPAT' ) {
+  public string function encryptForUrl( stringToEncrypt, encryptKey = variables.config.encryptKey, algorithm ) {
+    param config.encryptAlgorithm = 'CFMX_COMPAT';
+    param algorithm = config.encryptAlgorithm;
     return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey, algorithm ) ) );
   }
 
-  public string function decryptForUrl( stringToDecrypt, encryptKey = variables.config.encryptKey, algorithm = 'CFMX_COMPAT' ) {
+  public string function decryptForUrl( stringToDecrypt, encryptKey = variables.config.encryptKey, algorithm ) {
+    param config.encryptAlgorithm = 'CFMX_COMPAT';
+    param algorithm = config.encryptAlgorithm;
     return decrypt( toString( toBinary( base64URLDecode( stringToDecrypt ) ) ), encryptKey, algorithm );
   }
 
