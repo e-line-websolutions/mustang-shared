@@ -31,7 +31,7 @@ component accessors=true {
     var updateUserWith = { 'lastLoginDate' = now() };
 
     // Check credentials:
-    if ( structKeyExists( rc, 'authhash' ) && len( trim( rc.authhash ) ) ) {
+    if ( rc.keyExists( 'authhash' ) && rc.authhash.trim().len() ) {
       logService.writeLogLevel( 'trying authhash', request.appName );
 
       var decryptedHash = decrypt(
@@ -202,7 +202,7 @@ component accessors=true {
 
   // THIS FUNCTION WILL ALWAYS SET RC.AUTH
   public void function authorize( required struct rc ) {
-    if( structKeyExists( rc, 'authhash' ) ) doLogin( rc );
+    if( rc.keyExists( 'authhash' ) ) doLogin( rc );
 
     // Use auth struct that's stored in session
     rc.auth = securityService.getAuth();
