@@ -3,3 +3,4 @@ sftp-config.json
 sftp-config-alt.json
 sftp-config-alt2.json
 tests/testdata/json-file-001.json
+.DS_STORE
