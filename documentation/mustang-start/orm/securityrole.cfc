@@ -8,8 +8,8 @@ component extends="basecfc.base"
   property name="menulist" length=256 inform=true orderinform=2 editable=true;
   property name="loginscript" length=128 inform=true orderinform=3 editable=true inlist=true;
 
-  property name="contacts" fieldtype="one-to-many" inverse=true singularName="contact" cfc="root.model.beans.contact" FKColumn="securityroleid" cascade="delete-orphan";
-  property name="permissions" fieldtype="one-to-many" inverse=true singularName="permission" cfc="root.model.beans.permission" FKColumn="securityroleid" orderby="section" inform=true orderinform=4 editable=true inlineedit=true;
+  property name="contacts" fieldtype="one-to-many" inverse=true singularName="contact" cfc="root.orm.beans.contact" FKColumn="securityroleid" cascade="delete-orphan";
+  property name="permissions" fieldtype="one-to-many" inverse=true singularName="permission" cfc="root.orm.beans.permission" FKColumn="securityroleid" orderby="section" inform=true orderinform=4 editable=true inlineedit=true;
 
   property persistent=false name="canAccessAdmin" inlist=true;
 

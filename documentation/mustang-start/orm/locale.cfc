@@ -5,9 +5,9 @@ component extends="basecfc.base"
   property name="deleted" type="boolean" ORMType="boolean" default=false inapi=false;
   property name="sortorder" type="numeric" ORMType="integer" default=0;
 
-  property name="language" fieldType="many-to-one" cfc="root.model.beans.language" FKColumn="languageid" inform=true editable=true;
-  property name="country" fieldType="many-to-one" cfc="root.model.beans.country" FKColumn="countryid" inform=true editable=true;
-  property name="texts" fieldType="one-to-many" inverse=true cfc="root.model.beans.text" FKColumn="localeid" singularName="text";
+  property name="language" fieldType="many-to-one" cfc="root.orm.beans.language" FKColumn="languageid" inform=true editable=true;
+  property name="country" fieldType="many-to-one" cfc="root.orm.beans.country" FKColumn="countryid" inform=true editable=true;
+  property name="texts" fieldType="one-to-many" inverse=true cfc="root.orm.beans.text" FKColumn="localeid" singularName="text";
 
   property name="code" persistent=false inlist=true;
 

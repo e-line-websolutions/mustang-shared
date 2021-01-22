@@ -1,4 +1,4 @@
-component extends="root.model.beans.logged"
+component extends="root.orm.beans.logged"
           persistent=true
           joinColumn="id"
           defaultSort="lastname,email" {
@@ -11,10 +11,10 @@ component extends="root.model.beans.logged"
   property name="lastLoginDate" ORMType="timestamp" inlist=true;
   property name="phone" length="16" inform=true orderinform=6 editable=1;
   property name="photo" length="128";
-  property name="securityrole" fieldtype="many-to-one" cfc="root.model.beans.securityrole" fkcolumn="securityroleid" inform=true editable=true inlist=true;
-  property name="createdObjects" singularname="createdObject" fieldtype="one-to-many" inverse=true cfc="root.model.beans.logged" fkcolumn="createcontactid";
-  property name="updatedObjects" singularname="updatedObject" fieldtype="one-to-many" inverse=true cfc="root.model.beans.logged" fkcolumn="updatecontactid";
-  property name="contactLogEntries" singularname="contactLogEntry" fieldtype="one-to-many" inverse=true cfc="root.model.beans.logentry" fkcolumn="contactid" inapi=false;
+  property name="securityrole" fieldtype="many-to-one" cfc="root.orm.beans.securityrole" fkcolumn="securityroleid" inform=true editable=true inlist=true;
+  property name="createdObjects" singularname="createdObject" fieldtype="one-to-many" inverse=true cfc="root.orm.beans.logged" fkcolumn="createcontactid";
+  property name="updatedObjects" singularname="updatedObject" fieldtype="one-to-many" inverse=true cfc="root.orm.beans.logged" fkcolumn="updatecontactid";
+  property name="contactLogEntries" singularname="contactLogEntry" fieldtype="one-to-many" inverse=true cfc="root.orm.beans.logentry" fkcolumn="contactid" inapi=false;
   property name="receiveStatusUpdate" type="boolean" default=0 inlist=true;
   property name="name" persistent="false" inlist=true orderinlist=1;
 

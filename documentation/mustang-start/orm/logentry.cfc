@@ -3,10 +3,10 @@ component extends="basecfc.base" persistent=true table="log" defaultSort="dd DES
   property name="deleted" type="boolean" ORMType="boolean" default=false inapi=false;
   property name="sortorder" type="numeric" ORMType="integer" default=0;
 
-  property name="relatedEntity" fieldType="many-to-one" cfc="root.model.beans.logged" FKColumn="entityid" inform=true orderinform=1 inlist=true link=true;
-  property name="logaction" fieldType="many-to-one" cfc="root.model.beans.logaction" FKColumn="logactionid" inform=true orderinform=2 inlist=true;
+  property name="relatedEntity" fieldType="many-to-one" cfc="root.orm.beans.logged" FKColumn="entityid" inform=true orderinform=1 inlist=true link=true;
+  property name="logaction" fieldType="many-to-one" cfc="root.orm.beans.logaction" FKColumn="logactionid" inform=true orderinform=2 inlist=true;
   property name="savedState" length=4000 dataType="json" inform=true orderinform=5;
-  property name="by" fieldType="many-to-one" FKColumn="contactid" cfc="root.model.beans.contact";
+  property name="by" fieldType="many-to-one" FKColumn="contactid" cfc="root.orm.beans.contact";
   property name="dd" ORMType="timestamp" inlist=true;
   property name="ip" length=15;
 

@@ -1,4 +1,4 @@
-component extends="root.model.beans.text"
+component extends="root.orm.beans.text"
           persistent=true
           joinColumn="id"
 
