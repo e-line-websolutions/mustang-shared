@@ -62,11 +62,6 @@ component accessors=true {
     fileWrite( location, binarycode );
   }
 
-  public string function getMimetypeFromBinaryFile( binaryFileData ) {
-    var jl = javaloaderService.new( [ expandPath( "/mustang/lib/tika/tika-eval-1.22.jar" ) ] );
-    return jl.create( 'org.apache.tika.Tika' ).detect( binaryFileData );
-  }
-
   public string function getMimetype() {
     switch ( getFileExtension() ) {
       case 'jpg' :

@@ -1,6 +1,7 @@
 component accessors=true {
   property beanFactory;
   property config;
+  property javaloaderService;
 
   public component function upload( required string uploadField, string destination = 'temp/' ) {
     if ( destination contains '..' ) {
@@ -33,5 +34,17 @@ component accessors=true {
     input = replace( trim( input ), ' ', replaceSpace, 'all' );
 
     return toLowercase ? lCase( input ) : input;
+  }
+
+  public string function getMimetypeFromBinaryFile( binaryFileData ) {
+    var jl = javaloaderService.new( [ expandPath( "/mustang/lib/tika/tika-eval-1.22.jar" ) ] );
+    return jl.create( 'org.apache.tika.Tika' ).detect( binaryFileData );
+  }
+
+  public string function encodeFileToBase64Binary( fileObject ) {
+    var fileUtils = createObject( 'java', 'org.apache.commons.io.FileUtils' );
+    var base64Encoder = createObject( 'java', 'java.util.Base64' ).getEncoder();
+    return base64Encoder.encodeToString( fileUtils.readFileToByteArray( fileObject ) );
+    return fileObj;
   }
 }
