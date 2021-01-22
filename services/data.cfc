@@ -267,10 +267,6 @@ component accessors=true {
   // convenience functions
 
   public any function processEntity( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false, array path = [] ) {
-    if ( level == 0 ) {
-      variables.utilityService.setCFSetting( 'requesttimeout', 10 );
-    }
-
     var useJsonService = variables.jsonService;
 
     if ( !isNull( variables.jsonJavaService ) && isObject( variables.jsonJavaService ) ) {
@@ -373,20 +369,9 @@ component accessors=true {
         }
 
         if ( fieldProperties.dataType == 'json' && isSimpleValue( value ) ) {
-          try {
-            var deserialized = useJsonService.deserialize( value );
-            if ( !isNull( deserialized ) ) structAppend( result, deserialized );
-          } catch ( any e ) {
-            variables.logService.dumpToFile(
-              {
-                'dataService.processEntity()' = {
-                  'Exception' = e,
-                  'Data' = value,
-                  'Property' = fieldProperties
-                }
-              },
-              true
-            );
+          var deserialized = useJsonService.deserialize( value );
+          if ( !isNull( deserialized ) ) {
+            structAppend( result, deserialized );
           }
           continue;
         }
@@ -413,10 +398,6 @@ component accessors=true {
   public any function deOrm( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false ) {
     level = max( 0, level );
     maxLevel = min( 5, maxLevel );
-
-    if( level == 0 ) {
-      variables.utilityService.setCFSetting( "requesttimeout", 10 );
-    }
 
     var useJsonService = variables.jsonService;
 

@@ -218,7 +218,9 @@ component extends="latest-framework.one" {
       setupSession();
     }
 
-    request.allOrmEntities = variables.mstng.listAllOrmEntities( this.ormSettings.cfcLocation );
+    if ( variables.cfg.useOrm ) {
+      request.allOrmEntities = variables.mstng.listAllOrmEntities( this.ormSettings.cfcLocation );
+    }
 
     var bf = getBeanFactory();
     var i18n = bf.getBean( 'translationService' );
