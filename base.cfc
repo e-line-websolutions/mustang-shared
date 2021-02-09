@@ -23,7 +23,7 @@ component {
       }
     }
 
-    var result = { 'webroot' = getDefaultWebroot() };
+    var result = { 'webroot' = getDefaultWebroot(), 'paths' = {} };
     var mustangSharedRoot = getMustangRoot();
 
     var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & '/config/global.json', 'utf-8' ) );
@@ -76,6 +76,12 @@ component {
         mergeStructs( commandboxConfig, result );
       }
     }
+
+    // expand relative paths:
+    result.paths = result.paths.map(function( key, path ) {
+      return ( left( path, 2 ) == './' || left( path, 3 ) == '../' ? expandPath( path ) : path );
+    });
+
 
     lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {
       cachePut( 'config_#variables.name#', result );
