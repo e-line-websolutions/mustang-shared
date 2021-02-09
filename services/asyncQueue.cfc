@@ -50,7 +50,8 @@ component accessors=true {
 
       variables.isThreadRunning = true;
 
-      if ( !structKeyExists( server, 'lucee' ) ) {
+      // for ACF:
+      if ( !server.keyExists( 'lucee' ) ) {
         var threadfixService = variables.beanFactory.getBean( 'threadfix' );
         threadfixService.cacheScriptObjects();
       }
@@ -61,7 +62,7 @@ component accessors=true {
             var taskItem = getNextTaskItem();
           }
 
-          while ( structKeyExists( local, 'taskItem' ) ) {
+          while ( !isNull( taskItem ) ) {
             try {
               taskItem.taskMethod( argumentCollection = taskItem.taskArguments );
             } catch ( any e ) {
