@@ -56,9 +56,7 @@ component accessors=true {
         threadfixService.cacheScriptObjects();
       }
 
-      var hibernateSession = ormGetSession();
-
-      thread action="run" name=variables.threadName priority="high" hibernateSession=hibernateSession {
+      thread action="run" name=variables.threadName priority="high" {
         do {
           var taskItem = getNextTaskItem();
 
