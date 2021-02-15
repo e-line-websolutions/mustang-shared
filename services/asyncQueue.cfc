@@ -22,7 +22,7 @@ component accessors=true {
 
     param variables.runSingleThreaded = false;
 
-    structAppend( variables, arguments, true );
+    variables.append( arguments, true );
 
     abortQueue();
 
@@ -35,7 +35,7 @@ component accessors=true {
     return init( argumentCollection = arguments );
   }
 
-  public void function addTask( required any taskMethod, any taskArguments = {} ) {
+  public void function addTask( required any taskMethod, any taskArguments = getEmptyArgumentsCollection() ) {
     if ( variables.runSingleThreaded ) {
       taskMethod( argumentCollection = taskArguments );
       return;
@@ -56,11 +56,11 @@ component accessors=true {
         threadfixService.cacheScriptObjects();
       }
 
-      thread action="run" name=variables.threadName priority="high" {
+      var hibernateSession = ormGetSession();
+
+      thread action="run" name=variables.threadName priority="high" hibernateSession=hibernateSession {
         do {
-          lock name=variables.lockName timeout=variables.lockTimeout {
-            var taskItem = getNextTaskItem();
-          }
+          var taskItem = getNextTaskItem();
 
           while ( !isNull( taskItem ) ) {
             try {
@@ -76,13 +76,11 @@ component accessors=true {
               rethrow;
             }
 
-            lock name=variables.lockName timeout=variables.lockTimeout {
-              taskItem = getNextTaskItem();
-            }
+            taskItem = getNextTaskItem();
           }
 
           lock name=variables.lockName timeout=variables.lockTimeout {
-            var isQueueEmpty = arrayIsEmpty( variables.taskQueue );
+            var isQueueEmpty = variables.taskQueue.isEmpty();
             var isQueueFull = !isQueueEmpty;
 
             if ( isQueueEmpty ) {
@@ -114,19 +112,16 @@ component accessors=true {
       taskArguments = convertArgumentsArrayToCollection( taskArguments );
     }
 
-    arrayAppend(
-      variables.taskQueue,
-      {
-        'taskMethod' = taskMethod,
-        'taskArguments' = taskArguments,
-        'threadName' = threadName
-      }
-    );
+    variables.taskQueue.append( {
+      'taskMethod' = taskMethod,
+      'taskArguments' = taskArguments,
+      'threadName' = threadName
+    } );
   }
 
   private struct function convertArgumentsArrayToCollection( required array argumentsArray ) {
     var argumentsCollection = getEmptyArgumentsCollection();
-    var numberOfArguments = arrayLen( argumentsArray );
+    var numberOfArguments = argumentsArray.len();
 
     for ( var i = 1; i <= numberOfArguments; i++ ) {
       argumentsCollection[ i ] = argumentsArray[ i ];
@@ -145,17 +140,16 @@ component accessors=true {
 
   private string function getNewAsyncThreadName() {
     var index = ++variables.threadIndex;
-
     return 'thread-#variables.taskQueueID#-#index#';
   }
 
   private any function getNextTaskItem() {
-    if ( arrayLen( variables.taskQueue ) ) {
-      var taskItem = variables.taskQueue[ 1 ];
-
-      arrayDeleteAt( variables.taskQueue, 1 );
-
-      return taskItem;
+    lock name=variables.lockName timeout=variables.lockTimeout {
+      if ( !variables.taskQueue.isEmpty() ) {
+        var taskItem = variables.taskQueue[ 1 ];
+        variables.taskQueue.deleteAt( 1 );
+        return taskItem;
+      }
     }
   }
 }
