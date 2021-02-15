@@ -236,15 +236,16 @@ component {
     }
 
     var webroots = [ 'webroot', 'www' ];
-    var fallbackErrorFile = 'error.html';
+
+    param request.fallbackErrorFile = 'error.html';
 
     for ( webroot in webroots ) {
       if ( fileExists( variables.root & "/#webroot#/error-#errorCode#.html" ) ) {
         include "/#config.root#/#webroot#/error-#errorCode#.html";
         writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
         abort;
-      } else if ( fileExists( variables.root & "/#webroot#/#fallbackErrorFile#" ) ) {
-        include "/#config.root#/#webroot#/#fallbackErrorFile#";
+      } else if ( fileExists( variables.root & "/#webroot#/#request.fallbackErrorFile#" ) ) {
+        include "/#config.root#/#webroot#/#request.fallbackErrorFile#";
         writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
         abort;
       }
