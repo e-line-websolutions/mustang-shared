@@ -7,8 +7,10 @@ component accessors=true {
   public struct function getAuth( ) {
     var result = getEmptyAuth( );
 
-    if ( !isNull( session.auth ) ) {
-      var result = session.auth;
+    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="readonly" {
+      if ( !isNull( session.auth ) ) {
+        var result = session.auth;
+      }
     }
 
     return result;
@@ -41,9 +43,10 @@ component accessors=true {
       "auth" = getEmptyAuth( )
     };
 
-    structClear( session );
-
-    structAppend( session, tmpSession );
+    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
+      session.clear();
+      session.append( tmpSession );
+    }
   }
 
   public void function endSession() {
@@ -62,7 +65,9 @@ component accessors=true {
       "userid" = createUUID( )
     };
 
-    structAppend( session.auth, tempAuth, true );
+    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
+      session.auth.append( tempAuth, true );
+    }
   }
 
   public void function refreshSession( component user ) {
@@ -101,9 +106,10 @@ component accessors=true {
       }
     }
 
-    structAppend( session.auth, tempAuth, true );
-
-    sessionRotate();
+    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
+      session.auth.append( tempAuth, true );
+      sessionRotate();
+    }
   }
 
   public string function hashPassword( required string password ) {
@@ -153,18 +159,23 @@ component accessors=true {
   }
 
   public boolean function can( string action = '', string section = '' ) {
-    // not logged in:
-    if ( !session.keyExists( 'auth' ) ) return false;
+    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="readonly" {
+      // not logged in:
+      if ( !session.keyExists( 'auth' ) ) return false;
 
-    param session.can = {};
-    param session.auth.role.name = 'none';
-    param session.auth.role.isAdmin = false;
+      var authInSession = session.auth;
+      var sessionCanCache = session.can;
+    }
+
+    param sessionCanCache = {};
+    param authInSession.role.name = 'none';
+    param authInSession.role.isAdmin = false;
 
     // admin can do anything (cached):
-    if ( session.auth.role.name.left( 5 ) == 'Admin' ) return true;
+    if ( authInSession.role.name.left( 5 ) == 'Admin' ) return true;
 
     // check permissions:
-    return session.can.keyExists( '#action#-#section#' );
+    return sessionCanCache.keyExists( '#action#-#section#' );
   }
 
   public boolean function canIgnoreSecurity( string subsystem="",
@@ -219,7 +230,9 @@ component accessors=true {
       }
     }
 
-    session.can = cachedPermissions;
+    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
+      session.can = cachedPermissions;
+    }
   }
 
   private struct function getFakeUser( ) {
