@@ -6,14 +6,20 @@ component accessors=true {
 
   // PUBLIC
 
-  public struct function list( required string entityName, properties, showdeleted = false, filters = [], filterType, orderByString = '', maxResults = 0, offset = 0, entityInstanceVars ) {
+  public struct function list(
+    required string entityName,
+    properties,
+    showdeleted = false,
+    filters = [],
+    filterType,
+    orderByString = '',
+    maxResults = 0,
+    offset = 0,
+    entityInstanceVars
+  ) {
     var result = {};
-
-    var queryOptions = {
-      ignorecase = true
-    };
-
-    var params = { "deleted" = !showdeleted };
+    var queryOptions = { ignorecase = true };
+    var params = { 'deleted' = !showdeleted };
 
     if ( maxResults > 0 ) queryOptions.maxResults = maxResults;
     if ( offset > 0 ) queryOptions.offset = offset;
@@ -22,78 +28,77 @@ component accessors=true {
       filters.addAll( permissionService.getFilterForEntity( entityName ) );
     }
 
-    if ( arrayLen( filters ) ) {
-      var alsoFilterKeys = properties.findKey( "alsoFilter" );
-      var alsoFilterEntity = "";
-      var whereBlock = " WHERE 0 = 0 ";
-      var whereParameters = { };
+    if ( !filters.isEmpty() ) {
+      var alsoFilterKeys = properties.findKey( 'alsoFilter' );
+      var alsoFilterEntity = '';
+      var whereBlock = ' WHERE 0 = 0 ';
+      var whereParameters = {};
       var counter = 0;
 
       if ( showdeleted == 0 ) {
-        whereBlock &= " AND ( mainEntity.deleted IS NULL OR mainEntity.deleted = false ) ";
+        whereBlock &= ' AND ( mainEntity.deleted IS NULL OR mainEntity.deleted = false ) ';
       }
 
-      for ( var filter in filters ) {
-        if( !isArray( filter.filterOn ) ) {
+      filters.each( function( filter ) {
+        if ( !isArray( filter.filterOn ) ) {
           filter.filterOn = [ filter.filterOn ];
         }
 
-        whereBlock &= " AND ( 1 = 0 ";
+        whereBlock &= ' AND ( 1 = 0 ';
 
-        for( var filterOn in filter.filterOn ) {
-          if ( len( filter.field ) > 2 && right( filter.field, 2 ) == "id" ) {
-            whereBlock &= "OR mainEntity.#filter.field.left( filter.field.len() - 2 )# = ( FROM #filter.fieldleft( filter.field.len() - 2 )# WHERE id = :where_id )";
-            whereParameters[ "where_id" ] = filterOn;
+        filter.filterOn.each( function( filterOn, idx ) {
+          if ( len( filter.field ) > 2 && right( filter.field, 2 ) == 'id' ) {
+            whereBlock &= 'OR mainEntity.#filter.field.left( filter.field.len() - 2 )# = ( FROM #filter.fieldleft( filter.field.len() - 2 )# WHERE id = :where_id_#idx# )';
+            whereParameters[ 'where_id_#idx#' ] = filterOn;
           } else {
-            if ( filterOn == "NULL" ) {
-              whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#filter.field.lCase()# IS NULL ";
-            } else if ( properties[ filter.field ].keyExists( "cfc" ) ) {
-              whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#filter.field.lCase()#.id = :where_#filter.field.lCase()# ";
-              whereParameters[ "where_#filter.field.lCase()#" ] = filterOn;
-            } else if ( filter.keyExists( "operator" ) ) {
-              whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#filter.field.lCase()# #filter.operator# :where_#filter.field.lCase()# ";
-              whereParameters[ "where_#filter.field.lCase()#" ] = filterOn;
+            if ( filterOn == 'NULL' ) {
+              whereBlock &= ' OR ( ';
+              whereBlock &= ' mainEntity.#filter.field.lCase()# IS NULL ';
+            } else if ( properties[ filter.field ].keyExists( 'cfc' ) ) {
+              whereBlock &= ' OR ( ';
+              whereBlock &= ' mainEntity.#filter.field.lCase()#.id = :where_#filter.field.lCase()#_#idx# ';
+              whereParameters[ 'where_#filter.field.lCase()#_#idx#' ] = filterOn;
+            } else if ( filter.keyExists( 'operator' ) ) {
+              whereBlock &= ' OR ( ';
+              whereBlock &= ' mainEntity.#filter.field.lCase()# #filter.operator# :where_#filter.field.lCase()#_#idx# ';
+              whereParameters[ 'where_#filter.field.lCase()#_#idx#' ] = filterOn;
             } else {
-              if ( filterType == "contains" ) {
-                filterOn = "%#filterOn#";
+              if ( filterType == 'contains' ) {
+                filterOn = '%#filterOn#';
               }
 
-              filterOn = "#filterOn#%";
+              filterOn = '#filterOn#%';
 
-              whereBlock &= " OR ( ";
-              whereBlock &= " mainEntity.#filter.field.lCase()# LIKE :where_#filter.field.lCase()# ";
-              whereParameters[ "where_#filter.field.lCase()#" ] = filterOn;
+              whereBlock &= ' OR ( ';
+              whereBlock &= ' mainEntity.#filter.field.lCase()# LIKE :where_#filter.field.lCase()#_#idx# ';
+              whereParameters[ 'where_#filter.field.lCase()#_#idx#' ] = filterOn;
             }
 
-            for ( var alsoFilterKey in alsoFilterKeys ) {
-              if ( alsoFilterKey.owner.name neq filter.field ) {
-                continue;
+            alsoFilterKeys.each( function( alsoFilterKey ) {
+              if ( alsoFilterKey.owner.name eq filter.field ) {
+                counter++;
+                alsoFilterEntity &= ' LEFT JOIN mainEntity.#alsoFilterKey.owner.alsoFilter.listFirst( '.' )# AS entity_#counter# ';
+                whereBlock &= ' OR entity_#counter#.#alsoFilterKey.owner.alsoFilter.listLast( '.' )# LIKE ''#filterOn#'' ';
+                whereParameters[ 'where_#alsoFilterKey.owner.alsoFilter.listLast( '.' )#' ] = filterOn;
               }
+            } );
 
-              counter++;
-              alsoFilterEntity &= " LEFT JOIN mainEntity.#alsoFilterKey.owner.alsoFilter.listFirst( '.' )# AS entity_#counter# ";
-              whereBlock &= " OR entity_#counter#.#alsoFilterKey.owner.alsoFilter.listLast( '.' )# LIKE '#filterOn#' ";
-              whereParameters[ "where_#alsoFilterKey.owner.alsoFilter.listLast( '.' )#" ] = filterOn;
-            }
-            whereBlock &= " ) ";
+            whereBlock &= ' ) ';
           }
-        }
+        } );
 
-        whereBlock &= " ) ";
-      }
+        whereBlock &= ' ) ';
+      } );
 
-      if ( entityInstanceVars.settings.keyExists( "where" ) && len( trim( entityInstanceVars.settings.where ) ) ) {
+      if ( entityInstanceVars.settings.keyExists( 'where' ) && len( trim( entityInstanceVars.settings.where ) ) ) {
         whereBlock &= entityInstanceVars.settings.where;
       }
 
-      var HQLcounter = " SELECT COUNT( mainEntity ) AS total ";
-      var HQLselector = " SELECT mainEntity ";
+      var HQLcounter = ' SELECT COUNT( mainEntity ) AS total ';
+      var HQLselector = ' SELECT mainEntity ';
 
-      var HQL = "";
-      HQL &= " FROM #entityName.lCase()# mainEntity ";
+      var HQL = '';
+      HQL &= ' FROM #entityName.lCase()# mainEntity ';
       HQL &= alsoFilterEntity;
       HQL &= whereBlock;
 
@@ -101,31 +106,31 @@ component accessors=true {
       HQLselector = HQLselector & HQL;
 
       if ( len( trim( orderByString ) ) ) {
-        HQLselector &= " ORDER BY #orderByString# ";
+        HQLselector &= ' ORDER BY #orderByString# ';
       }
 
-      result.alldata = ORMExecuteQuery( HQLselector, whereParameters, queryOptions );
+      result.alldata = ormExecuteQuery( HQLselector, whereParameters, queryOptions );
 
       if ( !result.alldata.isEmpty() ) {
-        result.recordCounter = ORMExecuteQuery( HQLcounter, whereParameters, { ignorecase = true } )[ 1 ];
+        result.recordCounter = ormExecuteQuery( HQLcounter, whereParameters, { ignorecase = true } )[ 1 ];
       }
     } else {
-      var HQL = " FROM #entityName.lCase()# mainEntity WHERE ( mainEntity.deleted <> :deleted ) ";
+      var HQL = ' FROM #entityName.lCase()# mainEntity WHERE ( mainEntity.deleted <> :deleted ) ';
 
       if ( len( trim( orderByString ) ) ) {
-        HQL &= " ORDER BY #orderByString# ";
+        HQL &= ' ORDER BY #orderByString# ';
       }
 
-      result.alldata = ORMExecuteQuery( HQL, params, queryOptions );
+      result.alldata = ormExecuteQuery( HQL, params, queryOptions );
 
       if ( !result.alldata.isEmpty() ) {
-        result.recordCounter = ORMExecuteQuery(
-          "SELECT COUNT( e ) AS total FROM #entityName.lCase()# AS e WHERE e.deleted != :deleted",
+        result.recordCounter = ormExecuteQuery(
+          'SELECT COUNT( e ) AS total FROM #entityName.lCase()# AS e WHERE e.deleted != :deleted',
           params,
-          { "ignorecase" = true }
+          { 'ignorecase' = true }
         )[ 1 ];
-        result.deleteddata = ORMExecuteQuery(
-          "SELECT COUNT( mainEntity.id ) AS total FROM #entityName.lCase()# AS mainEntity WHERE mainEntity.deleted = :deleted",
+        result.deleteddata = ormExecuteQuery(
+          'SELECT COUNT( mainEntity.id ) AS total FROM #entityName.lCase()# AS mainEntity WHERE mainEntity.deleted = :deleted',
           params
         )[ 1 ];
 
