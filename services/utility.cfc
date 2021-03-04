@@ -9,8 +9,9 @@
   <cfprocessingdirective pageEncoding="utf-8" />
 
   <cfscript>
-  public any function init( fw ) {
+  public any function init( fw, defaultEncoding = 'utf-8' ) {
     structAppend( variables, arguments );
+    this.defaultEncoding = defaultEncoding;
     return this;
   }
 
@@ -279,28 +280,25 @@
     return inputArray;
   }
 
-  public string function base64URLEncode( required string value ) {
-    return binaryEncode( charsetDecode( value, 'utf-8' ), 'base64' )
+  public string function base64URLEncode( required string value, encoding = this.defaultEncoding ) {
+    return binaryEncode( charsetDecode( value, encoding ), 'base64' )
       .replace( '+', '-', 'all' )
       .replace( '/', '_', 'all' )
       .replace( '=', '', 'all' );
   }
 
-  public string function base64URLDecode( required string input ) {
+  public string function base64URLDecode( required string input, encoding = this.defaultEncoding ) {
     if ( 0 != compareNoCase( input, urlDecode( input ) ) ) {
       input = urlDecode( input );
     }
 
-    logService.writeLogLevel( text = 'base64URLDecode( #input# ) called', level = 'fatal' );
-
     if ( dataService.isGuid( input ) ) return input;
 
     try {
-      var tmp = input.replace( '-', '+', 'all' )
-                     .replace( '_', '/', 'all' );
+      var tmp = input.replace( '-', '+', 'all' ).replace( '_', '/', 'all' );
       tmp &= repeatString( '=', ( 4 - ( len( tmp ) % 4 ) ) );
       var bytes = binaryDecode( tmp, 'base64' );
-      return charsetEncode( bytes, 'utf-8' );
+      return charsetEncode( bytes, encoding );
     } catch ( any e ) {
       logService.writeLogLevel( text = 'input is not well formatted: ' & input, level = 'fatal' );
       logService.dumpToFile( { error = duplicate( e ) }, true );
@@ -308,16 +306,24 @@
     }
   }
 
-  public string function encryptForUrl( stringToEncrypt, encryptKey = variables.config.encryptKey, algorithm ) {
-    param config.encryptAlgorithm = 'CFMX_COMPAT';
-    param algorithm = config.encryptAlgorithm;
+  public string function encryptForUrl( stringToEncrypt, encryptKey = variables.config.encryptKey, algorithm, encoding = this.defaultEncoding ) {
+    param variables.config.encryptAlgorithm = 'CFMX_COMPAT';
+    param algorithm = variables.config.encryptAlgorithm;
     return base64URLEncode( toBase64( encrypt( stringToEncrypt, encryptKey, algorithm ) ) );
   }
 
-  public string function decryptForUrl( stringToDecrypt, encryptKey = variables.config.encryptKey, algorithm ) {
-    param config.encryptAlgorithm = 'CFMX_COMPAT';
-    param algorithm = config.encryptAlgorithm;
-    return decrypt( toString( toBinary( base64URLDecode( stringToDecrypt ) ) ), encryptKey, algorithm );
+  public string function decryptForUrl( stringToDecrypt, encryptKey = variables.config.encryptKey, algorithm, encoding = this.defaultEncoding ) {
+    param variables.config.encryptAlgorithm = 'CFMX_COMPAT';
+    param algorithm = variables.config.encryptAlgorithm;
+
+    var stage_1 = base64URLDecode( stringToDecrypt, encoding );
+    var stage_2 = toBinary( stage_1 );
+    var stage_3 = toString( stage_2 );
+    var stage_4 = decrypt( stage_3, encryptKey, algorithm );
+
+    return stage_4;
+
+    // return decrypt( toString( toBinary( base64URLDecode( stringToDecrypt ) ) ), encryptKey, algorithm );
   }
 
   public boolean function fileExistsUsingCache( required string absolutePath ) {
