@@ -48,7 +48,6 @@ component accessors=true {
       }
     }
 
-
     if ( rc.useAsViewEntity != variables.entity ) {
       var superClassControllerPath = "/#config.root#/controllers/#rc.useAsViewEntity#.cfc";
 
@@ -165,7 +164,6 @@ component accessors=true {
     var columnName = "";
     var columnsInList = [ ];
     var object = entityNew( variables.entity );
-    var orderByString = "";
 
     rc.recordCounter = 0;
     rc.deleteddata = 0;
@@ -230,7 +228,7 @@ component accessors=true {
       rc.d = 0;
     }
 
-    orderByString = rc.defaultSort.listToArray()
+    var orderByString = rc.defaultSort.listToArray()
       .map( function( orderByPart ) { return 'mainEntity.#orderByPart#'; } )
       .toList();
 
@@ -240,7 +238,7 @@ component accessors=true {
     }
 
     rc.filter( function( key, value ) { return key.listFirst( '_' ) == 'filter'; } )
-      .filter( function( key, value ) { return isSimpleValue( value ) || isStruct( value ); } )
+      .filter( function( key, value ) { return isSimpleValue( value ) || isStruct( value ) || isArray( value ); } )
       .filter( function( key ) { return rc.properties.keyExists( key.listRest( '_' ) ); } )
       .each( function( key, value ) {
         var fltr = { 'field' = key.listRest( '_' ) };
@@ -249,6 +247,8 @@ component accessors=true {
           fltr[ 'operator' ] = value.operator;
         } else if ( isSimpleValue( value ) ) {
           fltr[ 'filterOn' ] = value.replace( '''', '''''', 'all' );
+        } else if ( isArray( value ) ) {
+          fltr[ 'filterOn' ] = value;
         }
         rc.filters.append( fltr );
       } );
