@@ -42,7 +42,7 @@ component accessors=true {
 
         for( var filterOn in filter.filterOn ) {
           if ( len( filter.field ) > 2 && right( filter.field, 2 ) == "id" ) {
-            whereBlock &= "OR mainEntity.#filter.field.left( filter.field.len() - 2 )# = ( FROM #filter.fieldleft( filter.field.len() - 2 )# WHERE id = :where_id )";
+            whereBlock &= "OR mainEntity.#filter.field.left( filter.field.len() - 2 )# = ( FROM #filter.field.left( filter.field.len() - 2 )# WHERE id = :where_id )";
             whereParameters[ "where_id" ] = filterOn;
           } else {
             if ( filterOn == "NULL" ) {
