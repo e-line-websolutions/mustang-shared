@@ -142,7 +142,7 @@ component accessors=true {
 
   // other data integrity and utility functions:
 
-  public boolean function isGUID( required string text, boolean strict = false ) {
+  public boolean function isGUID( string text = '', boolean strict = false ) {
     if ( strict ) {
       var testForGuid = REMatchNoCase( "\{{0,1}[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}{0,1}", text );
       return !arrayIsEmpty( testForGuid );
