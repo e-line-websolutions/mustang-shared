@@ -2,13 +2,14 @@ component extends="testbox.system.BaseSpec" {
   variables.dataService = new services.data( );
 
   function run( ) {
-    describe( "GUID Tests", function( ) {
-      it( "Expects isGuid to work", function( ) {
-        expect( dataService.isGuid( 'C56A4180-65AA-42EC-A945-5FD21DEC0538' ) ).toBeTrue( );
-        expect( dataService.isGuid( 'C56A4180-65AA-42EC-A945-5FD21DEC0538', true ) ).toBeTrue( );
-        expect( dataService.isGuid( createUUID( ) ) ).toBeTrue( );
-        expect( dataService.isGuid( createUUID( ), true ) ).toBeFalse( );
-      } );
+    describe( "isGUID function", function( ) {
+      it( "knows C56A4180-65AA-42EC-A945-5FD21DEC0538 to be a valid GUID", function( ) { expect( dataService.isGUID( 'C56A4180-65AA-42EC-A945-5FD21DEC0538' ) ).toBeTrue( ); } );
+      it( "knows C56A4180-65AA-42EC-A945-5FD21DEC0538 to be a valid GUID using strict method", function( ) { expect( dataService.isGUID( 'C56A4180-65AA-42EC-A945-5FD21DEC0538', true ) ).toBeTrue( ); } );
+      it( "accepts CF's createUUID() to be valid", function( ) { expect( dataService.isGUID( createUUID( ) ) ).toBeTrue( ); } );
+      it( "knows CF's createUUID() to be invalid using strict", function( ) { expect( dataService.isGUID( createUUID( ), true ) ).toBeFalse( ); } );
+      it( "doesn't error when no value is given", function( ) { expect( dataService.isGUID() ).toBeFalse( ); } );
+      it( "doesn't error on a null value", function( ) { expect( dataService.isGUID( javaCast( 'null', 0 ) ) ).toBeFalse( ); } );
+      it( "knows a non GUID is not valid", function( ) { expect( dataService.isGUID( 'this is not a GUID' ) ).toBeFalse( ); } );
     } );
 
     describe( "reMatchGroups Tests", function ( ) {
