@@ -58,10 +58,14 @@ component extends="latest-framework.one" {
   if ( len( variables.cfg.datasource ) ) {
     this.datasource = variables.cfg.datasource;
 
+    orm_cfcLocation = directoryExists( variables.root & 'orm' )
+      ? variables.root & 'orm'
+      : variables.root & 'model';
+
     if ( variables.cfg.useOrm ) {
       this.ormEnabled = true;
       this.ormSettings = {
-        'cfcLocation' = variables.root & 'model',
+        'cfcLocation' = orm_cfcLocation,
         'dbCreate' = variables.mstng.getDbCreate( variables.cfg ),
         'secondaryCacheEnabled' = variables.live ? true : false,
         'cacheProvider' = 'ehcache',
