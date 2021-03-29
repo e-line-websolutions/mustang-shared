@@ -4,8 +4,8 @@ component accessors=true {
   property logService;
   property utilityService;
 
-  public struct function getAuth( ) {
-    var result = getEmptyAuth( );
+  public struct function getAuth() {
+    var result = getEmptyAuth();
 
     lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="readonly" {
       if ( !isNull( session.auth ) ) {
@@ -35,12 +35,12 @@ component accessors=true {
     return true;
   }
 
-  public void function createSession( ) {
+  public void function createSession() {
     logService.writeLogLevel( "createSession() called", "securityService", "debug" );
 
     var tmpSession = {
       "can" = { },
-      "auth" = getEmptyAuth( )
+      "auth" = getEmptyAuth()
     };
 
     lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
@@ -55,14 +55,14 @@ component accessors=true {
     sessionRotate();
   }
 
-  public void function refreshFakeSession( ) {
-    createSession( );
+  public void function refreshFakeSession() {
+    createSession();
 
     var tempAuth = {
       "isLoggedIn" = true,
-      "role" = getFakeRole( ),
-      "user" = dataService.processEntity( getFakeUser( ) ),
-      "userid" = createUUID( )
+      "role" = getFakeRole(),
+      "user" = dataService.processEntity( getFakeUser() ),
+      "userid" = createUUID()
     };
 
     lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
@@ -72,7 +72,7 @@ component accessors=true {
 
   public void function refreshSession( component user ) {
     if ( isNull( user ) ) {
-      var currentAuth = getAuth( );
+      var currentAuth = getAuth();
 
       if ( utilityService.isGuid( currentAuth.userId ) ) {
         user = entityLoadByPK( "contact", currentAuth.userId );
@@ -81,12 +81,12 @@ component accessors=true {
       entityReload( user );
     }
 
-    createSession( );
+    createSession();
 
     var tempAuth = {
       "isLoggedIn" = true,
       "user" = dataService.processEntity( user, 0, 1, false ),
-      "userid" = user.getID( )
+      "userid" = user.getID()
     };
 
     if ( structKeyExists( user, 'getSecurityRole' ) ) {
@@ -119,9 +119,9 @@ component accessors=true {
     do {
       var salt = bcrypt.gensalt( cost );
       var hashedPW = bcrypt.hashpw( password, salt );
-      var start = getTickCount( );
+      var start = getTickCount();
       bcrypt.checkpw( password, hashedPW );
-      var hashSpeed = getTickCount( ) - start;
+      var hashSpeed = getTickCount() - start;
       logService.writeLogLevel( "Password hash speed #hashSpeed#ms at #cost#.", "securityService", "debug" );
       cost++;
     } while ( hashSpeed < minSpeed && cost <= 30 );
@@ -147,15 +147,19 @@ component accessors=true {
 
   public boolean function isAdmin( string roleName ) {
     if ( isNull( roleName ) ) {
-      var currentAuth = getAuth( );
+      var currentAuth = getAuth();
       roleName = currentAuth.role.name;
     }
 
     return roleName == "Administrator" || roleName == "Admin";
   }
 
-  public boolean function yesWeCan( ) {
+  public boolean function yesWeCan() {
     return true;
+  }
+
+  public boolean function ahAhAhYouDidntSayTheMagicWord() {
+    return false;
   }
 
   public boolean function can( string action = '', string section = '' ) {
@@ -235,7 +239,7 @@ component accessors=true {
     }
   }
 
-  private struct function getFakeUser( ) {
+  private struct function getFakeUser() {
     return {
       "name" = "Administrator",
       "firstname" = "John",
@@ -243,7 +247,7 @@ component accessors=true {
     };
   }
 
-  private struct function getFakeRole( ) {
+  private struct function getFakeRole() {
     return {
       "name" = "Administrator",
       "menuList" = "",
@@ -255,12 +259,16 @@ component accessors=true {
     return createObject( 'java', 'org.mindrot.jbcrypt.BCrypt' );
   }
 
-  private struct function getEmptyAuth( ) {
+  private struct function getEmptyAuth() {
     return {
-      "isLoggedIn" = false,
-      "user" = { },
-      "role" = { "name" = "none" },
-      "userid" = ''
+      'isLoggedIn' = false,
+      'user' = {
+        'company' = {
+          'id' = createUUID()
+        }
+      },
+      'role' = { 'name' = 'none', 'isAdmin' = false, can = ahAhAhYouDidntSayTheMagicWord },
+      'userid' = ''
     };
   }
 }

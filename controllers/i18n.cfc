@@ -75,7 +75,7 @@ component accessors=true {
       }
 
       lock scope="session" timeout=5 type="exclusive" {
-        cfcookie( name="localeID", value="localeID", samesite="lax" );
+        cookie.localeID = { 'value' = localeID, 'samesite' = 'lax' };
         session.localeID = localeID;
         session.locale = locale;
         rc.currentlocaleID = localeID;

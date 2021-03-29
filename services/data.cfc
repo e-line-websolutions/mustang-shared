@@ -442,7 +442,7 @@ component accessors=true {
       }
 
       var result = { };
-      var allFields = getInheritedProperties( data );
+      var allFields = data.getInheritedProperties();
 
       for( var key in allFields ) {
         var fieldProperties = {

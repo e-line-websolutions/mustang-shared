@@ -29,7 +29,7 @@ component accessors=true {
     }
 
     if ( !filters.isEmpty() ) {
-      var alsoFilterKeys = properties.findKey( 'alsoFilter' );
+      var alsoFilterKeys = properties?.findKey( 'alsoFilter' );
       var alsoFilterEntity = '';
       var whereBlock = ' WHERE 0 = 0 ';
       var whereParameters = {};
@@ -90,7 +90,7 @@ component accessors=true {
         whereBlock &= ' ) ';
       } );
 
-      if ( entityInstanceVars.settings.keyExists( 'where' ) && len( trim( entityInstanceVars.settings.where ) ) ) {
+      if ( !isNull( entityInstanceVars ) && ( entityInstanceVars.settings.keyExists( 'where' ) && len( trim( entityInstanceVars.settings.where ) ) ) ) {
         whereBlock &= entityInstanceVars.settings.where;
       }
 
