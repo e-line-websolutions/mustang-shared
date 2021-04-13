@@ -37,6 +37,12 @@ component accessors=true {
   }
 
   public any function getFileLastModified( required string filePath ) {
+    if( !structKeyExists( variables, 'jFileInputStream'))
+      variables.jFileInputStream = createObject( 'java', 'java.io.FileInputStream' );
+
+    if( !structKeyExists( variables, 'jFile'))
+      variables.jFile = createObject( 'java', 'java.io.File' );
+      
     var file = variables.jFile.init( filePath );
     return createObject( 'java', 'java.util.Date' ).init( file.lastModified() );
   }
