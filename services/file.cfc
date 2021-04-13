@@ -36,6 +36,11 @@ component accessors=true {
     return toLowercase ? lCase( input ) : input;
   }
 
+  public any function getFileLastModified( required string filePath ) {
+    var file = variables.jFile.init( filePath );
+    return createObject( 'java', 'java.util.Date' ).init( file.lastModified() );
+  }
+
   public string function getMimetypeFromBinaryFile( binaryFileData ) {
     var jl = javaloaderService.new( [ expandPath( "/mustang/lib/tika/tika-eval-1.22.jar" ) ] );
     return jl.create( 'org.apache.tika.Tika' ).detect( binaryFileData );
