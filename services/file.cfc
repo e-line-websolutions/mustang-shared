@@ -3,13 +3,17 @@ component accessors=true {
   property config;
   property javaloaderService;
 
-  public component function upload( required string uploadField, string destination = 'temp/' ) {
+  public component function upload( required string uploadField, string destination = 'temp/', string mimeType = '' ) {
     if ( destination contains '..' ) {
       throw( 'path security error' );
     }
 
+    if ( !directoryExists( config.paths.fileUploads & '/' & destination ) ) {
+      directoryCreate( config.paths.fileUploads & '/' & destination );
+    }
+
     var tmpFilename = config.paths.fileUploads & '/' & destination & '/file-#createUUID()#.tmp';
-    var uploadState = fileUpload( tmpFilename, uploadField, '', 'MakeUnique' );
+    var uploadState = fileUpload( tmpFilename, uploadField, mimeType, 'MakeUnique', false );
 
     var fileObj = beanFactory.getBean( 'fileBean' );
 
@@ -34,17 +38,6 @@ component accessors=true {
     input = replace( trim( input ), ' ', replaceSpace, 'all' );
 
     return toLowercase ? lCase( input ) : input;
-  }
-
-  public any function getFileLastModified( required string filePath ) {
-    if( !structKeyExists( variables, 'jFileInputStream'))
-      variables.jFileInputStream = createObject( 'java', 'java.io.FileInputStream' );
-
-    if( !structKeyExists( variables, 'jFile'))
-      variables.jFile = createObject( 'java', 'java.io.File' );
-      
-    var file = variables.jFile.init( filePath );
-    return createObject( 'java', 'java.util.Date' ).init( file.lastModified() );
   }
 
   public string function getMimetypeFromBinaryFile( binaryFileData ) {
