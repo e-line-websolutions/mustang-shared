@@ -579,6 +579,7 @@ component accessors=true {
               converted[ key ] = value;
             }
           } catch ( any e ) {
+            logService.dumpToFile( xmlSource.toString(), true );abort;
             logService.writeLogLevel( text = 'Error with key "#key#": ' & e.message, level = 'debug' );
             value = '';
           }
@@ -592,7 +593,7 @@ component accessors=true {
       logService.writeLogLevel( text = 'xmlToArrayOfStructs() done', level = 'debug' );
     } catch ( any e ) {
       logService.writeLogLevel( text = 'xmlToArrayOfStructs() error: #e.message#', level = 'fatal' );
-      logService.dumpToFile( xmlSource.toString(), true );
+      logService.dumpToFile( { arguments = arguments, result = result, e = e }, true );
     }
 
     return isNull( result ) ? [] : result;
