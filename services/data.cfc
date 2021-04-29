@@ -535,80 +535,52 @@ component accessors=true {
   // conversion / mapping functions
 
   public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = 'id', name = 'name' } ) {
-    logService.writeLogLevel( text = 'xmlToArrayOfStructs() called', level = 'debug' );
+    var result = [];
 
-    try {
-      var result = [];
+    if ( !isArray( xmlSource ) ) {
+      xmlSource = [ xmlSource ];
+    }
 
-      if ( !isArray( xmlSource ) ) {
-        xmlSource = [ xmlSource ];
-        logService.writeLogLevel( text = 'xmlSource converted to array', level = 'debug' );
-      }
+    if ( arrayIsEmpty( xmlSource ) ) {
+      return [];
+    }
 
-      if ( arrayIsEmpty( xmlSource ) ) {
-        logService.writeLogLevel( text = 'xmlSource is empty', level = 'debug' );
-        return [];
-      }
+    var i = 0;
 
-      var i = 0;
-
-      if ( structIsEmpty( mapBy ) ) {
-        for ( var item in xmlSource ) {
-          i++;
-          var j = 0;
-          for ( var el in item.XmlChildren ) {
-            j++;
-            if ( !isNull( el ) && !isNull( el.xmlName ) ) {
-              mapBy[ el.xmlName ] = el.xmlName;
-            } else {
-              logService.writeLogLevel( text = 'null value in #i#:#j#', level = 'debug' );
-            }
-          }
-        }
-
-        logService.writeLogLevel( text = 'mapBy created', level = 'debug' );
-      }
-
+    if ( structIsEmpty( mapBy ) ) {
       for ( var item in xmlSource ) {
-        if ( isNull( item ) ) continue;
-
-        var converted = {};
-
-        for ( var key in mapBy ) {
-          if ( isNull( item ) ||
-               isNull( mapBy ) ||
-               isNull( key ) ||
-               !structKeyExists( mapBy, key ) ||
-               !structKeyExists( item, mapBy[ key ] ) ) {
-            logService.writeLogLevel( text = 'null value', level = 'debug' );
-            continue;
+        i++;
+        var j = 0;
+        for ( var el in item.XmlChildren ) {
+          j++;
+          if ( !isNull( el ) && !isNull( el.xmlName ) ) {
+            mapBy[ el.xmlName ] = el.xmlName;
+          } else {
+            logService.writeLogLevel( text = 'null value in #i#:#j#', level = 'debug' );
           }
-
-          if ( structKeyExists( item, mapBy[ key ] ) ) {
-            var value = item[ mapBy[ key ] ];
-
-            if ( len( trim( value.XmlText ) ) ) {
-              value = value.XmlText;
-            } else if ( structKeyExists( value, 'Items' ) && structKeyExists( value.Items, 'XmlChildren' ) ) {
-              logService.writeLogLevel( text = 'going deeper', level = 'debug' );
-              value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
-            } else {
-              value = '';
-            }
-          }
-
-          converted[ key ] = isNull( value ) ? '' : value;
         }
-
-        arrayAppend( result, converted );
-
-        logService.writeLogLevel( text = 'item added to result', level = 'debug' );
       }
 
-      logService.writeLogLevel( text = 'xmlToArrayOfStructs() done', level = 'debug' );
-    } catch ( any e ) {
-      logService.writeLogLevel( text = 'xmlToArrayOfStructs() error: #e.message#', level = 'fatal' );
-      logService.dumpToFile( { arguments = arguments, result = result, e = e }, true );
+      logService.writeLogLevel( text = 'mapBy created', level = 'debug' );
+    }
+
+    for ( var item in xmlSource ) {
+      result.append( mapBy.map( function( mapTo, originalKey ) {
+        var value = originalKey;
+
+        if ( structKeyExists( item, originalKey ) ) {
+          var xmlElement = item[ originalKey ];
+
+          if ( len( trim( xmlElement.XmlText ) ) ) {
+            value = xmlElement.XmlText;
+          } else if ( structKeyExists( xmlElement, 'Items' ) &&
+                      structKeyExists( xmlElement.Items, 'XmlChildren' ) ) {
+            value = xmlToArrayOfStructs( xmlElement.Items.XmlChildren, {} );
+          }
+        }
+
+        return value;
+      } ) );
     }
 
     return isNull( result ) ? [] : result;
