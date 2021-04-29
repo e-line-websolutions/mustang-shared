@@ -545,19 +545,10 @@ component accessors=true {
       return [];
     }
 
-    var i = 0;
-
     if ( structIsEmpty( mapBy ) ) {
       for ( var item in xmlSource ) {
-        i++;
-        var j = 0;
         for ( var el in item.XmlChildren ) {
-          j++;
-          if ( !isNull( el ) && !isNull( el.xmlName ) ) {
-            mapBy[ el.xmlName ] = el.xmlName;
-          } else {
-            logService.writeLogLevel( text = 'null value in #i#:#j#', level = 'debug' );
-          }
+          mapBy[ el.xmlName ] = el.xmlName;
         }
       }
 
