@@ -551,8 +551,6 @@ component accessors=true {
           mapBy[ el.xmlName ] = el.xmlName;
         }
       }
-
-      logService.writeLogLevel( text = 'mapBy created', level = 'debug' );
     }
 
     for ( var item in xmlSource ) {
