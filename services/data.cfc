@@ -558,6 +558,8 @@ component accessors=true {
       }
 
       for ( var item in xmlSource ) {
+        if ( isNull( item ) ) continue;
+
         var converted = {};
 
         for ( var key in mapBy ) {
