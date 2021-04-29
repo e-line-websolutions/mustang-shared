@@ -551,9 +551,12 @@ component accessors=true {
       }
 
       if ( structIsEmpty( mapBy ) ) {
-        for ( var el in xmlSource[ 1 ].XmlChildren ) {
-          mapBy[ el.xmlName ] = el.xmlName;
+        for ( var item in xmlSource ) {
+          for ( var el in item.XmlChildren ) {
+            mapBy[ el.xmlName ] = el.xmlName;
+          }
         }
+
         logService.writeLogLevel( text = 'mapBy created', level = 'debug' );
       }
 
@@ -575,14 +578,14 @@ component accessors=true {
               } else {
                 value = '';
               }
-
-              converted[ key ] = value;
             }
           } catch ( any e ) {
-            logService.dumpToFile( xmlSource.toString(), true );abort;
-            logService.writeLogLevel( text = 'Error with key "#key#": ' & e.message, level = 'debug' );
-            value = '';
+            value = 'npe';
           }
+
+          if ( isNull( value ) ) value = '';
+
+          converted[ key ] = value;
         }
 
         arrayAppend( result, converted );
