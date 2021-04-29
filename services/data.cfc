@@ -534,41 +534,48 @@ component accessors=true {
 
   // conversion / mapping functions
 
-  public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = "id", name = "name" } ) {
-    var result = [ ];
+  public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = 'id', name = 'name' } ) {
+    logService.writeLogLevel( text = 'xmlToArrayOfStructs() called', level = 'debug' );
+
+    var result = [];
 
     if ( !isArray( xmlSource ) ) {
       xmlSource = [ xmlSource ];
+      logService.writeLogLevel( text = 'xmlSource converted to array', level = 'debug' );
     }
 
     if ( arrayIsEmpty( xmlSource ) ) {
-      return [ ];
+      logService.writeLogLevel( text = 'xmlSource is empty', level = 'debug' );
+      return [];
     }
 
     if ( structIsEmpty( mapBy ) ) {
       for ( var el in xmlSource[ 1 ].XmlChildren ) {
         mapBy[ el.xmlName ] = el.xmlName;
       }
+      logService.writeLogLevel( text = 'mapBy created', level = 'debug' );
     }
 
     for ( var item in xmlSource ) {
-      var converted = { };
+      var converted = {};
       for ( var key in mapBy ) {
         if ( structKeyExists( item, mapBy[ key ] ) ) {
           var value = item[ mapBy[ key ] ];
 
           if ( len( trim( value.XmlText ) ) ) {
             value = value.XmlText;
-          } else if ( structKeyExists( value, "Items" ) && structKeyExists( value.Items, "XmlChildren" ) ) {
-            value = xmlToArrayOfStructs( value.Items.XmlChildren, { } );
+          } else if ( structKeyExists( value, 'Items' ) && structKeyExists( value.Items, 'XmlChildren' ) ) {
+            logService.writeLogLevel( text = 'going deeper', level = 'debug' );
+            value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
           } else {
-            value = "";
+            value = '';
           }
 
           converted[ key ] = value;
         }
       }
       arrayAppend( result, converted );
+      logService.writeLogLevel( text = 'item added to result', level = 'debug' );
     }
 
     return result;
