@@ -553,7 +553,9 @@ component accessors=true {
       if ( structIsEmpty( mapBy ) ) {
         for ( var item in xmlSource ) {
           for ( var el in item.XmlChildren ) {
-            mapBy[ el.xmlName ] = el.xmlName;
+            if ( !isNull( el ) && !isNull( el.xmlName ) ) {
+              mapBy[ el.xmlName ] = el.xmlName;
+            }
           }
         }
 
