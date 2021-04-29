@@ -561,8 +561,8 @@ component accessors=true {
         var converted = {};
 
         for ( var key in mapBy ) {
-          if ( structKeyExists( item, mapBy[ key ] ) ) {
-            try {
+          try {
+            if ( structKeyExists( item, mapBy[ key ] ) ) {
               var value = item[ mapBy[ key ] ];
 
               if ( len( trim( value.XmlText ) ) ) {
@@ -573,12 +573,12 @@ component accessors=true {
               } else {
                 value = '';
               }
-            } catch ( any e ) {
-              logService.writeLogLevel( text = e.message, level = 'debug' );
-              value = '';
-            }
 
-            converted[ key ] = value;
+              converted[ key ] = value;
+            }
+          } catch ( any e ) {
+            logService.writeLogLevel( text = 'Error with key "#key#": ' & e.message, level = 'debug' );
+            value = '';
           }
         }
 
