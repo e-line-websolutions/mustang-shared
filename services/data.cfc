@@ -592,7 +592,7 @@ component accessors=true {
       logService.writeLogLevel( text = 'xmlToArrayOfStructs() done', level = 'debug' );
     } catch ( any e ) {
       logService.writeLogLevel( text = 'xmlToArrayOfStructs() error: #e.message#', level = 'fatal' );
-      logService.dumpToFile( { arguments = arguments, result = result, e = e }, true );
+      logService.dumpToFile( xmlSource.toString(), true );
     }
 
     return isNull( result ) ? [] : result;
