@@ -588,13 +588,12 @@ component accessors=true {
       }
 
       logService.writeLogLevel( text = 'xmlToArrayOfStructs() done', level = 'debug' );
-
-      return isNull( result ) ? [] : result;
     } catch ( any e ) {
       logService.writeLogLevel( text = 'xmlToArrayOfStructs() error: #e.message#', level = 'fatal' );
       logService.dumpToFile( { arguments = arguments, result = result, e = e }, true );
-      rethrow;
     }
+
+    return isNull( result ) ? [] : result;
   }
 
   public array function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
