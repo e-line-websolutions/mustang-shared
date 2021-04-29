@@ -534,44 +534,45 @@ component accessors=true {
 
   // conversion / mapping functions
 
-  public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = "id", name = "name" } ) {
-    var result = [ ];
+  public array function xmlToArrayOfStructs( required any xmlSource, struct mapBy = { id = 'id', name = 'name' } ) {
+    var result = [];
 
     if ( !isArray( xmlSource ) ) {
       xmlSource = [ xmlSource ];
     }
 
     if ( arrayIsEmpty( xmlSource ) ) {
-      return [ ];
+      return [];
     }
 
     if ( structIsEmpty( mapBy ) ) {
-      for ( var el in xmlSource[ 1 ].XmlChildren ) {
-        mapBy[ el.xmlName ] = el.xmlName;
+      for ( var item in xmlSource ) {
+        for ( var el in item.XmlChildren ) {
+          mapBy[ el.xmlName ] = el.xmlName;
+        }
       }
     }
 
     for ( var item in xmlSource ) {
-      var converted = { };
-      for ( var key in mapBy ) {
-        if ( structKeyExists( item, mapBy[ key ] ) ) {
-          var value = item[ mapBy[ key ] ];
+      result.append( mapBy.map( function( mapTo, originalKey ) {
+        var value = originalKey;
 
-          if ( len( trim( value.XmlText ) ) ) {
-            value = value.XmlText;
-          } else if ( structKeyExists( value, "Items" ) && structKeyExists( value.Items, "XmlChildren" ) ) {
-            value = xmlToArrayOfStructs( value.Items.XmlChildren, { } );
-          } else {
-            value = "";
+        if ( structKeyExists( item, originalKey ) ) {
+          var xmlElement = item[ originalKey ];
+
+          if ( len( trim( xmlElement.XmlText ) ) ) {
+            value = xmlElement.XmlText;
+          } else if ( structKeyExists( xmlElement, 'Items' ) &&
+                      structKeyExists( xmlElement.Items, 'XmlChildren' ) ) {
+            value = xmlToArrayOfStructs( xmlElement.Items.XmlChildren, {} );
           }
-
-          converted[ key ] = value;
         }
-      }
-      arrayAppend( result, converted );
+
+        return value;
+      } ) );
     }
 
-    return result;
+    return isNull( result ) ? [] : result;
   }
 
   public array function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
