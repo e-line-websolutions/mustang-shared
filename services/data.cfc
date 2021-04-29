@@ -568,26 +568,29 @@ component accessors=true {
         var converted = {};
 
         for ( var key in mapBy ) {
-          try {
-            if ( structKeyExists( item, mapBy[ key ] ) ) {
-              var value = item[ mapBy[ key ] ];
-
-              if ( len( trim( value.XmlText ) ) ) {
-                value = value.XmlText;
-              } else if ( structKeyExists( value, 'Items' ) && structKeyExists( value.Items, 'XmlChildren' ) ) {
-                logService.writeLogLevel( text = 'going deeper', level = 'debug' );
-                value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
-              } else {
-                value = '';
-              }
-            }
-          } catch ( any e ) {
-            value = 'npe';
+          if ( isNull( item ) ||
+               isNull( mapBy ) ||
+               isNull( key ) ||
+               isNull( mapBy[ key ] ) ||
+               isNull( item[ mapBy[ key ] ] ) ) {
+            logService.writeLogLevel( text = 'null value', level = 'debug' );
+            continue;
           }
 
-          if ( isNull( value ) ) value = '';
+          if ( structKeyExists( item, mapBy[ key ] ) ) {
+            var value = item[ mapBy[ key ] ];
 
-          converted[ key ] = value;
+            if ( len( trim( value.XmlText ) ) ) {
+              value = value.XmlText;
+            } else if ( structKeyExists( value, 'Items' ) && structKeyExists( value.Items, 'XmlChildren' ) ) {
+              logService.writeLogLevel( text = 'going deeper', level = 'debug' );
+              value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
+            } else {
+              value = '';
+            }
+          }
+
+          converted[ key ] = isNull( value ) ? '' : value;
         }
 
         arrayAppend( result, converted );
