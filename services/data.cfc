@@ -558,27 +558,35 @@ component accessors=true {
 
     for ( var item in xmlSource ) {
       var converted = {};
+
       for ( var key in mapBy ) {
         if ( structKeyExists( item, mapBy[ key ] ) ) {
-          var value = item[ mapBy[ key ] ];
+          try {
+            var value = item[ mapBy[ key ] ];
 
-          if ( len( trim( value.XmlText ) ) ) {
-            value = value.XmlText;
-          } else if ( structKeyExists( value, 'Items' ) && structKeyExists( value.Items, 'XmlChildren' ) ) {
-            logService.writeLogLevel( text = 'going deeper', level = 'debug' );
-            value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
-          } else {
+            if ( len( trim( value.XmlText ) ) ) {
+              value = value.XmlText;
+            } else if ( structKeyExists( value, 'Items' ) && structKeyExists( value.Items, 'XmlChildren' ) ) {
+              logService.writeLogLevel( text = 'going deeper', level = 'debug' );
+              value = xmlToArrayOfStructs( value.Items.XmlChildren, {} );
+            } else {
+              value = '';
+            }
+          } catch ( any e ) {
+            logService.writeLogLevel( text = e.message, level = 'debug' );
             value = '';
           }
 
           converted[ key ] = value;
         }
       }
+
       arrayAppend( result, converted );
+
       logService.writeLogLevel( text = 'item added to result', level = 'debug' );
     }
 
-    return result;
+    return isNull( result ) ? [] : result;
   }
 
   public array function xmlFilter( xml data, string xPathString = "//EntityTypes/PvEntityTypeData", struct filter ) {
