@@ -571,8 +571,8 @@ component accessors=true {
           if ( isNull( item ) ||
                isNull( mapBy ) ||
                isNull( key ) ||
-               isNull( mapBy[ key ] ) ||
-               isNull( item[ mapBy[ key ] ] ) ) {
+               !mapBy.keyExists( key ) ||
+               !item.keyExists( mapBy[ key ] ) ) {
             logService.writeLogLevel( text = 'null value', level = 'debug' );
             continue;
           }
