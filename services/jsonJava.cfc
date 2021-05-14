@@ -8,10 +8,14 @@ component accessors=true {
   public any function d( required string source ) { return this.deserialize(source); }
 
   public string function serialize( required any source ) {
+    if ( server.keyExists( 'lucee' ) && !isNull( source ) ) return serializeJSON( source );
+
     return variables.gson.toJsonTree( source ).toString();
   }
 
   public any function deserialize( required string source ) {
+    if ( server.keyExists( 'lucee' ) && !isNull( source ) ) return deserializeJSON( source );
+
     if ( isNull( source ) || !isSimpleValue( source ) || !isJSON( source ) ) return;
 
     source = lTrim( source );
