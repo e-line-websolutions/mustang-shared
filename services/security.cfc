@@ -43,10 +43,8 @@ component accessors=true {
       "auth" = getEmptyAuth()
     };
 
-    lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
-      session.clear();
-      session.append( tmpSession );
-    }
+    session.clear();
+    session.append( tmpSession );
   }
 
   public void function endSession() {
@@ -56,58 +54,59 @@ component accessors=true {
   }
 
   public void function refreshFakeSession() {
-    createSession();
-
-    var tempAuth = {
-      "isLoggedIn" = true,
-      "role" = getFakeRole(),
-      "user" = dataService.processEntity( getFakeUser() ),
-      "userid" = createUUID()
-    };
-
     lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
+      createSession();
+
+      var tempAuth = {
+        "isLoggedIn" = true,
+        "role" = getFakeRole(),
+        "user" = dataService.processEntity( getFakeUser() ),
+        "userid" = createUUID()
+      };
+
       session.auth.append( tempAuth, true );
     }
   }
 
   public void function refreshSession( component user ) {
-    if ( isNull( user ) ) {
-      var currentAuth = getAuth();
-
-      if ( utilityService.isGuid( currentAuth.userId ) ) {
-        user = entityLoadByPK( "contact", currentAuth.userId );
-      }
-    } else {
-      entityReload( user );
-    }
-
-    createSession();
-
-    var tempAuth = {
-      "isLoggedIn" = true,
-      "user" = dataService.processEntity( user, 0, 1, false ),
-      "userid" = user.getID()
-    };
-
-    if ( structKeyExists( user, 'getSecurityRole' ) ) {
-      var securityRole = user.getSecurityRole();
-
-      if ( isNull( securityRole ) ) {
-        throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
-      }
-
-      tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
-
-      if ( isAdmin( tempAuth.role.name ) ) {
-        tempAuth.role.can = yesWeCan;
-      } else {
-        cachePermissions( tempAuth.role.permissions );
-        tempAuth.role.can = this.can;
-      }
-    }
-
     lock name="_lock_session_for_#cfid#-#cftoken#" timeout="3" throwontimeout="true" type="exclusive" {
+      if ( isNull( user ) ) {
+        var currentAuth = getAuth();
+
+        if ( utilityService.isGuid( currentAuth.userId ) ) {
+          user = entityLoadByPK( "contact", currentAuth.userId );
+        }
+      } else {
+        entityReload( user );
+      }
+
+      createSession();
+
+      var tempAuth = {
+        "isLoggedIn" = true,
+        "user" = dataService.processEntity( user, 0, 1, false ),
+        "userid" = user.getID()
+      };
+
+      if ( structKeyExists( user, 'getSecurityRole' ) ) {
+        var securityRole = user.getSecurityRole();
+
+        if ( isNull( securityRole ) ) {
+          throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
+        }
+
+        tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
+
+        if ( isAdmin( tempAuth.role.name ) ) {
+          tempAuth.role.can = yesWeCan;
+        } else {
+          cachePermissions( tempAuth.role.permissions );
+          tempAuth.role.can = this.can;
+        }
+      }
+
       session.auth.append( tempAuth, true );
+
       sessionRotate();
     }
   }
