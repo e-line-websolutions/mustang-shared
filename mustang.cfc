@@ -304,8 +304,11 @@ component extends="latest-framework.one" {
   }
 
   public string function onMissingView( struct rc ) {
-    var cfmlFileInsideDefaultSubsystem = variables.root & '/views/' & getSection() & '/' & getItem() & '.cfm';
-    var cfmlFileInsideSubsystem = variables.root & '/subsystems/' & getSubsystem() & '/views/' & getSection() & '/' & getItem() & '.cfm';
+    var cfmlFileInsideDefaultSubsystem = root & '/views/' & getSection() & '/' & getItem() & '.cfm';
+    var cfmlFileInsideSubsystem = root & '/subsystems/' & getSubsystem() & '/views/' & getSection() & '/' & getItem() & '.cfm';
+
+    cfmlFileInsideDefaultSubsystem = reReplace( cfmlFileInsideDefaultSubsystem, '/+', '/', 'all' );
+    cfmlFileInsideSubsystem = reReplace( cfmlFileInsideSubsystem, '/+', '/', 'all' );
 
     if ( util.fileExistsUsingCache( cfmlFileInsideDefaultSubsystem ) ) {
       return view( framework.subsystemDelimiter & getSection() & '/' & getItem() );
@@ -315,8 +318,8 @@ component extends="latest-framework.one" {
       return view( getSubsystem() & framework.subsystemDelimiter & getSection() & '/' & getItem() );
     }
 
-    if ( structKeyExists( request.context, 'fallbackView' ) ) {
-      return view( request.context.fallbackView );
+    if ( structKeyExists( rc, 'fallbackView' ) ) {
+      return view( rc.fallbackView );
     }
 
     return view( framework.subsystemDelimiter & 'app/notfound' );
