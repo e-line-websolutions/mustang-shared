@@ -198,9 +198,9 @@ component accessors=true {
       framework.abortController();
     }
 
-    // if we come from a failed authorization we try to create a redirect url to use after a successful login
+    // if we come from a failed authorization we try to create a returnpage to use after a successful login
 
-    rc.redirecturl = "";
+    rc.returnpage = "";
 
     if( !isNull( url ) && isStruct( url ) ){
       var urlString = "";
@@ -211,11 +211,11 @@ component accessors=true {
         urlString&= "#key#=#url[key]#";
       }
 
-      rc.redirecturl = framework.getSubsystemSectionAndItem() & urlString;
+      rc.returnpage = framework.getSubsystemSectionAndItem() & urlString;
     }
 
 
-    framework.redirect( ':security.login', 'alert,redirecturl' );
+    framework.redirect( ':security.login', 'alert,returnpage' );
     framework.abortController();
   }
 
