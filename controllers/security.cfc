@@ -140,7 +140,7 @@ component accessors=true {
     }
   }
 
-  public void function doLogout( required struct rc ) {
+  public void function doLogout( required struct rc, boolean failedAuthorization = false ) {
     // reset session
     securityService.endSession();
 
@@ -193,12 +193,35 @@ component accessors=true {
       rc.alert = { 'class' = 'success', 'text' = 'logout-success' };
     }
 
-    framework.redirect( ':security.login', 'alert' );
+    if( !failedAuthorization ){
+      framework.redirect( ':security.login', 'alert' );
+      framework.abortController();
+    }
+
+    // if we come from a failed authorization we try to create a redirect url to use after a successful login
+
+    rc.redirecturl = "";
+
+    if( !isNull( url ) && isStruct( url ) ){
+      var urlString = "";
+      for( var key in url ){
+        if( !len(trim( urlString ))) urlString &="?";
+        else urlString &="&";
+
+        urlString&= "#key#=#url[key]#";
+      }
+
+      rc.redirecturl = framework.getSubsystemSectionAndItem() & urlString;
+    }
+
+
+    framework.redirect( ':security.login', 'alert,redirecturl' );
     framework.abortController();
   }
 
   // THIS FUNCTION WILL ALWAYS SET RC.AUTH
   public void function authorize( required struct rc ) {
+
     if( rc.keyExists( 'authhash' ) ) doLogin( rc );
 
     // Use auth struct that's stored in session
@@ -263,7 +286,7 @@ component accessors=true {
         // nope, still not logged in: reset session via logout method.
         logService.writeLogLevel( text = 'User not logged in, reset session', type = 'information', file = request.appName );
         rc.alert = { 'class' = 'danger', 'text' = 'user-not-logged-in' };
-        doLogout( rc );
+        doLogout( rc, true );
       }
     }
   }
