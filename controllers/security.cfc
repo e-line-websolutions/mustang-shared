@@ -211,7 +211,7 @@ component accessors=true {
         urlString&= "#key#=#url[key]#";
       }
 
-      rc.returnpage = framework.getSubsystemSectionAndItem() & urlString;
+      rc.returnpage = cgi.path_info & urlString;
     }
 
 
