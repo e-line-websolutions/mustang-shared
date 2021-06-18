@@ -208,7 +208,7 @@ component {
     if ( !showDebugError && config.keyExists( 'rollbar' ) ) {
       runAsync( function() {
         try {
-          request.rollbarUserInfo = isNull( request.context.auth.user ) ? {} : {
+          request.rollbarUserInfo = !userExistsInRequestScope() ? {} : {
               'id' = request.context.auth.user.id
             , 'username' = request.context.auth.user.username
             , 'email' = request.context.auth.user.email
@@ -250,6 +250,16 @@ component {
         abort;
       }
     }
+  }
+
+
+  private boolean function userExistsInRequestScope(){
+    if( isNull( request.context.auth.user )) return false;
+    if( isNull( request.context.auth.user.id )) return false;
+    if( isNull( request.context.auth.user.username )) return false;
+    if( isNull( request.context.auth.user.email )) return false;
+
+    return true;
   }
 
   public void function clearCache() {
