@@ -208,12 +208,12 @@ component {
     if ( !showDebugError && config.keyExists( 'rollbar' ) ) {
       runAsync( function() {
         try {
-          request.rollbarUserInfo = !userExistsInRequestScope() ? {} : {
+          request.rollbarUserInfo = userExistsInRequestScope() ? {
               'id' = request.context.auth.user.id
             , 'username' = request.context.auth.user.username
             , 'email' = request.context.auth.user.email
             , 'extra' = 'test'
-          };
+          } : {};
           config.rollbar.environment = cgi.SERVER_NAME;
           var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
           rollbar.reportMessage( exception.message, "critical", exception, request.rollbarUserInfo );
