@@ -1,7 +1,9 @@
 component accessors=true {
   property config;
+  property contactService;
   property dataService;
   property logService;
+  property optionService;
   property utilityService;
 
   public struct function getAuth() {
@@ -96,6 +98,8 @@ component accessors=true {
         }
 
         tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
+
+        tempAuth.role.delete ( 'contacts' );
 
         if ( isAdmin( tempAuth.role.name ) ) {
           tempAuth.role.can = yesWeCan;
@@ -215,6 +219,20 @@ component accessors=true {
     return false;
   }
 
+  public void function doLogin( required string username, required string password ) {
+    var contact = contactService.getByUsername( username );
+
+    if ( comparePassword( password, contact.getPassword() ) ) {
+      logUserLogin( contact );
+      refreshSession( contact );
+    }
+  }
+
+  public void function doLogout() {
+    logUserLogout();
+    endSession();
+  }
+
   // private
 
   private void function cachePermissions( required array allPermissions ) {
@@ -269,5 +287,43 @@ component accessors=true {
       'role' = { 'name' = 'none', 'isAdmin' = false, can = ahAhAhYouDidntSayTheMagicWord },
       'userid' = ''
     };
+  }
+
+  private void function logUserLogin( contact ) {
+    if ( !config.log ) return;
+
+    contact.dontLog();
+    contact.save( {
+        'lastLoginDate' = now()
+      , 'add_logEntry' = {
+            'relatedEntity' = contact.getId()
+          , 'by' = contact.getId()
+          , 'dd' = now()
+          , 'ip' = cgi.remote_addr
+          , 'logaction' = optionService.getOptionByName( 'logaction', 'security' )
+          , 'note' = '#contact.getUsername()# logged in'
+        }
+    } );
+  }
+
+  private void function logUserLogout( contact ) {
+    if ( !config.log ) return;
+
+    var auth = getAuth();
+
+    if ( dataService.isGUID( auth?.userid ) ) {
+      var contact = contactService.get( auth.userid );
+      contact.dontLog();
+      contact.save( {
+        'add_logEntry' = {
+            'relatedEntity' = contact.getId()
+          , 'by' = contact.getId()
+          , 'dd' = now()
+          , 'ip' = cgi.remote_addr
+          , 'logaction' = optionService.getOptionByName( 'logaction', 'security' )
+          , 'note' = '#contact.getUsername()# logged out'
+        }
+      } );
+    }
   }
 }
