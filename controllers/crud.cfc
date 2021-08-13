@@ -254,7 +254,17 @@ component accessors=true {
       } );
 
     if ( !rc.keyExists( 'alldata' ) ) {
-      var crudData = crudService.list( variables.entity, rc.properties, rc.showdeleted, rc.filters, rc.filterType, orderByString, rc.maxResults, rc.offset, rc.entityInstanceVars );
+      var crudData = crudService.list(
+        variables.entity,
+        rc.properties,
+        rc.showdeleted,
+        rc.filters,
+        rc.filterType,
+        orderByString,
+        rc.maxResults,
+        rc.offset,
+        rc.entityInstanceVars
+      );
       if ( crudData.keyExists( 'allData' ) ) rc.append( crudData );
     }
 
@@ -271,7 +281,10 @@ component accessors=true {
       rc.allColumns[ property.name ] = property;
       rc.allColumns[ property.name ].columnIndex = orderNr;
 
-      if ( structKeyExists( property, "inlist" ) || structKeyExists( property, "showInList" ) ) {
+      param property.inlist = false;
+      param property.showInList = false;
+
+      if ( property.inlist || property.showInList ) {
         indexNr++;
         columnsInList[ indexNr ] = property.name;
       }
