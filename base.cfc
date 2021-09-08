@@ -98,7 +98,7 @@ component {
       return ( left( path, 2 ) == './' || left( path, 3 ) == '../' ? expandPath( path ) : path );
     });
 
-    writeDUmp( result );abort;
+    writeDUmp( result.dontsecurefqa );abort;
 
 
     lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {
