@@ -50,7 +50,7 @@ component {
     if( site.listLen('.') gt 1 ){
       domain = site.listGetAt( site.listLen('.') - 1, '.' ) & '.' & domain;
     }
-    
+
     if ( fileExists( configRoot & '/config/' & domain & '.json' ) ) {
       var domainConfig = deserializeJSON( fileRead( configRoot & '/config/' & domain & '.json', 'utf-8' ) );
 
@@ -97,6 +97,8 @@ component {
     result.paths = result.paths.map(function( key, path ) {
       return ( left( path, 2 ) == './' || left( path, 3 ) == '../' ? expandPath( path ) : path );
     });
+
+    writeDUmp( result );abort;
 
 
     lock name="lock_mustang_#variables.name#_config_write" timeout="3" type="exclusive" {
