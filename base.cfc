@@ -34,9 +34,6 @@ component {
     }
 
     site = site.replaceNoCase( 'www.', '' );
-    var domain = site.listLen('.') gt 1 ? site.listGetAt( site.listLen('.') - 1, '.' ) : site.listLast('.');
-
-    writeDUmp( domain );abort;
 
     if ( fileExists( configRoot & '/config/' & site & '.json' ) ) {
       var siteConfig = deserializeJSON( fileRead( configRoot & '/config/' & site & '.json', 'utf-8' ) );
@@ -47,6 +44,19 @@ component {
       }
 
       mergeStructs( siteConfig, result );
+    }
+    
+    var domain = site.listLen('.') gt 1 ? site.listGetAt( site.listLen('.') - 1, '.' ) : site.listLast('.');
+
+    if ( fileExists( configRoot & '/config/' & domain & '.json' ) ) {
+      var domainConfig = deserializeJSON( fileRead( configRoot & '/config/' & domain & '.json', 'utf-8' ) );
+
+      if ( domainConfig.keyExists( 'include' ) ) {
+        var includeDomainConfig = deserializeJSON( fileRead( configRoot & '/config/#domainConfig.include#', 'utf-8' ) );
+        mergeStructs( includeDomainConfig, result );
+      }
+
+      mergeStructs( domainConfig, result );
     }
 
     var machineName = getMachineName();
