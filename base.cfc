@@ -34,7 +34,7 @@ component {
     }
 
     site = site.replaceNoCase( 'www.', '' );
-    var domain = site.listLen('.') gt 1 ? site.listGetAt( site.listLen('.') - 1, '.' );
+    var domain = site.listLen('.') gt 1 ? site.listGetAt( site.listLen('.') - 1, '.' ) : site.listLast('.');
 
     writeDUmp( domain );abort;
 
