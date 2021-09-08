@@ -45,8 +45,12 @@ component {
 
       mergeStructs( siteConfig, result );
     }
-    
-    var domain = site.listLen('.') gt 1 ? site.listGetAt( site.listLen('.') - 1, '.' ) : site.listLast('.');
+
+    var domain = site.listLast('.');
+    if( site.listLen('.') gt 1 ){
+      domain = site.listGetAt( site.listLen('.') - 1, '.' ) & '.' & domain;
+    }
+    writeDump( domain );abort;
 
     if ( fileExists( configRoot & '/config/' & domain & '.json' ) ) {
       var domainConfig = deserializeJSON( fileRead( configRoot & '/config/' & domain & '.json', 'utf-8' ) );
