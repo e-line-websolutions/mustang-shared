@@ -34,9 +34,9 @@ component {
     }
 
     site = site.replaceNoCase( 'www.', '' );
-    var domain = site.replaceNoCase( 'www.', '' );
+    var domain = site.listLen('.') gt 1 ? site.listGetAt( site.listLen('.') - 1, '.' );
 
-    writeDUmp( cgi );abort;
+    writeDUmp( domain );abort;
 
     if ( fileExists( configRoot & '/config/' & site & '.json' ) ) {
       var siteConfig = deserializeJSON( fileRead( configRoot & '/config/' & site & '.json', 'utf-8' ) );
