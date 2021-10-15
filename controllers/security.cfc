@@ -64,6 +64,43 @@ component accessors=true {
       param rc.dontRedirect = true;
 
       logService.writeLogLevel( text = 'authhash success', type = 'information', file = request.appName );
+    }
+    else if( !isNull( request._fw1.headers.authorization )
+              && request._fw1.headers.authorization contains "Bearer"){
+
+      var token = trim( replace( request._fw1.headers.authorization, 'Bearer', '', 'ALL' ));
+
+      if( isNull( config.jwt.secret )){
+        logService.writeLogLevel(
+          text = 'No-JWT-secret-setup',
+          type = 'warning',
+          file = request.appName
+        );
+        doLogout( rc );
+      }
+
+      if( isNull( config.jwt.algorithm )){
+        logService.writeLogLevel(
+          text = 'No-JWT-algorithm-setup',
+          type = 'warning',
+          file = request.appName
+        );
+        doLogout( rc );
+      }
+
+      var jwt     = new mustang.lib.jwtcfml.models.jwt();
+      var payload = jwt.decode(token, config.jwt.secret, config.jwt.algorithm );
+
+      if( isNull( payload.contact.id )){
+        logService.writeLogLevel(
+          text = 'No-valid-contact-id',
+          type = 'warning',
+          file = request.appName
+        );
+        doLogout( rc );
+      }
+
+      var user = contactService.getById( payload.contact.id );
     } else {
       // CHECK USERNAME:
       var user = contactService.getByUsername( rc.username );
@@ -260,6 +297,9 @@ component accessors=true {
       ) ) {
         // API basic auth login:
         var HTTPRequestData = getHTTPRequestData();
+
+
+
 
         if ( isDefined( 'HTTPRequestData.headers.authorization' ) ) {
           logService.writeLogLevel( text = 'trying API basic auth', type = 'information', file = request.appName );
