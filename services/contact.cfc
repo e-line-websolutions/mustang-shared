@@ -32,4 +32,21 @@ component extends="baseService" {
       // returns null if more than one user is found }
     }
   }
+
+  public any function getById( required string id, boolean deleted = false ) {
+    var params = { 'deleted' = deleted, 'id' = id };
+    var hql = 'FROM #variables.entityName# WHERE deleted = :deleted AND id = :id';
+
+    var tmp = entityNew( variables.entityName );
+    if ( tmp.propertyExists( 'active' ) ) {
+      params[ 'active' ] = true;
+      hql &= ' AND active = :active ';
+    }
+
+    try {
+      return ormExecuteQuery( hql, params, true, { ignorecase = true } );
+    } catch ( any e ) {
+      // returns null if more than one user is found }
+    }
+  }
 }
