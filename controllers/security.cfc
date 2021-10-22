@@ -66,8 +66,6 @@ component accessors=true {
       logService.writeLogLevel( text = 'authhash success', type = 'information', file = request.appName );
     }
     else if( rc.keyExists( 'bearertoken' ) ){
-
-
       if( isNull( config.jwt.secret )){
         logService.writeLogLevel(
           text = 'No-JWT-secret-setup',
@@ -326,7 +324,7 @@ component accessors=true {
       }
 
       // Try authhash, or regular username/password if available (via basic auth for instance)
-      if ( structKeyExists( rc, 'authhash' ) || ( structKeyExists( rc, 'username' ) && structKeyExists( rc, 'password' ) ) || structKeyExists( rc, 'bearertoken' ) ) {
+      if ( structKeyExists( rc, 'authhash' ) || ( structKeyExists( rc, 'username' ) && structKeyExists( rc, 'password' ) ) ) {
         doLogin( rc );
       } else {
         // nope, still not logged in: reset session via logout method.
