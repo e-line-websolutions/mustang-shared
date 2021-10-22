@@ -65,11 +65,7 @@ component accessors=true {
 
       logService.writeLogLevel( text = 'authhash success', type = 'information', file = request.appName );
     }
-    else if( !isNull( request._fw1.headers.authorization )
-              && request._fw1.headers.authorization contains "Bearer"){
-
-      var token = trim( replace( request._fw1.headers.authorization, 'Bearer', '', 'ALL' ));
-
+    else if( rc.keyExists( 'bearertoken' ) ){
       if( isNull( config.jwt.secret )){
         logService.writeLogLevel(
           text = 'No-JWT-secret-setup',
@@ -89,7 +85,7 @@ component accessors=true {
       }
 
       var jwt     = new mustang.lib.jwtcfml.models.jwt();
-      var payload = jwt.decode(token, config.jwt.secret, config.jwt.algorithm );
+      var payload = jwt.decode(rc.bearertoken, config.jwt.secret, config.jwt.algorithm );
 
       if( isNull( payload.contact.id )){
         logService.writeLogLevel(
@@ -149,6 +145,7 @@ component accessors=true {
         'note' = 'Logged in'
       };
     }
+
 
     // user.enableDebug();
     user.dontLog();
@@ -259,7 +256,16 @@ component accessors=true {
   // THIS FUNCTION WILL ALWAYS SET RC.AUTH
   public void function authorize( required struct rc ) {
 
+    // try to loging with authash
     if( rc.keyExists( 'authhash' ) ) doLogin( rc );
+
+    //trying to see if we have a token
+    var HTTPRequestData = getHTTPRequestData();
+    if( isDefined( 'HTTPRequestData.headers.authorization' ) && HTTPRequestData.headers.authorization.contains( 'Bearer') ){
+      rc.bearertoken  = listLast( HTTPRequestData.headers.authorization, ' ' );
+      rc.dontRedirect = true;
+      doLogin( rc );
+    }
 
     // Use auth struct that's stored in session
     rc.auth = securityService.getAuth();
@@ -268,6 +274,7 @@ component accessors=true {
       securityService.refreshFakeSession();
       return;
     }
+
 
     // Always allow access to security && api:css
     var args = {
@@ -280,6 +287,7 @@ component accessors=true {
     if ( securityService.canIgnoreSecurity( argumentCollection = args ) ) {
       return; // EARLY EXIT
     }
+
 
     // check validity of auth struct
     if ( !structKeyExists( rc, 'auth' ) ) {
@@ -295,14 +303,10 @@ component accessors=true {
         rc,
         'authhash'
       ) ) {
-        // API basic auth login:
-        var HTTPRequestData = getHTTPRequestData();
-
-
-
 
         if ( isDefined( 'HTTPRequestData.headers.authorization' ) ) {
           logService.writeLogLevel( text = 'trying API basic auth', type = 'information', file = request.appName );
+
           var basicAuth = toString( toBinary( listLast( HTTPRequestData.headers.authorization, ' ' ) ) );
 
           rc.username = listFirst( basicAuth, ':' );
