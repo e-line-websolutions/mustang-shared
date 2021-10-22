@@ -51,9 +51,7 @@ component accessors=true {
     }
 
     if ( !len( trim( translation ) ) ) {
-      translation = capFirst
-        ? replace( utilityService.capFirst( alternative ), "-", " ", "all" )
-        : alternative;
+      translation = alternative;
 
       // Try some default translation options on FQAs
       if ( listLen( "padding" & label, ":" ) == 2 && listLen( "padding" & label, "." ) == 2 ) {
@@ -94,7 +92,9 @@ component accessors=true {
       result = replaceNoCase( result, _label_, translate( mid( _label_, 2, len( _label_ ) - 2 ) ) );
     }
 
-    return result;
+    return capFirst
+      ? replace( utilityService.capFirst( result ), "-", " ", "all" )
+      : result;
   }
 
   public void function changeLanguage( string newLanguage ) {
