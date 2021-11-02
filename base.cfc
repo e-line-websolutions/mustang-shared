@@ -321,12 +321,25 @@ component {
 
     if ( !isNull( allOrmEntities ) ) return allOrmEntities;
 
-    var allOrmEntities = {};
-    var allEntities = ormGetSessionFactory().getStatistics().getEntityNames();
+    if ( server.keyExists( 'lucee' ) ) {
+      /* LUCEE */
+      var allOrmEntities = entityNameArray().reduce( function( r = {}, entityName ) {
+        var entity = entityNew( entityName );
+        return r.insert( entityName, {
+          name: entityName,
+          table: entity.table?:entityName,
+          isOption: isInstanceOf( entity, 'option' )
+        } );
+      } );
+    } else {
+      /* COLDFUSION */
+      var allOrmEntities = {};
+      var allEntities = ormGetSessionFactory().getStatistics().getEntityNames();
 
-    for ( var entityName in allEntities ) {
-      var entity = getMetadata( entityNew( entityName ) );
-      allOrmEntities[ entityName ] = { 'name' = entityName, 'table' = isNull( entity.table ) ? entityName : entity.table };
+      for ( var entityName in allEntities ) {
+        var entity = getMetadata( entityNew( entityName ) );
+        allOrmEntities[ entityName ] = { 'name' = entityName, 'table' = isNull( entity.table ) ? entityName : entity.table };
+      }
     }
 
     cachePut( cacheKey, allOrmEntities );

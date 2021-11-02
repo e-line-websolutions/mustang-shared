@@ -255,7 +255,6 @@ component accessors=true {
 
   // THIS FUNCTION WILL ALWAYS SET RC.AUTH
   public void function authorize( required struct rc ) {
-
     // try to loging with authash
     if( rc.keyExists( 'authhash' ) ) doLogin( rc );
 
@@ -299,11 +298,7 @@ component accessors=true {
 
     // we're not logged in, try a few options:
     if ( !rc.auth.isLoggedIn ) {
-      if ( ( framework.getSubsystem() == 'api' || listFirst( cgi.PATH_INFO, '/' ) == 'api' ) && !structKeyExists(
-        rc,
-        'authhash'
-      ) ) {
-
+      if ( ( framework.getSubsystem() == 'api' || listFirst( cgi.PATH_INFO, '/' ) == 'api' ) && !structKeyExists( rc, 'authhash' ) ) {
         if ( isDefined( 'HTTPRequestData.headers.authorization' ) ) {
           logService.writeLogLevel( text = 'trying API basic auth', type = 'information', file = request.appName );
 
@@ -316,6 +311,7 @@ component accessors=true {
           var isLucee = listFindNoCase( 'lucee,railo', server.ColdFusion.ProductName );
           var pageContext = getPageContext();
           var response = isLucee ? pageContext.getResponse() : pageContext.getFusionContext().getResponse();
+
           response.setHeader( 'WWW-Authenticate', 'Basic realm="#request.appName#-API"' );
 
           framework.renderData( 'rawjson', '{"status":"error","detail":"Unauthorized","action":"#rc.action#"}', 401 );

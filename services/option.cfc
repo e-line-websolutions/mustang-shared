@@ -3,39 +3,13 @@ component accessors=true {
   property logService;
   property array optionEntities;
 
-  // constructor
-
-  public component function init( config ) {
-    structAppend( variables, arguments );
-
-    variables.optionEntities = [];
-
-    param config.useOrm = true;
-
-    if ( config.useOrm ) {
-      try {
-        var allEntities = ormGetSession().getSessionFactory().getAllClassMetadata();
-      } catch ( any e ) {
-        var allEntities = ormGetSessionFactory().getAllClassMetadata();
-      }
-      for ( var key in allEntities ) {
-        var entity = allEntities[ key ];
-        if ( entity.getMappedSuperclass() == 'option' ) {
-          arrayAppend( variables.optionEntities, key );
-        }
-      }
-
-      if ( !arrayIsEmpty( variables.optionEntities ) ) {
-        reloadOptions();
-      }
-    }
-
-    return this;
-  }
-
   // public functions
 
   public void function reloadOptions() {
+    variables.optionEntities = request.allOrmEntities
+      .filter( function ( k, v ) { return v.isOption; } )
+      .reduce( function ( r = [], k, v ) { return r.append( k ); } );
+
     var result = {};
     var optionsInDb = __getOptionsFromDB();
 
@@ -49,9 +23,12 @@ component accessors=true {
 
       arrayAppend( result[ key ], value );
     }
+
   }
 
   public any function getOptionByName( required string entityName, required string optionName, boolean createIfMissing = false ) {
+    if ( !variables.keyExists( 'optionEntities' ) ) reloadOptions();
+
     entityName = trim( entityName );
     optionName = trim( optionName );
 

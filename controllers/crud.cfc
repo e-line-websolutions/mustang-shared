@@ -12,7 +12,6 @@ component accessors=true {
     fw.frameworkTrace( 'mustang-shared.crud.init() called' );
 
     variables.framework = fw;
-    variables.ormEntities = structKeyArray( ormGetSessionFactory().getAllClassMetadata() );
 
     param variables.listitems="";
     param variables.listactions=".new";
@@ -39,7 +38,7 @@ component accessors=true {
 
     param rc.useAsViewEntity=variables.entity;
 
-    if ( arrayFindNoCase( variables.ormEntities, variables.entity ) ) {
+    if ( request.allOrmEntities.keyExists( variables.entity ) ) {
       var object = entityNew( variables.entity );
       rc.entityInstanceVars = object.getInstanceVariables( );
 
@@ -152,7 +151,7 @@ component accessors=true {
     rc.entity = variables.entity;
 
     // exit with error when trying to control a non-persisted entity
-    if ( !variables.ormEntities.findNoCase( variables.entity ) ) {
+    if ( !request.allOrmEntities.keyExists( variables.entity ) ) {
       rc.fallbackView = ":app/notfound";
       variables.framework.setView( '.#variables.entity#' );
       return;
@@ -488,7 +487,7 @@ component accessors=true {
     param rc.returnto = "#rc.useAsViewEntity#.default";
     param rc.dontredirect = false;
 
-    if ( structCount( form ) == 0 ) {
+    if ( form.isEmpty() ) {
       rc.alert = { 'class' = 'danger', 'text' = 'global-form-error' };
       variables.framework.redirect( rc.useAsViewEntity & '.default', 'alert' );
     }
