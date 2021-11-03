@@ -233,7 +233,7 @@ component accessors=true {
     endSession();
   }
 
-  public string function createJWTForUser(
+  public string function createJWTForContact(
     required component contact
   ){
 
