@@ -177,11 +177,9 @@ component {
     param exception.errorCode=500;
     param exception.detail="";
 
-    var errorCode = duplicate( exception.errorCode );
-
-    if ( !isNumeric( errorCode ) ) {
-      exception.message &= ' (code: #errorCode#)';
-      errorCode = 500;
+    if ( !isNumeric( exception.errorCode ) || exception.errorCode == 0 ) {
+      exception.message &= ' (code: #exception.errorCode#)';
+      exception.errorCode = 500;
     }
 
     var pc = getPageContext( );
@@ -189,34 +187,43 @@ component {
     if ( server.keyExists( "lucee" ) ) {
       try {
         cfcontent( reset = true );
-        cfheader( statusCode = errorCode, statusText = exception.message );
-      } catch ( any e ) {}
+        cfheader( statusCode = exception.errorCode, statusText = exception.type & 'Error' );
+      } catch ( any e ) {
+        writeDump(e);abort;
+      }
     } else {
       pc.getCfoutput( ).clearAll( );
       pc.getResponse( )
         .getResponse( )
-        .setStatus( errorCode, exception.message );
+        .setStatus( exception.errorCode, exception.message );
     }
 
-    var showDebugError = config.debugIP.listFind( cgi.remote_addr );
+    var showDebugError = config.debugIP.listFind( cgi.remote_addr ) || config.showDebug;
+    var inApi = cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/";
 
-    if ( cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/" || showDebugError || config.showDebug ) {
-      if ( server.keyExists( "lucee" ) ) {
-        try {
-          cfcontent( type = "text/plain" );
-        } catch ( any e ) {}
+    if ( inApi || showDebugError ) {
+      if ( inApi ) {
+        if ( server.keyExists( "lucee" ) ) {
+          try {
+            cfcontent( type = "application/json" );
+          } catch ( any e ) {}
+        } else {
+          pc.getResponse( )
+            .setContentType( "application/json" );
+        }
+
+        writeOutput( serializeJSON( {
+          'status': 'error',
+          'message': exception.message,
+          'detail': exception.detail,
+          'error_description': '#exception.message#, #exception.detail#',
+          'stackTrace': exception.stackTrace
+        } ) );
       } else {
-        pc.getResponse( )
-          .setContentType( "text/plain" );
+        writeOutput( '<h1>#exception.message#</h1>' );
+        writeOutput( '#exception.stackTrace.reReplace( '\sat\s', '<br> at ', 'all' )#' );
+        writeOutput( '<hr />' );
       }
-
-      writeOutput( "Error: " & exception.message );
-      writeOutput( chr( 13 ) & chr( 10 ) & "Detail: " & exception.detail );
-
-      if ( showDebugError ) {
-        writeOutput( chr( 13 ) & chr( 10 ) & "Stacktrace: " & exception.stackTrace );
-      }
-
       abort;
     }
 
@@ -255,8 +262,8 @@ component {
     param request.fallbackErrorFile = 'error.html';
 
     for ( webroot in webroots ) {
-      if ( fileExists( variables.root & "/#webroot#/error-#errorCode#.html" ) ) {
-        include "/#config.root#/#webroot#/error-#errorCode#.html";
+      if ( fileExists( variables.root & "/#webroot#/error-#exception.errorCode#.html" ) ) {
+        include "/#config.root#/#webroot#/error-#exception.errorCode#.html";
         writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
         abort;
       } else if ( fileExists( variables.root & "/#webroot#/#request.fallbackErrorFile#" ) ) {
