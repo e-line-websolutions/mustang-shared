@@ -233,6 +233,35 @@ component accessors=true {
     endSession();
   }
 
+  public string function createJWTForContact(
+    required component contact
+  ){
+
+    if( isNull( config.jwt.secret )){
+      logService.writeLogLevel(
+        text = 'No-JWT-secret-setup',
+        type = 'warning',
+        file = request.appName
+      );
+      throw('No-JWT-secret-setup');
+    }
+
+
+    if( isNull( config.jwt.algorithm )){
+      logService.writeLogLevel(
+        text = 'No-JWT-algorithm-setup',
+        type = 'warning',
+        file = request.appName
+      );
+      throw('No-JWT-algorithm-setup');
+    }
+
+    var jwt     = new mustang.lib.jwtcfml.models.jwt();
+    var payload = { id= contact.getId(), username= contact.getUsername(), securityroleid = contact.getSecurityRole().getId(), 'exp' = dateAdd( 'd', 1, now() ) };
+    var token   = jwt.encode( payload, config.jwt.secret, config.jwt.algorithm )
+    return token;
+  }
+
   // private
 
   private void function cachePermissions( required array allPermissions ) {
