@@ -220,7 +220,8 @@ component {
           'stackTrace': exception.stackTrace
         } ) );
       } else {
-        writeOutput( '<h1>#exception.message#</h1>' );
+        writeOutput( '<h1>#exception?.message#</h1>' );
+        writeOutput( '<h3>#exception?.detail#</h3>' );
         writeOutput( '#exception.stackTrace.reReplace( '\sat\s', '<br> at ', 'all' )#' );
         writeOutput( '<hr />' );
       }
