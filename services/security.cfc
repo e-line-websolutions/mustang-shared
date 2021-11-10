@@ -257,12 +257,11 @@ component accessors=true {
     }
 
     var jwt     = new mustang.lib.jwtcfml.models.jwt();
-    var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId(), 'exp' = dateAdd( 'd', 1, now() ) };
-    var token   = jwt.encode( { 'contact' = payload }, config.jwt.secret, config.jwt.algorithm )
+    var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() };
+    var token   = jwt.encode( { 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }, config.jwt.secret, config.jwt.algorithm )
     return token;
   }
 
-  // private
 
   private void function cachePermissions( required array allPermissions ) {
     var cachedPermissions = { };
