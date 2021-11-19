@@ -6,6 +6,7 @@ component accessors=true {
   property crudService;
   property jsonJavaService;
   property securityService;
+  property frontendService;
   property utilityService;
 
   public any function init( fw ) {
