@@ -262,6 +262,33 @@ component accessors=true {
     return token;
   }
 
+  public any function decodeJwt(
+    required string token
+  ){
+    if( isNull( config.jwt.secret )){
+      logService.writeLogLevel(
+        text = 'No-JWT-secret-setup',
+        type = 'warning',
+        file = request.appName
+      );
+      throw('No-JWT-secret-setup');
+    }
+
+
+    if( isNull( config.jwt.algorithm )){
+      logService.writeLogLevel(
+        text = 'No-JWT-algorithm-setup',
+        type = 'warning',
+        file = request.appName
+      );
+      throw('No-JWT-algorithm-setup');
+    }
+
+
+    var jwt     = new mustang.lib.jwtcfml.models.jwt();
+    return jwt.decode( token, config.jwt.secret, config.jwt.algorithm );
+  }
+
 
   private void function cachePermissions( required array allPermissions ) {
     var cachedPermissions = { };
