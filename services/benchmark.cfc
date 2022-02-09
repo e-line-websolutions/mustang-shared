@@ -2,6 +2,7 @@ component {
   resetTimers( );
 
   function init( ) {
+    resetTimers( );
     variables.system = createObject( "java", "java.lang.System" );
 
     return this;
