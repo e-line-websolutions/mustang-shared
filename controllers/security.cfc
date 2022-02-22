@@ -27,6 +27,7 @@ component accessors=true {
     param rc.username="";
     param rc.password="";
     param rc.authhash="";
+    param rc.contact="";
 
     var updateUserWith = { 'lastLoginDate' = now() };
 
@@ -64,8 +65,7 @@ component accessors=true {
       param rc.dontRedirect = true;
 
       logService.writeLogLevel( text = 'authhash success', type = 'information', file = request.appName );
-    }
-    else if( rc.keyExists( 'bearertoken' ) ){
+    } else if( rc.keyExists( 'bearertoken' ) ){
       if( isNull( config.jwt.secret )){
         logService.writeLogLevel(
           text = 'No-JWT-secret-setup',
@@ -97,6 +97,8 @@ component accessors=true {
       }
 
       var user = contactService.getById( payload.contact.id );
+    } else if ( isObject( rc.contact ) ) {
+      var user = rc.contact;
     } else {
       // CHECK USERNAME:
       var user = contactService.getByUsername( rc.username );
@@ -145,7 +147,6 @@ component accessors=true {
         'note' = 'Logged in'
       };
     }
-
 
     // user.enableDebug();
     user.dontLog();
