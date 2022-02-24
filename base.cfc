@@ -345,8 +345,13 @@ component {
       var allEntities = ormGetSessionFactory().getStatistics().getEntityNames();
 
       for ( var entityName in allEntities ) {
-        var entity = getMetadata( entityNew( entityName ) );
-        allOrmEntities[ entityName ] = { 'name' = entityName, 'table' = isNull( entity.table ) ? entityName : entity.table };
+        var entity = entityNew( entityName );
+        var md = getMetadata( entity );
+        allOrmEntities[ entityName ] = {
+          'name' = entityName,
+          'table' = isNull( md.table ) ? entityName : md.table,
+          'isOption' = isInstanceOf( entity, 'option' )
+        };
       }
     }
 
