@@ -258,7 +258,7 @@ component accessors=true {
 
     var jwt     = new mustang.lib.jwtcfml.models.jwt();
     var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() };
-    var token   = jwt.encode( { 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }, config.jwt.secret, config.jwt.algorithm )
+    var token   = jwt.encode( { 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }, config.jwt.secret, config.jwt.algorithm );
     return token;
   }
 
@@ -361,13 +361,13 @@ component accessors=true {
     } );
   }
 
-  private void function logUserLogout( contact ) {
+  private void function logUserLogout() {
     if ( !config.log ) return;
 
     var auth = getAuth();
 
     if ( dataService.isGUID( auth?.userid ) ) {
-      var contact = contactService.get( auth.userid );
+      contactService.get( auth.userid );
       contact.dontLog();
       contact.save( {
         'add_logEntry' = {

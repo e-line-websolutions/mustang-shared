@@ -13,7 +13,7 @@ component accessors=true {
     }
 
     var tmpFilename = config.paths.fileUploads & '/' & destination & '/file-#createUUID()#.tmp';
-    var uploadState = fileUpload( tmpFilename, uploadField, mimeType, 'MakeUnique' );
+    var uploadState = fileUpload( tmpFilename, uploadField, mimeType, 'MakeUnique', false );
 
     var fileObj = beanFactory.getBean( 'fileBean' );
 
