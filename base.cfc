@@ -275,6 +275,7 @@ component {
         }
       }
     } catch ( any e ) {
+      writeDump( exception );
       writeDump( e );
       abort;
     }
