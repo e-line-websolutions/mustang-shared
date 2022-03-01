@@ -167,111 +167,116 @@ component {
   }
 
   public void function handleExceptions( required struct config, any exception, string event ) {
-    exception = duplicate( exception );
+    try {
+      exception = duplicate( exception );
 
-    if ( exception.keyExists( "Cause" ) ) {
-      exception = duplicate( exception.cause );
-    }
-
-    param exception.message="Uncaught Error";
-    param exception.errorCode=500;
-    param exception.detail="";
-
-    if ( !isNumeric( exception.errorCode ) || exception.errorCode == 0 ) {
-      exception.message &= ' (code: #exception.errorCode#)';
-      exception.errorCode = 500;
-    }
-
-    var pc = getPageContext( );
-
-    if ( server.keyExists( "lucee" ) ) {
-      try {
-        cfcontent( reset = true );
-        cfheader( statusCode = exception.errorCode, statusText = exception.type & 'Error' );
-      } catch ( any e ) {
-        writeDump(e);abort;
+      if ( exception.keyExists( "Cause" ) ) {
+        exception = duplicate( exception.cause );
       }
-    } else {
-      pc.getCfoutput( ).clearAll( );
-      pc.getResponse( )
-        .getResponse( )
-        .setStatus( exception.errorCode, exception.message );
-    }
 
-    var showDebugError = config.debugIP.listFind( cgi.remote_addr ) || config.showDebug;
-    var inApi = cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/";
+      param exception.message="Uncaught Error";
+      param exception.errorCode=500;
+      param exception.detail="";
 
-    if ( inApi || showDebugError ) {
-      if ( inApi ) {
-        if ( server.keyExists( "lucee" ) ) {
-          try {
-            cfcontent( type = "application/json" );
-          } catch ( any e ) {}
-        } else {
-          pc.getResponse( )
-            .setContentType( "application/json" );
-        }
-
-        writeOutput( serializeJSON( {
-          'status': 'error',
-          'message': exception.message,
-          'detail': exception.detail,
-          'error_description': '#exception.message#, #exception.detail#',
-          'stackTrace': exception.stackTrace
-        } ) );
-      } else {
-        writeOutput( '<h1>#exception?.message#</h1>' );
-        writeOutput( '<h3>#exception?.detail#</h3>' );
-        writeOutput( '#exception.stackTrace.reReplace( '\sat\s', '<br> at ', 'all' )#' );
-        writeOutput( '<hr />' );
+      if ( !isNumeric( exception.errorCode ) || val( exception.errorCode ) == 0 ) {
+        exception.message &= ' (code: #exception.errorCode#)';
+        exception.errorCode = 500;
       }
-      abort;
-    }
 
-    if ( !showDebugError && config.keyExists( 'rollbar' ) ) {
-      runAsync( function() {
+      var pc = getPageContext( );
+
+      if ( server.keyExists( "lucee" ) ) {
         try {
-          request.rollbarUserInfo = userExistsInRequestScope() ? {
-              'id' = request.context.auth.user.id
-            , 'username' = request.context.auth.user.username
-            , 'email' = request.context.auth.user.email
-            , 'extra' = 'test'
-          } : {};
-          config.rollbar.environment = cgi.SERVER_NAME;
-          var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
-          rollbar.reportMessage( exception.message, "critical", exception, request.rollbarUserInfo );
+          cfcontent( reset = true );
+          cfheader( statusCode = exception.errorCode, statusText = exception.type & 'Error' );
         } catch ( any e ) {
-          writeLog( 'Failed to send error to Rollbar: #e.message# (#e.detail#).', 'fatal' );
+          writeDump(e);abort;
         }
-      } );
-    } else {
-      var errorDump = "";
-      savecontent variable="errorDump" {
-        writeOutput( "Error: " & exception.message );
-        writeOutput( "<br />Detail: " & exception.detail );
-        writeOutput( "<br />Stacktrace: <pre>" & exception.stackTrace & "</pre>" );
-        writeDump( cgi );
+      } else {
+        pc.getCfoutput( ).clearAll( );
+        pc.getResponse( )
+          .getResponse( )
+          .setStatus( exception.errorCode, exception.message );
       }
 
-      param config.paths.errors = expandPath( '../../ProjectsTemporaryFiles/errors' );
+      var showDebugError = config.debugIP.listFind( cgi.remote_addr ) || config.showDebug;
+      var inApi = cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/";
 
-      fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
-    }
+      if ( inApi || showDebugError ) {
+        if ( inApi ) {
+          if ( server.keyExists( "lucee" ) ) {
+            try {
+              cfcontent( type = "application/json" );
+            } catch ( any e ) {}
+          } else {
+            pc.getResponse( )
+              .setContentType( "application/json" );
+          }
 
-    var webroots = [ 'webroot', 'www' ];
-
-    param request.fallbackErrorFile = 'error.html';
-
-    for ( webroot in webroots ) {
-      if ( fileExists( variables.root & "/#webroot#/error-#exception.errorCode#.html" ) ) {
-        include "/#config.root#/#webroot#/error-#exception.errorCode#.html";
-        writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
-        abort;
-      } else if ( fileExists( variables.root & "/#webroot#/#request.fallbackErrorFile#" ) ) {
-        include "/#config.root#/#webroot#/#request.fallbackErrorFile#";
-        writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+          writeOutput( serializeJSON( {
+            'status': 'error',
+            'message': exception.message,
+            'detail': exception.detail,
+            'error_description': '#exception.message#, #exception.detail#',
+            'stackTrace': exception.stackTrace
+          } ) );
+        } else {
+          writeOutput( '<h1>#exception?.message#</h1>' );
+          writeOutput( '<h3>#exception?.detail#</h3>' );
+          writeOutput( '#exception.stackTrace.reReplace( '\sat\s', '<br> at ', 'all' )#' );
+          writeOutput( '<hr />' );
+        }
         abort;
       }
+
+      if ( !showDebugError && config.keyExists( 'rollbar' ) ) {
+        runAsync( function() {
+          try {
+            request.rollbarUserInfo = userExistsInRequestScope() ? {
+                'id' = request.context.auth.user.id
+              , 'username' = request.context.auth.user.username
+              , 'email' = request.context.auth.user.email
+              , 'extra' = 'test'
+            } : {};
+            config.rollbar.environment = cgi.SERVER_NAME;
+            var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
+            rollbar.reportMessage( exception.message, "critical", exception, request.rollbarUserInfo );
+          } catch ( any e ) {
+            writeLog( 'Failed to send error to Rollbar: #e.message# (#e.detail#).', 'fatal' );
+          }
+        } );
+      } else {
+        var errorDump = "";
+        savecontent variable="errorDump" {
+          writeOutput( "Error: " & exception.message );
+          writeOutput( "<br />Detail: " & exception.detail );
+          writeOutput( "<br />Stacktrace: <pre>" & exception.stackTrace & "</pre>" );
+          writeDump( cgi );
+        }
+
+        param config.paths.errors = expandPath( '../../ProjectsTemporaryFiles/errors' );
+
+        fileWrite( config.paths.errors & "/uncaught-error-#createUUID()#.html", errorDump, "utf-8" );
+      }
+
+      var webroots = [ 'webroot', 'www' ];
+
+      param request.fallbackErrorFile = 'error.html';
+
+      for ( webroot in webroots ) {
+        if ( fileExists( variables.root & "/#webroot#/error-#exception.errorCode#.html" ) ) {
+          include "/#config.root#/#webroot#/error-#exception.errorCode#.html";
+          writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+          abort;
+        } else if ( fileExists( variables.root & "/#webroot#/#request.fallbackErrorFile#" ) ) {
+          include "/#config.root#/#webroot#/#request.fallbackErrorFile#";
+          writeOutput( '<!-- Message: #exception.message# | Detail: #exception.detail# -->' );
+          abort;
+        }
+      }
+    } catch ( any e ) {
+      writeDump( e );
+      abort;
     }
   }
 
