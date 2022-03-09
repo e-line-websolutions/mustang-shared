@@ -13,7 +13,12 @@ component accessors=true {
     }
 
     var tmpFilename = config.paths.fileUploads & '/' & destination & '/file-#createUUID()#.tmp';
-    var uploadState = fileUpload( tmpFilename, uploadField, mimeType, 'MakeUnique', false );
+
+    // Lucee compatible fileUpload
+    if( server.keyExists( "lucee" ) )
+      var uploadState = fileUpload( tmpFilename, uploadField, mimeType, 'MakeUnique' );
+    else
+      var uploadState = fileUpload( tmpFilename, uploadField, mimeType, 'MakeUnique', false );
 
     var fileObj = beanFactory.getBean( 'fileBean' );
 
