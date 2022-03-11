@@ -189,6 +189,8 @@ component accessors=true {
 
         var updateUserLog = {
           'contactID' = user.getID(),
+          'mfacode' = javacast('null',0),
+          'mfatries' = 0,
           'add_logEntry' = {
             'relatedEntity' = user.getId(),
             'by' = user.getId(),
