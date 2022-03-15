@@ -190,6 +190,7 @@ component {
           cfcontent( reset = true );
           cfheader( statusCode = exception.errorCode, statusText = exception.type & 'Error' );
         } catch ( any e ) {
+          writeDump(exception);
           writeDump(e);abort;
         }
       } else {

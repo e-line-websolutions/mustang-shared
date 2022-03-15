@@ -367,9 +367,8 @@ component accessors=true {
     var auth = getAuth();
 
     if ( dataService.isGUID( auth?.userid ) ) {
-      contactService.get( auth.userid );
-      contact.dontLog();
-      contact.save( {
+      var contact = contactService.get( auth.userid );
+      contact.dontLog().save( {
         'add_logEntry' = {
             'relatedEntity' = contact.getId()
           , 'by' = contact.getId()
