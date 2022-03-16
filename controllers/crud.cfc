@@ -110,6 +110,8 @@ component accessors=true {
   public void function default( required struct rc ) {
     framework.frameworkTrace( 'mustang-shared.crud.default() called' );
 
+    writeDUmp( 1 );abort;
+
     if ( !rc.auth.isLoggedIn ) {
       return;
     }
