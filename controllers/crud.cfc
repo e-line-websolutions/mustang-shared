@@ -110,8 +110,6 @@ component accessors=true {
   public void function default( required struct rc ) {
     framework.frameworkTrace( 'mustang-shared.crud.default() called' );
 
-    writeDUmp( rc.auth.isLoggedIn );abort;
-
     if ( !rc.auth.isLoggedIn ) {
       return;
     }
@@ -126,6 +124,8 @@ component accessors=true {
     param rc.filters=[ ];
     param rc.filterType="contains";
     param rc.classColumn="";
+
+    writeDUmp( rc.maxResults );abort;
 
     // exit controller on non crud items
     switch ( variables.framework.getSection( ) ) {
