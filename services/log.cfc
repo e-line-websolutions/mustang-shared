@@ -95,12 +95,12 @@ component accessors=true {
     if( config.keyExists( 'rollbar' ) ) {
       runAsync( function() {
         try {
-          request.rollbarUserInfo = isNull( request.context.auth.user ) ? {} : {
+          request.rollbarUserInfo = !isNull( request.context.auth.user ) && isStruct( request.context.auth.user ) && structKeyExists( request.context.auth.user, 'id') ?  {
               'id' = request.context.auth.user.id
             , 'username' = request.context.auth.user.username
             , 'email' = request.context.auth.user.email
             , 'extra' = 'test'
-          };
+          } : {};
           config.rollbar.environment = cgi.SERVER_NAME;
           var rollbar = new mustang.lib.rollbar.Rollbar( config.rollbar );
           rollbar.reportMessage( exception.message, "critical", exception, request.rollbarUserInfo );
