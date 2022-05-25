@@ -584,7 +584,7 @@ component accessors=true {
         var values = listToArray( filter[ key ], "|" );
 
         if( arrayLen( values ) == 1 ) {
-          arrayAppend( filters, '#key#="#xmlFormat( values[ 1 ] )#"' );
+          arrayAppend( filters, '#key#="#values[ 1 ]#"' );
         } else {
           var multipleValues = __toXpathStringOr( values );
           arrayAppend( filters, '#key#[#multipleValues#]' );
@@ -1019,7 +1019,7 @@ component accessors=true {
     var result = [];
 
     for( var item in source ) {
-      arrayAppend( result, ". = '" & xmlFormat( trim( item ) ) ) & "'";
+      arrayAppend( result, ". = '" & encodeForXMLAttribute( trim( item ) ) ) & "'";
     }
 
     return arrayToList( result, " or " );
