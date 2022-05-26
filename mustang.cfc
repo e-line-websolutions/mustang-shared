@@ -128,7 +128,7 @@ component extends="latest-framework.one" {
           modelPath = expandPath( modelPath );
         }
 
-        var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml' );
+        var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml|*.cfc.hbm.xml' );
 
         for ( var filepath in hbmxmlFiles ) {
           fileDelete( filepath );
@@ -160,7 +160,7 @@ component extends="latest-framework.one" {
 
         logService.writeLogLevel( 'NUKE (#getTickCount()-t#ms): ORM reloaded', request.appName );
 
-        var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml' );
+        var hbmxmlFiles = directoryList( modelPath, true, 'path', '*.hbmxml|*.cfc.hbm.xml' );
 
         if ( !arrayIsEmpty( hbmxmlFiles ) ) {
           var t = getTickCount();
@@ -178,8 +178,8 @@ component extends="latest-framework.one" {
           var t = getTickCount();
 
           for ( var filepath in hbmxmlFiles ) {
-            var fileName = getFileFromPath( filepath );
-            var destination = variables.root & 'documentation/hbmxml/' & fileName;
+            var fileName = getFileFromPath( filepath ).listFirst('.');
+            var destination = variables.root & 'documentation/hbmxml/' & fileName & '.hbmxml';
             fileMove( filepath, destination );
           }
 
