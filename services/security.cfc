@@ -116,7 +116,7 @@ component accessors=true {
   }
 
   public string function hashPassword( required string password ) {
-    var minSpeed = 100;
+    var minSpeed = 250;
     var cost = 4;
     var bcrypt = getBCrypt();
     do {

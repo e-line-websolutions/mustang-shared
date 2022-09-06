@@ -322,7 +322,9 @@ component {
   }
 
   private string function getDefaultWebroot() {
-    return ( cgi.https == 'on' ? 'https' : 'http' ) & '://' & cgi.http_host;
+    var httpRequestData = getHttpRequestData();
+    var httpsIsOn = cgi.https == 'on' || (httpRequestData.headers.keyExists('X-Forwarded-Proto') && httpRequestData.headers['X-Forwarded-Proto'] == 'https')
+    return ( httpsIsOn ? 'https' : 'http' ) & '://' & cgi.http_host;
   }
 
   public string function getMachineName() {
