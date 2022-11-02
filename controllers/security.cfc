@@ -269,6 +269,12 @@ component accessors=true {
       doLogin( rc );
     }
 
+    if( rc.keyExists('jwt')){
+      rc.bearertoken  = rc.jwt;
+      rc.dontRedirect = true;
+      doLogin( rc );
+    }
+
     // Use auth struct that's stored in session
     rc.auth = securityService.getAuth();
 
