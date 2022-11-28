@@ -92,9 +92,15 @@ component accessors=true {
       result = replaceNoCase( result, _label_, translate( mid( _label_, 2, len( _label_ ) - 2 ) ) );
     }
 
-    return capFirst
-      ? replace( utilityService.capFirst( result ), "-", " ", "all" )
+    result = compare( label, result ) == 0
+      ? replace( result, '-', ' ', 'all' )
+      : result
+
+    result = capFirst
+      ? utilityService.capFirst( result )
       : result;
+
+    return result;
   }
 
   public void function changeLanguage( string newLanguage ) {
