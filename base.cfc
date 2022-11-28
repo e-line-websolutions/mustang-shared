@@ -93,6 +93,11 @@ component {
       }
     }
 
+    if ( fileExists( configRoot & '/config/docker.json' ) && server.system.environment?.IN_DOCKER == 'true' ) {
+      var dockerConfig = deserializeJSON( fileRead( configRoot & '/config/docker.json', 'utf-8' ) );
+      mergeStructs( dockerConfig, result );
+    }
+
     // expand relative paths:
     result.paths = result.paths.map(function( key, path ) {
       return ( left( path, 2 ) == './' || left( path, 3 ) == '../' ? expandPath( path ) : path );
