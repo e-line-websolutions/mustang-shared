@@ -1,4 +1,4 @@
-component extends="latest-framework.one" {
+component extends="framework.one" {
   if ( !structKeyExists( variables, 'framework' ) ) {
     variables.framework = {};
   }
@@ -34,7 +34,7 @@ component extends="latest-framework.one" {
       'SESOmitIndex' = true,
       'base' = '/root',
       'diLocations' = [
-        '/mustang-staging/services',
+        '/mustang/services',
         '/#variables.cfg.root#/model/services'
       ],
       'diConfig' = {

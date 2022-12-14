@@ -14,8 +14,8 @@ component accessors=true {
     var optionsInDb = __getOptionsFromDB();
 
     for ( var option in optionsInDb ) {
-      var key = option.get( 'key' );
-      var value = option.get( 'value' );
+      var key = option.key;
+      var value = option.value;
 
       if ( !structKeyExists( result, key ) ) {
         result[ key ] = [];
@@ -85,10 +85,7 @@ component accessors=true {
     return newOption;
   }
 
-  private array function __getOptionsFromDB() {
-    var hql = '
-      SELECT new map( type( o ) AS key, o.name AS value ) FROM option o WHERE o.name <> '''' AND o.deleted = false
-    ';
-    return ormExecuteQuery( hql, {}, false, { 'cacheable' = true } );
+  private function __getOptionsFromDB() {
+    return queryExecute( 'select type as key, name as value from option where name <> '''' and deleted = false', {} );
   }
 }
