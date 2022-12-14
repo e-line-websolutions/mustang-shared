@@ -1,7 +1,7 @@
 component {
   public component function init( fw1Config ) {
-    variables.basePath = getDirectoryFromPath( getBaseTemplatePath( ) );
-    variables.root = getRoot( );
+    variables.basePath = fixPath( mid(getBaseTemplatePath(), 1, getBaseTemplatePath().findNoCase('index.cfm')-1) );
+    variables.root = getRoot();
     variables.name = hash( variables.basePath & cgi.server_name );
     variables.framework = fw1Config;
 

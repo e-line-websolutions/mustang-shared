@@ -34,7 +34,7 @@ component extends="framework.one" {
       'SESOmitIndex' = true,
       'base' = '/root',
       'diLocations' = [
-        '/mustang-staging/services',
+        '/mustang/services',
         '/#variables.cfg.root#/model/services'
       ],
       'diConfig' = {

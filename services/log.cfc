@@ -126,7 +126,7 @@ component accessors=true {
       debug = '<h1>' & title & '</h1>' & debug;
     }
 
-    fileWrite( "#variables.config.paths.errors#/#fileNamePrefix#-#createUUID( )#.html", debug );
+    fileWrite( "#variables.config.paths.errors#/#fileNamePrefix#-#dateTimeFormat(now(), 'yyyymmdd-HHnnss')#-#createUUID( )#.html", debug );
   }
 
   private string function mapLevelToCfType( level ) {

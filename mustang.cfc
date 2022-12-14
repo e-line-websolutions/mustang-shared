@@ -32,7 +32,7 @@ component extends="framework.one" {
       'error' = 'app.error',
       'unhandledPaths' = '/inc,/tests,/browser,/cfimage,/diagram,/orm',
       'diLocations' = [
-        '/mustang-staging/services',
+        '/mustang/services',
         '/#variables.cfg.root#/services',
         '/#variables.cfg.root#/model/services',
         '/#variables.cfg.root#/subsystems/api/services'
