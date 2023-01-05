@@ -86,6 +86,12 @@ component accessors=true {
   }
 
   private function __getOptionsFromDB() {
-    return queryExecute( 'select type as key, name as value from option where name <> '''' and deleted = false', {} );
+    return queryExecute( '
+      SELECT  "type" AS "key",
+              "name" AS "value"
+      FROM    "option"
+      WHERE   "name" <> ''''
+        AND   "deleted" = false
+    ', {} );
   }
 }
