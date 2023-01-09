@@ -19,8 +19,6 @@ component accessors=true {
 
     structAppend( variables, arguments );
 
-    variables.queryServiceLogId = 0;
-
     return this;
   }
 
@@ -40,8 +38,6 @@ component accessors=true {
     */
   public any function execute( required string sqlStatement, any queryParams = { }, struct queryOptions = { } ) {
     addDatasource( queryOptions );
-
-    variables.queryServiceLogId++;
 
     var sqlToLog = left( reReplace( sqlStatement, "\s+", " ", "all" ), 1000 );
     var localQueryOptions = duplicate( queryOptions );
