@@ -307,7 +307,11 @@ component accessors=true {
 
     // we're not logged in, try a few options:
     if ( !rc.auth.isLoggedIn ) {
-      if ( ( framework.getSubsystem() == 'api' || listFirst( cgi.PATH_INFO, '/' ) == 'api' ) && !structKeyExists( rc, 'authhash' ) ) {
+      if ( ( framework.getSubsystem() == 'api' ||
+             listFirst( cgi.PATH_INFO, '/' ) == 'api' ||
+             framework.getSubsystem() == 'adminapi' ||
+             listFirst( cgi.PATH_INFO, '/' ) == 'adminapi'
+          ) && !structKeyExists( rc, 'authhash' ) ) {
         if ( isDefined( 'HTTPRequestData.headers.authorization' ) ) {
           logService.writeLogLevel( text = 'trying API basic auth', type = 'information', file = request.appName );
 
