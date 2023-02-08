@@ -48,6 +48,7 @@ component accessors=true {
 
     if ( requestedLevel >= levelThreshold ) {
       writeLog( text = text, type = mapLevelToCfType( level ), file = file );
+      systemOutput( text, true, requestedLevel > 3 );
       return true;
     }
 

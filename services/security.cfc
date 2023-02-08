@@ -120,10 +120,11 @@ component accessors=true {
     var cost = 4;
     var bcrypt = getBCrypt();
     do {
-      var salt = bcrypt.gensalt( cost );
-      var hashedPW = bcrypt.hashpw( password, salt );
+      // var salt = bcrypt.gensalt( cost );
+      // var hashedPW = bcrypt.hashpw( password, salt );
+      var hashedPW = bcrypt.withDefaults().hashToString(cost, passwordAsCharArray( password ));
       var start = getTickCount();
-      bcrypt.checkpw( password, hashedPW );
+      bcrypt.verifyer().verify( passwordAsCharArray( password ), hashedPW );
       var hashSpeed = getTickCount() - start;
       logService.writeLogLevel( "Password hash speed #hashSpeed#ms at #cost#.", "securityService", "debug" );
       cost++;
@@ -135,7 +136,7 @@ component accessors=true {
     try {
       // FIRST TRY BCRYPT:
       var bcrypt = getBCrypt();
-      return bcrypt.checkpw( password, storedPW );
+      return bcrypt.verifyer().verify( passwordAsCharArray( password ), storedPW ).verified;
     } catch ( any e ) {
       writeDump( e );abort;
       try {
@@ -328,7 +329,12 @@ component accessors=true {
   }
 
   private any function getBCrypt() {
-    return createObject( 'java', 'org.mindrot.jbcrypt.BCrypt' );
+    return createObject( 'java', 'at.favre.lib.crypto.bcrypt.BCrypt' );
+  }
+
+  private any function passwordAsCharArray(password) {
+    // var StandardCharsets = createObject( 'java', 'java.nio.charset.StandardCharsets' );
+    return password.toCharArray();
   }
 
   private struct function getEmptyAuth() {
