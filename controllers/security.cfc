@@ -176,6 +176,8 @@ component accessors=true {
   }
 
   public void function doLogout( required struct rc, boolean failedAuthorization = false ) {
+    param rc.dontRedirect = false;
+
     // reset session
     securityService.endSession();
 
@@ -214,6 +216,8 @@ component accessors=true {
       }
     }
 
+    if( !isNull( rc.dontRedirect ) && isBoolean( rc.dontRedirect ) && rc.dontRedirect == true ) return;
+
     logService.writeLogLevel( logMessage );
 
     if ( framework.getSubsystem() == 'api' || listFirst( cgi.PATH_INFO, '/' ) == 'api' ) {
@@ -250,6 +254,7 @@ component accessors=true {
 
       rc.returnpage = cgi.path_info & urlString;
     }
+
 
 
     framework.redirect( ':security.login', 'alert,returnpage' );
