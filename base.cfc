@@ -345,14 +345,15 @@ component {
 
     if ( server.keyExists( 'lucee' ) ) {
       /* LUCEE */
-      var allOrmEntities = entityNameArray().reduce( function( r = {}, entityName ) {
+      var allOrmEntities = entityNameArray().reduce( ( r, entityName ) => {
         var entity = entityNew( entityName );
-        return r.insert( entityName, {
+        r[ entityName ] = {
           name: entityName,
           table: entity.table?:entityName,
           isOption: isInstanceOf( entity, 'option' )
-        } );
-      } );
+        };
+        return r;
+      }, {} );
     } else {
       /* COLDFUSION */
       var allOrmEntities = {};
