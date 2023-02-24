@@ -33,13 +33,13 @@ component extends="baseService" {
     }
   }
 
-  public any function getById( required string id, boolean deleted = false ) {
+  public any function getById( required string id, boolean deleted = false, boolean active = true ) {
     var params = { 'deleted' = deleted, 'id' = id };
     var hql = 'FROM #variables.entityName# WHERE deleted = :deleted AND id = :id';
 
     var tmp = entityNew( variables.entityName );
     if ( tmp.propertyExists( 'active' ) ) {
-      params[ 'active' ] = true;
+      params[ 'active' ] = active;
       hql &= ' AND active = :active ';
     }
 

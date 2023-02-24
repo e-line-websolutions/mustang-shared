@@ -96,7 +96,7 @@ component accessors=true {
         doLogout( rc );
       }
 
-      var user = contactService.getById( payload.contact.id );
+      var user = contactService.getById( id = payload.contact.id, active = ( framework.getItem() != 'password' ) ); // allows inactive users to reset their password
     } else if ( isObject( rc.contact ) ) {
       var user = rc.contact;
     } else {
