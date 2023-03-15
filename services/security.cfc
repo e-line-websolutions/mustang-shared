@@ -194,30 +194,40 @@ component accessors=true {
 
     systemOutput( 'FQA: #fqa# canIgnoreSecurity check' );
 
-    if ( isArray( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.findNoCase( fqa ) ) return true;
-    if ( isSimpleValue( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.listfindNoCase( fqa ) ) return true;
+    if ( isArray( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.findNoCase( fqa ) ) {
+      return true;
+    }
+
+    if ( isSimpleValue( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.listfindNoCase( fqa ) ) {
+      return true;
+    }
 
     systemOutput( ' -> not on dontSecureFQA list' );
 
     if ( subsystem == "adminapi" && section == "css" ) {
+      systemOutput( ' -> ignore adminapi/css' );
       return true;
     }
 
     if ( subsystem == "api" && section == "auth" ) {
+      systemOutput( ' -> ignore api/auth' );
       return true;
     }
 
     var inDefaultSubsystem = subsystem == defaultSubsystem;
 
     if ( inDefaultSubsystem && section == "security" ) {
+      systemOutput( ' -> ignore security section' );
       return true;
     }
 
     if ( inDefaultSubsystem && !variables.config.secureDefaultSubsystem ) {
+      systemOutput( ' -> secureDefaultSubsystem is off' );
       return true;
     }
 
     if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
+      systemOutput( ' -> not on securedSubsystems list' );
       return true;
     }
 
