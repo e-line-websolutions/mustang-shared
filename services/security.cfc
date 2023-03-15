@@ -192,8 +192,12 @@ component accessors=true {
                                              string defaultSubsystem="" ) {
     logService.writeLogLevel( text = fqa, level = 'information' );
 
+    systemOutput( 'FQA: #fqa# canIgnoreSecurity check' );
+
     if ( isArray( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.findNoCase( fqa ) ) return true;
     if ( isSimpleValue( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.listfindNoCase( fqa ) ) return true;
+
+    systemOutput( ' -> not on dontSecureFQA list' );
 
     if ( subsystem == "adminapi" && section == "css" ) {
       return true;
@@ -216,6 +220,8 @@ component accessors=true {
     if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
       return true;
     }
+
+    systemOutput( ' -> can not ignore security' );
 
     return false;
   }
