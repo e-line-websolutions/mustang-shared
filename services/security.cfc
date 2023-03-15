@@ -195,10 +195,12 @@ component accessors=true {
     systemOutput( 'FQA: #fqa# canIgnoreSecurity check' );
 
     if ( isArray( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.findNoCase( fqa ) ) {
+      systemOutput( ' -> on dontSecureFQA list' );
       return true;
     }
 
     if ( isSimpleValue( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.listfindNoCase( fqa ) ) {
+      systemOutput( ' -> on dontSecureFQA list' );
       return true;
     }
 
