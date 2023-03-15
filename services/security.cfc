@@ -190,51 +190,35 @@ component accessors=true {
                                              string section="",
                                              string fqa="",
                                              string defaultSubsystem="" ) {
-    logService.writeLogLevel( text = fqa, level = 'information' );
-
-    systemOutput( 'FQA: #fqa# canIgnoreSecurity check', true );
-    systemOutput( serializeJson( variables.config.dontSecureFQA ), true );
-
     if ( isArray( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.findNoCase( fqa ) ) {
-      systemOutput( ' -> on dontSecureFQA list', true );
       return true;
     }
 
     if ( isSimpleValue( variables.config.dontSecureFQA ) && variables.config.dontSecureFQA.listfindNoCase( fqa ) ) {
-      systemOutput( ' -> on dontSecureFQA list', true );
       return true;
     }
 
-    systemOutput( ' -> not on dontSecureFQA list', true );
-
     if ( subsystem == "adminapi" && section == "css" ) {
-      systemOutput( ' -> ignore adminapi/css', true );
       return true;
     }
 
     if ( subsystem == "api" && section == "auth" ) {
-      systemOutput( ' -> ignore api/auth', true );
       return true;
     }
 
     var inDefaultSubsystem = subsystem == defaultSubsystem;
 
     if ( inDefaultSubsystem && section == "security" ) {
-      systemOutput( ' -> ignore security section', true );
       return true;
     }
 
     if ( inDefaultSubsystem && !variables.config.secureDefaultSubsystem ) {
-      systemOutput( ' -> secureDefaultSubsystem is off', true );
       return true;
     }
 
     if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
-      systemOutput( ' -> not on securedSubsystems list', true );
       return true;
     }
-
-    systemOutput( ' -> can not ignore security', true );
 
     return false;
   }
