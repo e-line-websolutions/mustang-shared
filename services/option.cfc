@@ -86,10 +86,12 @@ component accessors=true {
   }
 
   private function __getOptionsFromDB() {
+    var schema = entityNew( 'option' ).getSchemaName();
+
     return queryExecute( '
       SELECT  "type" AS "key",
               "name" AS "value"
-      FROM    "option"
+      FROM    "#schema#"."option"
       WHERE   "name" <> ''''
         AND   "deleted" = false
     ', {} );

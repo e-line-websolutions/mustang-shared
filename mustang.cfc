@@ -19,6 +19,8 @@ component extends="framework.one" {
 
   param variables.framework.subsystemDelimiter=':';
 
+  variables.framework.reloadApplicationOnEveryRequest = !variables.cfg.appIsLive;
+
   variables.mstng.cleanXHTMLQueryString();
   variables.live = variables.cfg.appIsLive;
   variables.routes = [];
