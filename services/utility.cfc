@@ -251,12 +251,12 @@
     return inputArray;
   }
 
-  public array function arrayShift( required array inputArray ) {
-    arrayPrepend( inputArray, inputArray[ arrayLen( inputArray ) ] );
-    arrayDeleteAt( inputArray, arrayLen( inputArray ) );
+  // public array function arrayShift( required array inputArray ) {
+  //   arrayPrepend( inputArray, inputArray[ arrayLen( inputArray ) ] );
+  //   arrayDeleteAt( inputArray, arrayLen( inputArray ) );
 
-    return inputArray;
-  }
+  //   return inputArray;
+  // }
 
   public array function arrayTrim( required array inputArray, required numeric trimAt ) {
     var result = [ ];
@@ -269,16 +269,16 @@
     return result;
   }
 
-  public array function arrayReverse( required array inputArray ) {
-    var len = arrayLen( inputArray );
-    var end = ceiling( len / 2 );
-    for ( var i = 1; i <= end; i++ ) {
-      var temp = inputArray[ i ];
-      inputArray[ i ] = inputArray[ ( len + 1 ) - i ];
-      inputArray[ ( len + 1 ) - i ] = temp;
-    }
-    return inputArray;
-  }
+  // public array function arrayReverse( required array inputArray ) {
+  //   var len = arrayLen( inputArray );
+  //   var end = ceiling( len / 2 );
+  //   for ( var i = 1; i <= end; i++ ) {
+  //     var temp = inputArray[ i ];
+  //     inputArray[ i ] = inputArray[ ( len + 1 ) - i ];
+  //     inputArray[ ( len + 1 ) - i ] = temp;
+  //   }
+  //   return inputArray;
+  // }
 
   public string function base64URLEncode( required string value, encoding = this.defaultEncoding ) {
     return binaryEncode( charsetDecode( value, encoding ), 'base64' )
