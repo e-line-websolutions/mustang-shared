@@ -97,9 +97,10 @@ component accessors=true {
           throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
         }
 
-        tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
+        tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false )
+          .append( { permissions: securityRole.getPermissions().filter((p) => !p.getDeleted()).map((p) => p.deOrm() ) }, true );
 
-        tempAuth.role.delete ( 'contacts' );
+        tempAuth.role.delete( 'contacts' );
 
         if ( isAdmin( tempAuth.role.name ) ) {
           tempAuth.role.can = yesWeCan;
