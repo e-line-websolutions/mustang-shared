@@ -98,7 +98,7 @@ component accessors=true {
         }
 
         tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false )
-          .append( { permissions: securityRole.getPermissions().filter((p) => !p.getDeleted()).map((p) => p.deOrm() ) }, true );
+          .append( { permissions: securityRole.getPermissions().filter((p) => !p.getDeleted()).map((p) => dataService.processEntity( p, 0, 1, false ) ) }, true );
 
         tempAuth.role.delete( 'contacts' );
 
