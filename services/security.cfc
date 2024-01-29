@@ -239,9 +239,10 @@ component accessors=true {
   }
 
   public string function createJWTForContact(
-    required component contact
+    required component contact,
+    struct additionalData
   ){
-
+    if( isNull( additionalData )) additionalData = {};
     if( isNull( config.jwt.secret )){
       logService.writeLogLevel(
         text = 'No-JWT-secret-setup',
@@ -262,7 +263,7 @@ component accessors=true {
     }
 
     var jwt     = new mustang.lib.jwtcfml.models.jwt();
-    var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() };
+    var payload = additionalData.append({ 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() });
     var token   = jwt.encode( { 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }, config.jwt.secret, config.jwt.algorithm );
     return token;
   }
