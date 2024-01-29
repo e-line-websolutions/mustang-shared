@@ -263,8 +263,8 @@ component accessors=true {
     }
 
     var jwt     = new mustang.lib.jwtcfml.models.jwt();
-    var payload = additionalData.append({ 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() });
-    var token   = jwt.encode( { 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }, config.jwt.secret, config.jwt.algorithm );
+    var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() };
+    var token   = jwt.encode( additionalData.append({ 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }), config.jwt.secret, config.jwt.algorithm );
     return token;
   }
 
