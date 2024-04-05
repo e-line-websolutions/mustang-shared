@@ -319,6 +319,10 @@ component accessors=true {
         return;
       }
 
+      if ( data.getDeleted() ) {
+        continue;
+      }
+
       var allowedFieldTypes = 'id,column,many-to-one,one-to-many,many-to-many'; // level 0 only
 
       if ( level > 1 || basicsOnly ) {
