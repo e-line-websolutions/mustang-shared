@@ -266,7 +266,7 @@ component accessors=true {
 
   // convenience functions
 
-  public any function processEntity( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false, array path = [] ) {
+  public any function processEntity( any data, numeric level = 0, numeric maxLevel = 1, boolean basicsOnly = false, array path = [], boolean justIds = false ) {
     var useJsonService = variables.jsonService;
 
     if ( !isNull( variables.jsonJavaService ) && isObject( variables.jsonJavaService ) ) {
@@ -304,7 +304,7 @@ component accessors=true {
           arrayAppend( result, 'capped at #maxArrayItt# results' );
           break;
         } else {
-          var newData = this.processEntity( el, level, maxLevel, basicsOnly, path );
+          var newData = this.processEntity( el, level, maxLevel, basicsOnly, path, justIds );
           if ( !isNull( newData ) ) {
             arrayAppend( result, newData );
           }
@@ -331,6 +331,10 @@ component accessors=true {
 
       if ( level >= maxLevel && !maxLevel == 0 ) {
         allowedFieldTypes = 'id,column';
+      }
+      
+      if ( level >= 1 && justIds ) {
+        allowedFieldTypes = 'id';
       }
 
       var result = {};
@@ -380,18 +384,23 @@ component accessors=true {
           continue;
         }
 
-        if ( fieldProperties.fieldtype contains 'to-many' ) {
+        if ( fieldProperties.fieldtype contains '-to-many' ) {
           basicsOnly = true; // next level only allow to-one
         }
 
-        result[ fieldProperties.name ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path );
-      }
+        var linkedObject = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path, justIds );
 
+        if ( fieldProperties.fieldtype contains '-to-one' && justIds ) {
+          result[ '#value.getEntityName()#id' ] = linkedObject?.id;
+        } else {
+          result[ fieldProperties.name ] = linkedObject;
+        }
+      }
     } else if ( isStruct( data ) ) {
       var result = {};
       for ( var key in data ) {
         var value = data[ key ];
-        result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path );
+        result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path, justIds );
       }
 
     }
