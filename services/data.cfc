@@ -276,13 +276,7 @@ component accessors=true {
     level = max( 0, level );
     maxLevel = min( 5, maxLevel );
 
-    if ( isNull( data ) || (
-      maxLevel > 0 &&
-      level > maxLevel &&
-      !isSimpleValue( data )
-    ) ) {
-      return;
-    }
+    if ( isNull( data ) || ( level > maxLevel && isObject( data ))) return;
 
     var nextLevel = level + 1;
     var maxArrayItt = 100;
@@ -389,6 +383,8 @@ component accessors=true {
         }
 
         var linkedObject = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path, justIds );
+
+        if ( isNull( linkedObject ) ) continue;
 
         if ( fieldProperties.fieldtype contains '-to-one' && justIds ) {
           result[ '#value.getEntityName()#id' ] = linkedObject?.id;
