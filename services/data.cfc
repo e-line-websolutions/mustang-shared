@@ -326,7 +326,7 @@ component accessors=true {
       if ( level >= maxLevel && !maxLevel == 0 ) {
         allowedFieldTypes = 'id,column';
       }
-      
+
       if ( level >= 1 && justIds ) {
         allowedFieldTypes = 'id';
       }
@@ -395,7 +395,7 @@ component accessors=true {
     } else if ( isStruct( data ) ) {
       var result = {};
       for ( var key in data ) {
-        var value = data[ key ];
+        var value = !isNull( data[ key ] ) ? data[ key ] : javaCast('null', 0);
         result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path, justIds );
       }
 
