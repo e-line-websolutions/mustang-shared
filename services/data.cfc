@@ -395,8 +395,8 @@ component accessors=true {
     } else if ( isStruct( data ) ) {
       var result = {};
       for ( var key in data ) {
-        var value = !isNull( data[ key ] ) ? data[ key ] : javaCast('null', 0);
-        result[ key ] = this.processEntity( value, nextLevel, maxLevel, basicsOnly, path, justIds );
+
+        result[ key ] = this.processEntity( !isNull( data[ key ] ) ? data[ key ] : javaCast('null', 0), nextLevel, maxLevel, basicsOnly, path, justIds );
       }
 
     }
