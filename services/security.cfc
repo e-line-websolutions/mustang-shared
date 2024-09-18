@@ -97,9 +97,10 @@ component accessors=true {
           throw( "No security role for this user, or no security role name set.", "securityService.refreshSession" );
         }
 
-        tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false );
+        tempAuth[ "role" ] = dataService.processEntity( securityRole, 0, 1, false )
+          .append( { permissions: securityRole.getPermissions().filter((p) => !p.getDeleted()).map((p) => dataService.processEntity( p, 0, 1, false ) ) }, true );
 
-        tempAuth.role.delete ( 'contacts' );
+        tempAuth.role.delete( 'contacts' );
 
         if ( isAdmin( tempAuth.role.name ) ) {
           tempAuth.role.can = yesWeCan;
@@ -238,9 +239,10 @@ component accessors=true {
   }
 
   public string function createJWTForContact(
-    required component contact
+    required component contact,
+    struct additionalData
   ){
-
+    if( isNull( additionalData )) additionalData = {};
     if( isNull( config.jwt.secret )){
       logService.writeLogLevel(
         text = 'No-JWT-secret-setup',
@@ -262,7 +264,7 @@ component accessors=true {
 
     var jwt     = new mustang.lib.jwtcfml.models.jwt();
     var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() };
-    var token   = jwt.encode( { 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }, config.jwt.secret, config.jwt.algorithm );
+    var token   = jwt.encode( additionalData.append({ 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }), config.jwt.secret, config.jwt.algorithm );
     return token;
   }
 
