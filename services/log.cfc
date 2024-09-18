@@ -129,6 +129,8 @@ component accessors=true {
 
     var fileName = "#fileNamePrefix#-#dateTimeFormat(now(), 'yyyymmdd-HHnnss')#-#createUUID( )#.html";
 
+    if ( !directoryExists(variables.config.paths.errors) ) directoryCreate(variables.config.paths.errors, true);
+
     fileWrite( "#variables.config.paths.errors#/#fileName#", debug );
     fileSetAccessMode( "#variables.config.paths.errors#/#fileName#", 755 );
   }
