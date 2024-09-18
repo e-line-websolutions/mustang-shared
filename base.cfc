@@ -205,7 +205,7 @@ component {
           .setStatus( exception.errorCode, exception.message );
       }
 
-      var showDebugError = config.debugIP.listFind( cgi.remote_addr ) || config.showDebug;
+      var showDebugError = config.debugIP.listFind( cgi.remote_addr ) || config.showDebug || (server.system.environment?.IN_DOCKER == 'true');
       var inApi = cgi.path_info contains "/api/" || cgi.path_info contains "/adminapi/";
 
       if ( inApi || showDebugError ) {
@@ -338,7 +338,7 @@ component {
   }
 
   public struct function listAllOrmEntities( cfcLocation ) {
-    var cacheKey = 'orm-entities';
+    var cacheKey = 'orm-entities-#getApplicationMetadata().name#';
     var allOrmEntities = cacheGet( cacheKey );
 
     if ( !isNull( allOrmEntities ) ) return allOrmEntities;

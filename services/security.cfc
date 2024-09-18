@@ -332,7 +332,7 @@ component accessors=true {
   }
 
   private any function getBCrypt() {
-    return createObject( 'java', 'at.favre.lib.crypto.bcrypt.BCrypt' );
+    return createObject( 'java', 'at.favre.lib.crypto.bcrypt.BCrypt', expandPath( '/mustang/lib/java/' ) );
   }
 
   private any function passwordAsCharArray(password) {

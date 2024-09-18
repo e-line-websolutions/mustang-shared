@@ -127,7 +127,12 @@ component accessors=true {
       debug = '<h1>' & title & '</h1>' & debug;
     }
 
-    fileWrite( "#variables.config.paths.errors#/#fileNamePrefix#-#dateTimeFormat(now(), 'yyyymmdd-HHnnss')#-#createUUID( )#.html", debug );
+    var fileName = "#fileNamePrefix#-#dateTimeFormat(now(), 'yyyymmdd-HHnnss')#-#createUUID( )#.html";
+
+    if ( !directoryExists(variables.config.paths.errors) ) directoryCreate(variables.config.paths.errors, true);
+
+    fileWrite( "#variables.config.paths.errors#/#fileName#", debug );
+    fileSetAccessMode( "#variables.config.paths.errors#/#fileName#", 755 );
   }
 
   private string function mapLevelToCfType( level ) {
