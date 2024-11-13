@@ -26,9 +26,13 @@ component {
     var result = { 'webroot' = getDefaultWebroot(), 'paths' = {} };
     var mustangSharedRoot = getMustangRoot();
 
+    systemOutput( 'reading file: #mustangSharedRoot#/config/global.json' );
+    
     var globalConfig = deserializeJSON( fileRead( mustangSharedRoot & '/config/global.json', 'utf-8' ) );
     mergeStructs( globalConfig, result );
     if ( fileExists( configRoot & '/config/default.json' ) ) {
+      systemOutput( 'reading file: #configRoot#/config/default.json' );
+      
       var defaultConfig = deserializeJSON( fileRead( configRoot & '/config/default.json', 'utf-8' ) );
       mergeStructs( defaultConfig, result );
     }
@@ -36,9 +40,13 @@ component {
     site = site.replaceNoCase( 'www.', '' );
 
     if ( fileExists( configRoot & '/config/' & site & '.json' ) ) {
+      systemOutput( 'reading file: #configRoot#/config/#site#.json' );
+      
       var siteConfig = deserializeJSON( fileRead( configRoot & '/config/' & site & '.json', 'utf-8' ) );
 
       if ( siteConfig.keyExists( 'include' ) ) {
+        systemOutput( 'reading file: #configRoot#/config/#siteConfig.include#' );
+        
         var includeConfig = deserializeJSON( fileRead( configRoot & '/config/#siteConfig.include#', 'utf-8' ) );
         mergeStructs( includeConfig, result );
       }
@@ -52,9 +60,13 @@ component {
     }
 
     if ( fileExists( configRoot & '/config/' & domain & '.json' ) ) {
+      systemOutput( 'reading file: #configRoot#/config/#domain#.json' );
+      
       var domainConfig = deserializeJSON( fileRead( configRoot & '/config/' & domain & '.json', 'utf-8' ) );
 
       if ( domainConfig.keyExists( 'include' ) ) {
+        systemOutput( 'reading file: #configRoot#/config/#domainConfig.include#' );
+        
         var includeDomainConfig = deserializeJSON( fileRead( configRoot & '/config/#domainConfig.include#', 'utf-8' ) );
         mergeStructs( includeDomainConfig, result );
       }
@@ -65,6 +77,8 @@ component {
     var machineName = getMachineName();
 
     if ( fileExists( configRoot & '/config/#machineName.lCase()#.json' ) ) {
+      systemOutput( 'reading file: #configRoot#/config/#machineName#.json' );
+      
       var machineConfig = deserializeJSON( fileRead( configRoot & '/config/#machineName#.json', 'utf-8' ) );
       mergeStructs( machineConfig, result );
     }
@@ -88,12 +102,16 @@ component {
       }
 
       if ( useCommandbox ) {
+        systemOutput( 'reading file: #configRoot#/config/commandbox.json' );
+        
         var commandboxConfig = deserializeJSON( fileRead( configRoot & '/config/commandbox.json', 'utf-8' ) );
         mergeStructs( commandboxConfig, result );
       }
     }
 
     if ( fileExists( configRoot & '/config/docker.json' ) && server.system.environment?.IN_DOCKER == 'true' ) {
+      systemOutput( 'reading file: #configRoot#/config/docker.json' );
+      
       var dockerConfig = deserializeJSON( fileRead( configRoot & '/config/docker.json', 'utf-8' ) );
       mergeStructs( dockerConfig, result );
     }
