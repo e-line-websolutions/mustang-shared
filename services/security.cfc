@@ -75,7 +75,7 @@ component accessors=true {
       if ( isNull( user ) ) {
         var currentAuth = getAuth();
 
-        if ( utilityService.isGuid( currentAuth.userId ) ) {
+        if ( dataService.isGuid( currentAuth.userId ) ) {
           user = entityLoadByPK( "contact", currentAuth.userId );
         }
       } else {
