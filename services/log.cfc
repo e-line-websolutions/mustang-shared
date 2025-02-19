@@ -113,7 +113,7 @@ component accessors=true {
   }
 
   private void function writeToFile( any data, string fileNamePrefix = "error", string title = "" ) {
-    param variables.config.paths.errors="C:/TEMP";
+    param variables.config.paths.errors="/tmp";
 
     variables.utilityService.setCFSetting( "requestTimeout", 600 );
 
