@@ -75,7 +75,7 @@ component accessors=true {
       if ( isNull( user ) ) {
         var currentAuth = getAuth();
 
-        if ( utilityService.isGuid( currentAuth.userId ) ) {
+        if ( dataService.isGuid( currentAuth.userId ) ) {
           user = entityLoadByPK( "contact", currentAuth.userId );
         }
       } else {
@@ -264,6 +264,14 @@ component accessors=true {
 
     var jwt     = new mustang.lib.jwtcfml.models.jwt();
     var payload = { 'id' = contact.getId(), 'username' = contact.getUsername(), 'securityroleid' = contact.getSecurityRole().getId() };
+
+    try{
+      var company = contact.getCompany();
+      if( !isNull( company )){
+        payload['companyid'] = company.getId();
+      }
+    }catch(e){}
+
     var token   = jwt.encode( additionalData.append({ 'contact' = payload, 'exp' = dateAdd( 'd', 1, now() ) }), config.jwt.secret, config.jwt.algorithm );
     return token;
   }
