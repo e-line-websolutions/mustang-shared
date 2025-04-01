@@ -297,6 +297,9 @@ component accessors=true {
       'defaultSubsystem' = framework.getDefaultSubsystem()
     };
 
+
+    writeDUmp( framework.getSubsystem() );
+    writedump( framework.getRoutePath() );abort;
     if ( securityService.canIgnoreSecurity( argumentCollection = args ) ) {
       return; // EARLY EXIT
     }
