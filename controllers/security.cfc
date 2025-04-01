@@ -297,11 +297,6 @@ component accessors=true {
       'defaultSubsystem' = framework.getDefaultSubsystem()
     };
 
-    if( framework.getRoutepath().find('/api/') > 0 ){
-      args.subsystem = 'api';
-    }
-    
-
     if ( securityService.canIgnoreSecurity( argumentCollection = args ) ) {
       return; // EARLY EXIT
     }
