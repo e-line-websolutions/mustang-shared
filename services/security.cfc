@@ -217,10 +217,6 @@ component accessors=true {
       return true;
     }
 
-
-  writedUmp( variables.config.securedSubsystems );
-  writedUmp( subsystem );abort;
-
     if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
       return true;
     }
