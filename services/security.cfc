@@ -217,9 +217,6 @@ component accessors=true {
       return true;
     }
 
-
-    writeDUmp( framework.getSubsystem() );
-    writedump( framework.getRoutePath() );abort;
     if ( !inDefaultSubsystem && !listFindNoCase( variables.config.securedSubsystems, subsystem ) ) {
       return true;
     }
